@@ -34,9 +34,9 @@
 
 Contenedor Docker para ejecutar un servidor dedicado de ARK: Survival Evolved utilizando [ARK Server Tools (arkmanager)](https://github.com/arkmanager/ark-server-tools), con respaldos automáticos integrados, notificaciones a Discord, reinicios programados y configuración completa mediante variables de entorno.
 
-### Sobre este Fork
+### 📖 Acerca del Proyecto
 
-Este repositorio es un fork modificado de [indifferentbroccoli/ark-server-docker](https://github.com/indifferentbroccoli/ark-server-docker). Agrega copias de seguridad automáticas programadas, notificaciones por Webhook de Discord, reinicios periódicos automatizados con avisos en el juego, script simple de restauración de backups (`restore.sh`), multiplicadores de rates por variables de entorno, volúmenes persistentes y un branding genérico y limpio.
+Contenedor Docker todo-en-uno diseñado para desplegar y administrar servidores dedicados de ARK: Survival Evolved de forma robusta, automatizada y sin complicaciones. Desarrollado sobre la base de [ARK Server Tools (arkmanager)](https://github.com/arkmanager/ark-server-tools) e inspirado originalmente en [indifferentbroccoli/ark-server-docker](https://github.com/indifferentbroccoli/ark-server-docker), este proyecto ha evolucionado para ofrecer una solución completa lista para producción con copias de seguridad inteligentes, notificaciones multi-idioma a Discord, reinicios programados y restauración en un solo comando.
 
 ### 📚 Centro de Documentación
 Para guías detalladas paso a paso, consulta la carpeta [**`Documents/`**](Documents/README.md):
@@ -46,7 +46,7 @@ Para guías detalladas paso a paso, consulta la carpeta [**`Documents/`**](Docum
 
 ### Características
 
-#### 🌟 Novedades de este Fork
+#### 🌟 Principales Capacidades
 - **Copias de Seguridad Automáticas**: Backups periódicos con intervalo configurable y rotación por cantidad máxima de archivos (`BACKUP_MAX_COUNT`).
 - **Restauración Fácil en 1 Comando**: Script ejecutable `restore.sh` para restaurar el último backup o uno específico.
 - **Notificaciones a Discord**: Alertas en tiempo real en tu canal de Discord para estado del servidor, respaldos, actualizaciones y reinicios.
@@ -282,9 +282,9 @@ Asegúrate de que los siguientes puertos estén abiertos y redirigidos en tu enr
 
 A Docker container for running an ARK: Survival Evolved dedicated server using [ARK Server Tools (arkmanager)](https://github.com/arkmanager/ark-server-tools), featuring built-in automated backups, Discord notifications, scheduled restarts, and full configuration via environment variables.
 
-### About This Fork
+### 📖 About the Project
 
-This repository is a modified fork of [indifferentbroccoli/ark-server-docker](https://github.com/indifferentbroccoli/ark-server-docker). It adds automated scheduled backups, Discord Webhook notifications, automated periodic restarts with in-game warnings, simple backup restoration (`restore.sh`), rate multipliers via environment variables, persistent volume mounts, and clean generic container branding.
+An all-in-one Docker container designed to deploy and manage ARK: Survival Evolved dedicated servers in a robust, automated, and hassle-free manner. Built on top of [ARK Server Tools (arkmanager)](https://github.com/arkmanager/ark-server-tools) and originally inspired by [indifferentbroccoli/ark-server-docker](https://github.com/indifferentbroccoli/ark-server-docker), this project has evolved into a complete production-ready solution featuring intelligent automated backups, multi-language Discord notifications, scheduled server restarts, and single-command restoration.
 
 ### 📚 Documentation Center
 For detailed step-by-step guides, check out the [**`Documents/`**](Documents/README.md) folder:
@@ -294,7 +294,7 @@ For detailed step-by-step guides, check out the [**`Documents/`**](Documents/REA
 
 ### Features
 
-#### 🌟 Added in This Fork
+#### 🌟 Core Capabilities
 - **Automated Scheduled Backups**: Built-in periodic backups with configurable interval and count-based rotation (`BACKUP_MAX_COUNT`).
 - **One-Command Restoration**: Simple `restore.sh` script to restore the latest or a specific backup instantly.
 - **Discord Webhook Notifications**: Real-time channel alerts for server status, backups, updates, and restarts.
