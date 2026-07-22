@@ -6,6 +6,11 @@ on:
       - main
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'Documents/**'
+      - '.gitignore'
+      - '.github/ISSUE_TEMPLATE/**'
   release:
     types: [published]
   workflow_dispatch:
