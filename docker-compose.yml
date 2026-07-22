@@ -1,0 +1,33 @@
+---
+name: ark-server
+services:
+  ark-server:
+    image: marcusm99/ark-server-docker:latest
+    platform: linux/amd64
+    restart: unless-stopped
+    container_name: ark-server
+    stop_grace_period: 30s
+    ports:
+      - "7777:7777/udp"
+      - "27015:27015/udp"
+      - "27020:27020/tcp"
+    environment:
+      # --- Essential Server Settings ---
+      - SESSION_NAME=ARK Server
+      - SERVER_PASSWORD=
+      - ADMIN_PASSWORD=adminpass
+      - MAX_PLAYERS=10
+      - WORLD=TheIsland
+      - SERVER_PVE=false
+      - BATTLEEYE=false
+      - RCON_ENABLED=true
+      - MOD_IDS=
+      # --- Backup Settings ---
+      - BACKUP_ENABLED=true
+      - BACKUP_INTERVAL_HOURS=6
+      - BACKUP_MAX_COUNT=10
+    volumes:
+      - ./steamcmd/ark:/home/steam/steamcmd/ark
+      - ./ark-backups:/home/steam/ark-backups
+    labels:
+      icon: https://raw.githubusercontent.com/GMS-EC/ark-server-docker/main/Documents/logo.png

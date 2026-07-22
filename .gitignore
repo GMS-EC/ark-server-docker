@@ -1,0 +1,12 @@
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Server data (created at runtime, should not be versioned)
+steamcmd/
+ark-backups/
+
+# OS/editor noise
+.DS_Store
+*.swp

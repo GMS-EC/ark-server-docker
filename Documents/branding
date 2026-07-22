@@ -1,0 +1,17 @@
++---------------------------------------------------------------+
+|                                                               |
+|       _    ____  _  __  ____  _____ ______     _______ ____   |
+|     / \  |  _ \| |/ / / ___|| ____|  _ \ \   / / ____|  _ \   |
+|    / _ \ | |_) | ' /  \___ \|  _| | |_) \ \ / /|  _| | |_) |  |
+|   / ___ \|  _ <| . \   ___) | |___|  _ < \ V / | |___|  _ <   |
+|  /_/   \_\_| \_\_|\_\ |____/|_____|_| \_\ \_/  |_____|_| \_\  |
+|                                                               |
+|            ARK: Survival Evolved Dedicated Server             |
+|                                                               |
+|          Powered by arkmanager & SteamCMD in Docker           |
+|          Automated scheduled backups & size rotation          |
+|         Auto-updates for server & Steam Workshop mods         |
+|        Cluster support, cross-travel & PvE/PvP ready          |
+|      Graceful shutdown with auto-save on container stop       |
+|                                                               |
++---------------------------------------------------------------+
