@@ -271,6 +271,14 @@ Asegúrate de que los siguientes puertos estén abiertos y redirigidos en tu enr
     └── restore.sh
 ```
 
+### 👨‍💻 Autor y Mantenedor
+
+Proyecto mantenido activamente por **[GMS-EC](https://gmsec.cc/)**.
+
+- 🌐 **Sitio Web Oficial**: [gmsec.cc](https://gmsec.cc/)
+- 🐳 **Docker Hub Repository**: [marcusm99/ark-server-docker](https://hub.docker.com/r/marcusm99/ark-server-docker)
+- 🐙 **GitHub Repository**: [@GMS-EC/ark-server-docker](https://github.com/GMS-EC/ark-server-docker)
+
 </details>
 
 ---
@@ -518,5 +526,13 @@ Ensure the following ports are open and forwarded:
     ├── healthcheck.sh
     └── restore.sh
 ```
+
+### 👨‍💻 Author & Maintainer
+
+Actively maintained by **[GMS-EC](https://gmsec.cc/)**.
+
+- 🌐 **Official Website**: [gmsec.cc](https://gmsec.cc/)
+- 🐳 **Docker Hub Repository**: [marcusm99/ark-server-docker](https://hub.docker.com/r/marcusm99/ark-server-docker)
+- 🐙 **GitHub Repository**: [@GMS-EC/ark-server-docker](https://github.com/GMS-EC/ark-server-docker)
 
 </details>
