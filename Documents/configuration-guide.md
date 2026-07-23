@@ -51,6 +51,35 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 | `RCON_ENABLED` | `true` | Habilita o desactiva la consola de administración remota RCON. |
 | `MOD_IDS` | *(vacío)* | Lista de IDs de mods de Steam Workshop separados por coma (ej. `731604991,893735676`). |
 
+##### 🏰 Clústeres de Servidores
+| Variable | Valor por Defecto | Descripción |
+|----------|-------------------|-------------|
+| `CLUSTER_ID` | *(vacío)* | Identificador para conectar varios servidores en un clúster y permitir viajes entre mapas. |
+| `CLUSTER_DIR_OVERRIDE` | *(vacío)* | Ruta personalizada para el directorio compartido de datos del clúster. |
+
+##### 🔄 Actualizaciones y Ramas de Steam
+| Variable | Valor por Defecto | Descripción |
+|----------|-------------------|-------------|
+| `BETA` | `public` | Rama de actualización en Steam (`public`, `preaquatica`, etc.). |
+| `UPDATE_ON_START` | `true` | Si se establece en `true`, verifica e instala actualizaciones del servidor y mods al arrancar. |
+
+##### 🛠️ Opciones Avanzadas de arkmanager y Consola
+| Variable | Valor por Defecto | Descripción |
+|----------|-------------------|-------------|
+| `ADDITIONAL_ARGS` | *(vacío)* | Argumentos adicionales tipo `-flag` para el ejecutable (ej. `-ServerHardcore -ForceAllowCaveFlyers`). |
+| `ARKMANAGER_OPTS` | *(vacío)* | Entradas crudas separadas por salto de línea para inyectar directamente en `arkmanager.cfg`. |
+
+##### 📦 Backups, Notificaciones y Reinicios
+| Variable | Valor por Defecto | Descripción |
+|----------|-------------------|-------------|
+| `BACKUP_ENABLED` | `true` | Habilita o desactiva las copias de seguridad automáticas programadas. |
+| `BACKUP_INTERVAL_HOURS` | `6` | Intervalo en horas entre cada respaldo automático. |
+| `BACKUP_DIR` | `/home/steam/ark-backups` | Directorio dentro del contenedor donde se almacenan las copias. |
+| `BACKUP_MAX_COUNT` | *(vacío)* | Número máximo de respaldos a conservar (los más viejos se eliminan automáticamente). |
+| `DISCORD_WEBHOOK_URL` | *(vacío)* | URL del Webhook de Discord para notificaciones de estado y eventos. |
+| `DISCORD_LANGUAGE` | `es` | Idioma de los mensajes de alerta en Discord (`es` / `en`). |
+| `AUTO_RESTART_HOURS` | `0` | Intervalo en horas para reinicios automáticos con avisos in-game (0 = desactivado). |
+
 ##### ⚡ Multiplicadores de Rates Recomendados (Solo / Dúo)
 | Variable | Descripción | Valor Oficial | Recomendado PvE Dúo |
 |----------|-------------|---------------|----------------------|
@@ -176,13 +205,34 @@ This guide details how to fully customize your ARK server, from environment vari
 | `QUERY_PORT` | `27015` | UDP | Steam server browser and query port. |
 | `RCON_PORT` | `27020` | TCP | Remote administration RCON port. |
 
-##### 🛡️ Rules & Game Modes
+##### 🏰 Server Clusters
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SERVER_PVE` | `false` | Enable PvE mode (players cannot harm other players or structures). |
-| `BATTLEEYE` | `false` | Enable BattlEye anti-cheat protection. |
-| `RCON_ENABLED` | `true` | Enable or disable the remote administration RCON console. |
-| `MOD_IDS` | *(empty)* | Comma-separated list of Steam Workshop Mod IDs (e.g. `731604991,893735676`). |
+| `CLUSTER_ID` | *(empty)* | Cluster ID for linking multiple servers and enabling cross-travel. |
+| `CLUSTER_DIR_OVERRIDE` | *(empty)* | Custom shared directory path for cluster data storage. |
+
+##### 🔄 Steam Updates & Branches
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BETA` | `public` | Steam server update branch (`public`, `preaquatica`, etc.). |
+| `UPDATE_ON_START` | `true` | Automatically update server and mods when the container starts. |
+
+##### 🛠️ Advanced arkmanager & Console Options
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ADDITIONAL_ARGS` | *(empty)* | Additional `-flag` command line arguments (e.g. `-ServerHardcore -ForceAllowCaveFlyers`). |
+| `ARKMANAGER_OPTS` | *(empty)* | Raw newline-separated entries injected directly into `arkmanager.cfg`. |
+
+##### 📦 Backups, Notifications & Restarts
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BACKUP_ENABLED` | `true` | Enable or disable automated scheduled backups. |
+| `BACKUP_INTERVAL_HOURS` | `6` | Backup frequency interval in hours. |
+| `BACKUP_DIR` | `/home/steam/ark-backups` | Container directory where backup files are saved. |
+| `BACKUP_MAX_COUNT` | *(empty)* | Maximum backup files to retain (older files are purged automatically). |
+| `DISCORD_WEBHOOK_URL` | *(empty)* | Discord Webhook URL for status and event channel notifications. |
+| `DISCORD_LANGUAGE` | `es` | Language for Discord alert messages (`es` / `en`). |
+| `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled). |
 
 ##### ⚡ Recommended Server Rates (Solo / Duo)
 | Variable | Description | Official Rate | Recommended PvE Duo |
