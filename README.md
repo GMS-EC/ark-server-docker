@@ -32,7 +32,7 @@
 
 ### 📖 Acerca del Proyecto
 
-Contenedor Docker todo-en-uno diseñado para desplegar y administrar servidores dedicados de ARK: Survival Evolved de forma robusta, automatizada y sin complicaciones. Desarrollado sobre la base de [ARK Server Tools (arkmanager)](https://github.com/arkmanager/ark-server-tools), este proyecto ofrece una solución completa lista para producción con copias de seguridad inteligentes, notificaciones multi-idioma a Discord, reinicios programados y restauración rápida.
+Contenedor Docker todo-en-uno diseñado para desplegar y administrar servidores dedicados de ARK: Survival Evolved de forma robusta, automatizada y sin complicaciones mediante `arkmanager`. Inspirado originalmente en el proyecto de [indifferentbroccoli](https://github.com/indifferentbroccoli/ark-server-docker), este contenedor ofrece una solución completa lista para producción con copias de seguridad inteligentes, notificaciones multi-idioma a Discord, reinicios programados y restauración rápida.
 
 ### 📚 Centro de Documentación
 
@@ -172,7 +172,7 @@ Proyecto mantenido activamente por **[GMS-EC](https://gmsec.cc/)**.
 
 ### 📖 About the Project
 
-An all-in-one Docker container designed to deploy and manage ARK: Survival Evolved dedicated servers in a robust, automated, and hassle-free manner. Built on top of [ARK Server Tools (arkmanager)](https://github.com/arkmanager/ark-server-tools), this project offers a complete production-ready solution featuring intelligent automated backups, multi-language Discord notifications, scheduled server restarts, and one-command restoration.
+An all-in-one Docker container designed to deploy and manage ARK: Survival Evolved dedicated servers in a robust, automated, and hassle-free manner using `arkmanager`. Originally inspired by the project by [indifferentbroccoli](https://github.com/indifferentbroccoli/ark-server-docker), this container offers a complete production-ready solution featuring intelligent automated backups, multi-language Discord notifications, scheduled server restarts, and one-command restoration.
 
 ### 📚 Documentation Center
 
