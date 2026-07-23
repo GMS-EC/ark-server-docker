@@ -110,26 +110,15 @@ services:
 
 | Variable | Valor por Defecto | Descripción |
 |----------|-------------------|-------------|
-| `PUID` | `1000` | ID de usuario para permisos en Linux |
-| `PGID` | `1000` | ID de grupo para permisos en Linux |
 | `SESSION_NAME` | `ARK Server` | Nombre del servidor visible en el buscador |
 | `SERVER_PASSWORD` | (vacío) | Contraseña para unirse al servidor |
 | `ADMIN_PASSWORD` | `adminpass` | Contraseña de administración (`enablecheats`) y RCON |
 | `MAX_PLAYERS` | `10` | Slots máximos de jugadores |
 | `WORLD` | `TheIsland` | Nombre oficial del mapa (`TheIsland`, `Ragnarok`, etc.) |
-| `SERVER_PORT` | `7777` | Puerto UDP del juego |
-| `QUERY_PORT` | `27015` | Puerto UDP de consultas de Steam |
-| `RCON_PORT` | `27020` | Puerto TCP de RCON |
-| `RCON_ENABLED` | `true` | Activa consola remota RCON |
 | `SERVER_PVE` | `false` | Activa modo PvE |
 | `BATTLEEYE` | `false` | Activa protección BattlEye |
+| `RCON_ENABLED` | `true` | Activa consola remota RCON |
 | `MOD_IDS` | (vacío) | IDs de mods de Steam Workshop separados por coma |
-| `CLUSTER_ID` | (vacío) | ID de clúster para viajar entre servidores |
-| `CLUSTER_DIR_OVERRIDE` | (vacío) | Ruta del directorio compartido del clúster |
-| `ADDITIONAL_ARGS` | (vacío) | Argumentos adicionales tipo `-flag` para el servidor |
-| `ARKMANAGER_OPTS` | (vacío) | Entradas crudas inyectadas en `arkmanager.cfg` |
-| `BETA` | `public` | Rama de actualización en Steam (`public`, `preaquatica`, etc.) |
-| `UPDATE_ON_START` | `true` | Actualizar servidor y mods al arrancar el contenedor |
 | `BACKUP_ENABLED` | `true` | Activa las copias de seguridad automáticas |
 | `BACKUP_INTERVAL_HOURS` | `6` | Intervalo en horas entre cada backup |
 | `BACKUP_MAX_COUNT` | `10` | Máximo de backups a conservar |
@@ -137,7 +126,7 @@ services:
 | `DISCORD_LANGUAGE` | `es` | Idioma de las alertas de Discord (`es` / `en`) |
 | `AUTO_RESTART_HOURS` | `0` | Intervalo de reinicios programados en horas (0 = desactivado) |
 
-> 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables de rates y opciones avanzadas.*
+> 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (puertos, PUID/PGID, clústeres, rates y arkmanager).*
 
 ### ⚠️ Limitaciones Conocidas
 
@@ -261,26 +250,15 @@ services:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PUID` | `1000` | User ID for Linux file permissions |
-| `PGID` | `1000` | Group ID for Linux file permissions |
 | `SESSION_NAME` | `ARK Server` | Server name displayed in the server browser |
 | `SERVER_PASSWORD` | (empty) | Password required to join |
 | `ADMIN_PASSWORD` | `adminpass` | Admin (`enablecheats`) and RCON password |
 | `MAX_PLAYERS` | `10` | Maximum player slots |
 | `WORLD` | `TheIsland` | Official map name (`TheIsland`, `Ragnarok`, etc.) |
-| `SERVER_PORT` | `7777` | Game UDP port |
-| `QUERY_PORT` | `27015` | Steam query UDP port |
-| `RCON_PORT` | `27020` | RCON TCP port |
-| `RCON_ENABLED` | `true` | Enable RCON remote administration |
 | `SERVER_PVE` | `false` | Enable PvE mode |
 | `BATTLEEYE` | `false` | Enable BattlEye anti-cheat |
+| `RCON_ENABLED` | `true` | Enable RCON remote administration |
 | `MOD_IDS` | (empty) | Comma-separated Steam Workshop mod IDs |
-| `CLUSTER_ID` | (empty) | Cluster ID for server clusters |
-| `CLUSTER_DIR_OVERRIDE` | (empty) | Custom cluster directory path |
-| `ADDITIONAL_ARGS` | (empty) | Additional `-flag` command line arguments |
-| `ARKMANAGER_OPTS` | (empty) | Raw newline-separated `arkmanager.cfg` entries |
-| `BETA` | `public` | Steam update branch (`public`, `preaquatica`, etc.) |
-| `UPDATE_ON_START` | `true` | Update server and mods on container start |
 | `BACKUP_ENABLED` | `true` | Enable automatic scheduled backups |
 | `BACKUP_INTERVAL_HOURS` | `6` | Backup interval in hours |
 | `BACKUP_MAX_COUNT` | `10` | Max recent backup files to retain |
@@ -288,7 +266,7 @@ services:
 | `DISCORD_LANGUAGE` | `es` | Language for Discord notification messages (`es` / `en`) |
 | `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled) |
 
-> 📌 *Check out the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the full list of rate multipliers and raw `.ini` options.*
+> 📌 *Check out the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the full list of advanced variables (ports, PUID/PGID, clusters, rates & arkmanager).*
 
 ### ⚠️ Known Limitations
 
