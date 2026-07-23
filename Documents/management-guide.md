@@ -19,7 +19,7 @@ Esta guía cubre las operaciones diarias de mantenimiento, gestión de respaldos
 
 #### 💻 1. Comandos Frecuentes con `arkmanager`
 
-El contenedor incluye [ARK Server Tools (`arkmanager`)](https://github.com/arkmanager/ark-server-tools) preinstalado. Puedes ejecutar cualquier comando administrativo directamente desde la terminal de tu PC mediante `docker exec`:
+El contenedor incluye [ARK Server Tools (`arkmanager`)](https://github.com/arkmanager/ark-server-tools) preinstalado. Puedes consultar la [documentación completa de comandos de arkmanager](https://github.com/arkmanager/ark-server-tools#usage) o ejecutar cualquiera de los comandos administrativos más frecuentes directamente con `docker exec`:
 
 ##### Comandos de Consola Útiles:
 
@@ -133,7 +133,7 @@ This guide covers daily maintenance, backup management, one-click restoration, D
 
 #### 💻 1. Common `arkmanager` Commands
 
-##### Useful Console Commands:
+The container includes [ARK Server Tools (`arkmanager`)](https://github.com/arkmanager/ark-server-tools) pre-installed. You can consult the [full arkmanager command usage documentation](https://github.com/arkmanager/ark-server-tools#usage) or execute common admin commands directly using `docker exec`:
 
 * **Check detailed server status (connected players, version, RAM usage):**
   ```bash
