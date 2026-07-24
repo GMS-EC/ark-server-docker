@@ -113,6 +113,9 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
+      # --- Updates & Maintenance ---
+      - UPDATE_ON_START=true
+      - AUTO_RESTART_HOURS=0
       # --- Backup Settings ---
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6
@@ -139,13 +142,18 @@ services:
 | `BATTLEEYE` | `false` | Activa protección BattlEye |
 | `RCON_ENABLED` | `true` | Activa consola remota RCON |
 | `MOD_IDS` | (vacío) | IDs de mods de Steam Workshop separados por coma |
+| `UPDATE_ON_START` | `true` | Busca e instala actualizaciones de ARK y mods al iniciar |
+| `AUTO_RESTART_HOURS` | `0` | Intervalo de reinicios programados en horas (0 = desactivado) |
+| `SCHEDULE_ENABLED` | `false` | Activa el horario automático de encendido/apagado |
+| `SCHEDULE_START` | `20:00` | Hora de encendido en formato 24h (`HH:MM`) |
+| `SCHEDULE_STOP` | `00:00` | Hora de apagado en formato 24h (`HH:MM`) |
+| `SCHEDULE_WARN_MINUTES` | `10` | Minutos de aviso in-game antes de apagar por horario |
 | `BACKUP_ENABLED` | `true` | Activa las copias de seguridad automáticas |
 | `BACKUP_INTERVAL_HOURS` | `6` | Intervalo en horas entre cada backup |
 | `BACKUP_MAX_COUNT` | `10` | Máximo de backups a conservar |
 | `DISCORD_WEBHOOK_URL` | (vacío) | URL del Webhook de Discord |
 | `DISCORD_LANGUAGE` | `es` | Idioma de las alertas de Discord (`es` / `en`) |
-| `AUTO_RESTART_HOURS` | `0` | Intervalo de reinicios programados en horas (0 = desactivado) |
-| `TZ` | `UTC` | Zona horaria del contenedor para notificaciones y logs |
+| `TZ` | `UTC` | Zona horaria del contenedor para horarios y logs |
 
 > 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (puertos, PUID/PGID, clústeres, rates y arkmanager).*
 
@@ -274,6 +282,9 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
+      # --- Updates & Maintenance ---
+      - UPDATE_ON_START=true
+      - AUTO_RESTART_HOURS=0
       # --- Backup Settings ---
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6
@@ -300,13 +311,18 @@ services:
 | `BATTLEEYE` | `false` | Enable BattlEye anti-cheat |
 | `RCON_ENABLED` | `true` | Enable RCON remote administration |
 | `MOD_IDS` | (empty) | Comma-separated Steam Workshop mod IDs |
+| `UPDATE_ON_START` | `true` | Check and install ARK server & mod updates on container startup |
+| `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled) |
+| `SCHEDULE_ENABLED` | `false` | Enable automatic power start/stop schedule |
+| `SCHEDULE_START` | `20:00` | Server power-on time in 24h format (`HH:MM`) |
+| `SCHEDULE_STOP` | `00:00` | Server power-off time in 24h format (`HH:MM`) |
+| `SCHEDULE_WARN_MINUTES` | `10` | In-game advance warning notice in minutes before scheduled shutdown |
 | `BACKUP_ENABLED` | `true` | Enable automatic scheduled backups |
 | `BACKUP_INTERVAL_HOURS` | `6` | Backup interval in hours |
 | `BACKUP_MAX_COUNT` | `10` | Max recent backup files to retain |
 | `DISCORD_WEBHOOK_URL` | (empty) | Discord Webhook URL for channel notifications |
 | `DISCORD_LANGUAGE` | `es` | Language for Discord notification messages (`es` / `en`) |
-| `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled) |
-| `TZ` | `UTC` | Container timezone used for notifications and log timestamps |
+| `TZ` | `UTC` | Container timezone used for schedule calculation and log timestamps |
 
 > 📌 *Check out the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the full list of advanced variables (ports, PUID/PGID, clusters, rates & arkmanager).*
 

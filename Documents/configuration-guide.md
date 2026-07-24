@@ -75,7 +75,7 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 | `BACKUP_ENABLED` | `true` | Habilita o desactiva las copias de seguridad automáticas programadas. |
 | `BACKUP_INTERVAL_HOURS` | `6` | Intervalo en horas entre cada respaldo automático. |
 | `BACKUP_DIR` | `/home/steam/ark-backups` | Directorio dentro del contenedor donde se almacenan las copias. |
-| `BACKUP_MAX_COUNT` | *(vacío)* | Número máximo de respaldos a conservar (los más viejos se eliminan automáticamente). |
+| `BACKUP_MAX_COUNT` | `10` | Número máximo de respaldos a conservar (los más viejos se eliminan automáticamente). |
 | `DISCORD_WEBHOOK_URL` | *(vacío)* | URL del Webhook de Discord para notificaciones de estado y eventos. |
 | `DISCORD_LANGUAGE` | `es` | Idioma de los mensajes de alerta en Discord (`es` / `en`). |
 | `AUTO_RESTART_HOURS` | `0` | Intervalo en horas para reinicios automáticos con avisos in-game (0 = desactivado). |
@@ -238,7 +238,7 @@ This guide details how to fully customize your ARK server, from environment vari
 | `BACKUP_ENABLED` | `true` | Enable or disable automated scheduled backups. |
 | `BACKUP_INTERVAL_HOURS` | `6` | Backup frequency interval in hours. |
 | `BACKUP_DIR` | `/home/steam/ark-backups` | Container directory where backup files are saved. |
-| `BACKUP_MAX_COUNT` | *(empty)* | Maximum backup files to retain (older files are purged automatically). |
+| `BACKUP_MAX_COUNT` | `10` | Maximum backup files to retain (older files are purged automatically). |
 | `DISCORD_WEBHOOK_URL` | *(empty)* | Discord Webhook URL for status and event channel notifications. |
 | `DISCORD_LANGUAGE` | `es` | Language for Discord alert messages (`es` / `en`). |
 | `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled). |

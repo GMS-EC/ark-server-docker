@@ -82,7 +82,7 @@ RUN chmod +x /home/steam/scripts/*.sh
 
 WORKDIR /home/steam
 
-HEALTHCHECK --start-period=10m --interval=1m --timeout=15s \
+HEALTHCHECK --start-period=25m --interval=1m --timeout=30s --retries=5 \
             CMD /home/steam/scripts/healthcheck.sh
 
 ENTRYPOINT ["/home/steam/scripts/init.sh"]
