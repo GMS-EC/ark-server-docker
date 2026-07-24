@@ -9,6 +9,15 @@ validate_integer() {
     fi
 }
 
+validate_time_format() {
+    local var_name="$1"
+    local var_value="$2"
+    if [ -n "$var_value" ] && ! [[ "$var_value" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]; then
+        echo "ERROR: $var_name debe tener formato HH:MM (24 horas), recibido: '$var_value'"
+        exit 1
+    fi
+}
+
 validate_integer "MAX_PLAYERS" "$MAX_PLAYERS"
 validate_integer "SERVER_PORT" "$SERVER_PORT"
 validate_integer "QUERY_PORT" "$QUERY_PORT"
@@ -16,6 +25,16 @@ validate_integer "RCON_PORT" "$RCON_PORT"
 validate_integer "BACKUP_INTERVAL_HOURS" "$BACKUP_INTERVAL_HOURS"
 validate_integer "BACKUP_MAX_COUNT" "$BACKUP_MAX_COUNT"
 validate_integer "AUTO_RESTART_HOURS" "$AUTO_RESTART_HOURS"
+validate_integer "SCHEDULE_WARN_MINUTES" "${SCHEDULE_WARN_MINUTES:-10}"
+
+if [ "${SCHEDULE_ENABLED:-false}" = "true" ]; then
+    if [ -z "$SCHEDULE_START" ] || [ -z "$SCHEDULE_STOP" ]; then
+        echo "ERROR: SCHEDULE_ENABLED está activo pero SCHEDULE_START o SCHEDULE_STOP no están definidos o están vacíos."
+        exit 1
+    fi
+    validate_time_format "SCHEDULE_START" "$SCHEDULE_START"
+    validate_time_format "SCHEDULE_STOP" "$SCHEDULE_STOP"
+fi
 
 if [ "${ADMIN_PASSWORD:-adminpass}" = "adminpass" ]; then
     echo "⚠️  ADVERTENCIA: Estás usando la contraseña de administrador por defecto (adminpass)."
@@ -208,9 +227,51 @@ if [ "${UPDATE_ON_START}" = "true" ]; then
     fi
 fi
 
-# Start the server
-echo "Starting ARK server..."
-arkmanager start --noautoupdate @main
+_SCHEDULE_WARN_SENT=false
+
+# Discord webhook message localization
+if [ "${DISCORD_LANGUAGE:-es}" = "en" ]; then
+    _DISCORD_MSG_BACKUP_OK="📦 **[ARK Backup]** Scheduled backup completed successfully on server **${SESSION_NAME:-ARK Server}**."
+    _DISCORD_MSG_BACKUP_FAIL="⚠️ **[ARK Backup Warning]** Scheduled backup creation failed on server **${SESSION_NAME:-ARK Server}**."
+    _DISCORD_MSG_RESTART="🔄 **[ARK Server Restart]** Initiating scheduled restart sequence (interval: ${AUTO_RESTART_HOURS}h) with in-game warnings."
+    _DISCORD_MSG_SCHEDULE_START="⏰ **[ARK Power Schedule]** Server started according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    _DISCORD_MSG_SCHEDULE_WARN="⏰ **[ARK Power Schedule]** Server will shut down in ${SCHEDULE_WARN_MINUTES:-10} minute(s) according to schedule."
+    _DISCORD_MSG_SCHEDULE_STOP="⏰ **[ARK Power Schedule]** Server shut down according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+else
+    _DISCORD_MSG_BACKUP_OK="📦 **[ARK Backup]** Backup programado completado exitosamente en el servidor **${SESSION_NAME:-ARK Server}**."
+    _DISCORD_MSG_BACKUP_FAIL="⚠️ **[ARK Backup Warning]** Falló la creación del backup programado en el servidor **${SESSION_NAME:-ARK Server}**."
+    _DISCORD_MSG_RESTART="🔄 **[ARK Server Restart]** Iniciando secuencia de reinicio programado (intervalo: ${AUTO_RESTART_HOURS}h) con avisos in-game."
+    _DISCORD_MSG_SCHEDULE_START="⏰ **[ARK Power Schedule]** Servidor encendido según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    _DISCORD_MSG_SCHEDULE_WARN="⏰ **[ARK Power Schedule]** El servidor se apagará en ${SCHEDULE_WARN_MINUTES:-10} minuto(s) según el horario programado."
+    _DISCORD_MSG_SCHEDULE_STOP="⏰ **[ARK Power Schedule]** Servidor apagado según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+fi
+
+# Initial check for power schedule before starting server
+_INITIAL_IN_WINDOW=true
+if [ "${SCHEDULE_ENABLED:-false}" = "true" ]; then
+    _NOW_H=$(date +%H)
+    _NOW_M=$(date +%M)
+    _NOW_MINUTES=$(( 10#$_NOW_H * 60 + 10#$_NOW_M ))
+    _START_H="${SCHEDULE_START%%:*}"
+    _START_M="${SCHEDULE_START#*:}"
+    _START_MINUTES=$(( 10#$_START_H * 60 + 10#$_START_M ))
+    _STOP_H="${SCHEDULE_STOP%%:*}"
+    _STOP_M="${SCHEDULE_STOP#*:}"
+    _STOP_MINUTES=$(( 10#$_STOP_H * 60 + 10#$_STOP_M ))
+
+    if [ "$_START_MINUTES" -le "$_STOP_MINUTES" ]; then
+        _INITIAL_IN_WINDOW=$([ "$_NOW_MINUTES" -ge "$_START_MINUTES" ] && [ "$_NOW_MINUTES" -lt "$_STOP_MINUTES" ] && echo true || echo false)
+    else
+        _INITIAL_IN_WINDOW=$([ "$_NOW_MINUTES" -ge "$_START_MINUTES" ] || [ "$_NOW_MINUTES" -lt "$_STOP_MINUTES" ] && echo true || echo false)
+    fi
+fi
+
+if [ "$_INITIAL_IN_WINDOW" = "true" ]; then
+    echo "Starting ARK server..."
+    arkmanager start --noautoupdate @main
+else
+    echo "[schedule] Server schedule enabled and outside active window (${SCHEDULE_START} - ${SCHEDULE_STOP}). Process start deferred."
+fi
 
 # Monitor the server's status
 _BACKUP_LAST_RUN=$(date +%s)
@@ -219,20 +280,85 @@ _BACKUP_INTERVAL_SECS=$(( ${BACKUP_INTERVAL_HOURS:-6} * 3600 ))
 _RESTART_LAST_RUN=$(date +%s)
 _RESTART_INTERVAL_SECS=$(( ${AUTO_RESTART_HOURS:-0} * 3600 ))
 
-# Discord webhook message localization
-if [ "${DISCORD_LANGUAGE:-es}" = "en" ]; then
-    _DISCORD_MSG_BACKUP_OK="📦 **[ARK Backup]** Scheduled backup completed successfully on server **${SESSION_NAME:-ARK Server}**."
-    _DISCORD_MSG_BACKUP_FAIL="⚠️ **[ARK Backup Warning]** Scheduled backup creation failed on server **${SESSION_NAME:-ARK Server}**."
-    _DISCORD_MSG_RESTART="🔄 **[ARK Server Restart]** Initiating scheduled restart sequence (interval: ${AUTO_RESTART_HOURS}h) with in-game warnings."
-else
-    _DISCORD_MSG_BACKUP_OK="📦 **[ARK Backup]** Backup programado completado exitosamente en el servidor **${SESSION_NAME:-ARK Server}**."
-    _DISCORD_MSG_BACKUP_FAIL="⚠️ **[ARK Backup Warning]** Falló la creación del backup programado en el servidor **${SESSION_NAME:-ARK Server}**."
-    _DISCORD_MSG_RESTART="🔄 **[ARK Server Restart]** Iniciando secuencia de reinicio programado (intervalo: ${AUTO_RESTART_HOURS}h) con avisos in-game."
-fi
-
 while true; do
-    arkmanager status @main
+    _STATUS_OUTPUT=$(arkmanager status @main 2>&1 || true)
+    echo "$_STATUS_OUTPUT"
     _NOW=$(date +%s)
+
+    # --- Power Schedule Monitoring ---
+    _IN_WINDOW=true
+    if [ "${SCHEDULE_ENABLED:-false}" = "true" ]; then
+        _NOW_H=$(date +%H)
+        _NOW_M=$(date +%M)
+        _NOW_MINUTES=$(( 10#$_NOW_H * 60 + 10#$_NOW_M ))
+        _START_H="${SCHEDULE_START%%:*}"
+        _START_M="${SCHEDULE_START#*:}"
+        _START_MINUTES=$(( 10#$_START_H * 60 + 10#$_START_M ))
+        _STOP_H="${SCHEDULE_STOP%%:*}"
+        _STOP_M="${SCHEDULE_STOP#*:}"
+        _STOP_MINUTES=$(( 10#$_STOP_H * 60 + 10#$_STOP_M ))
+
+        if [ "$_START_MINUTES" -le "$_STOP_MINUTES" ]; then
+            # Ventana normal, no cruza medianoche (ej. 08:00 a 18:00)
+            _IN_WINDOW=$([ "$_NOW_MINUTES" -ge "$_START_MINUTES" ] && [ "$_NOW_MINUTES" -lt "$_STOP_MINUTES" ] && echo true || echo false)
+            _MINUTES_UNTIL_STOP=$(( _STOP_MINUTES - _NOW_MINUTES ))
+        else
+            # Ventana cruza medianoche (ej. 20:00 a 00:00)
+            _IN_WINDOW=$([ "$_NOW_MINUTES" -ge "$_START_MINUTES" ] || [ "$_NOW_MINUTES" -lt "$_STOP_MINUTES" ] && echo true || echo false)
+            if [ "$_NOW_MINUTES" -ge "$_START_MINUTES" ]; then
+                _MINUTES_UNTIL_STOP=$(( 1440 - _NOW_MINUTES + _STOP_MINUTES ))
+            else
+                _MINUTES_UNTIL_STOP=$(( _STOP_MINUTES - _NOW_MINUTES ))
+            fi
+        fi
+
+        _IS_RUNNING=$(pgrep "ShooterGameServer" > /dev/null 2>&1 && echo true || echo false)
+
+        if [ "$_IN_WINDOW" = "true" ]; then
+            if [ "$_IS_RUNNING" = "false" ]; then
+                echo "[schedule] Inside scheduled window (${SCHEDULE_START} - ${SCHEDULE_STOP}). Starting ARK server..."
+                _SCHEDULE_WARN_SENT=false
+                if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
+                    curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_SCHEDULE_START}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
+                fi
+                arkmanager start --noautoupdate @main
+            else
+                _WARN_MINS=${SCHEDULE_WARN_MINUTES:-10}
+                if [ "$_SCHEDULE_WARN_SENT" = "false" ] && [ "$_WARN_MINS" -gt 0 ] && [ "$_MINUTES_UNTIL_STOP" -le "$_WARN_MINS" ] && [ "$_MINUTES_UNTIL_STOP" -gt 0 ]; then
+                    echo "[schedule] Sending shutdown warning (${_MINUTES_UNTIL_STOP} min remaining until ${SCHEDULE_STOP})..."
+                    if [ "${DISCORD_LANGUAGE:-es}" = "en" ]; then
+                        _WARN_MSG="[SCHEDULE] Server will shut down in ${_MINUTES_UNTIL_STOP} minute(s) according to schedule (${SCHEDULE_STOP})."
+                    else
+                        _WARN_MSG="[HORARIO] El servidor se apagara en ${_MINUTES_UNTIL_STOP} minuto(s) segun el horario programado (${SCHEDULE_STOP})."
+                    fi
+                    arkmanager broadcast "${_WARN_MSG}" @main || true
+                    if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
+                        curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_SCHEDULE_WARN}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
+                    fi
+                    _SCHEDULE_WARN_SENT=true
+                fi
+            fi
+        else
+            if [ "$_IS_RUNNING" = "true" ]; then
+                _ACTIVE_PLAYERS=$(echo "$_STATUS_OUTPUT" | grep -i "Active.*Players:" | grep -o '[0-9]\+' | head -n 1)
+                _ACTIVE_PLAYERS=${_ACTIVE_PLAYERS:-0}
+
+                if [ "$_ACTIVE_PLAYERS" -gt 0 ]; then
+                    echo "[schedule] Fuera de horario (${SCHEDULE_START} - ${SCHEDULE_STOP}) pero hay ${_ACTIVE_PLAYERS} jugador(es) conectado(s), posponiendo apagado..."
+                else
+                    echo "[schedule] Outside scheduled window (${SCHEDULE_START} - ${SCHEDULE_STOP}) and 0 active players. Stopping ARK server..."
+                    if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
+                        curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_SCHEDULE_STOP}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
+                    fi
+                    arkmanager stop --saveworld @main
+                    _SCHEDULE_WARN_SENT=false
+                fi
+            else
+                _SCHEDULE_WARN_SENT=false
+            fi
+        fi
+    fi
+    # --- End Power Schedule Monitoring ---
 
     # --- Automatic backup ---
     if [ "${BACKUP_ENABLED:-true}" = "true" ]; then
@@ -278,14 +404,23 @@ while true; do
 
     # --- Scheduled Restart ---
     if [ "${AUTO_RESTART_HOURS:-0}" -gt 0 ]; then
-        _RESTART_ELAPSED=$(( _NOW - _RESTART_LAST_RUN ))
-        if [ "${_RESTART_ELAPSED}" -ge "${_RESTART_INTERVAL_SECS}" ]; then
-            echo "[restart] Triggering scheduled server restart (interval: ${AUTO_RESTART_HOURS}h)..."
-            if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
-                curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_RESTART}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
+        _SKIP_RESTART=false
+        if [ "${SCHEDULE_ENABLED:-false}" = "true" ] && [ "${_IN_WINDOW}" = "false" ] && ! pgrep "ShooterGameServer" > /dev/null 2>&1; then
+            _SKIP_RESTART=true
+        fi
+
+        if [ "$_SKIP_RESTART" = "true" ]; then
+            _RESTART_LAST_RUN=$_NOW
+        else
+            _RESTART_ELAPSED=$(( _NOW - _RESTART_LAST_RUN ))
+            if [ "${_RESTART_ELAPSED}" -ge "${_RESTART_INTERVAL_SECS}" ]; then
+                echo "[restart] Triggering scheduled server restart (interval: ${AUTO_RESTART_HOURS}h)..."
+                if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
+                    curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_RESTART}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
+                fi
+                arkmanager restart --warn @main
+                _RESTART_LAST_RUN=$(date +%s)
             fi
-            arkmanager restart --warn @main
-            _RESTART_LAST_RUN=$(date +%s)
         fi
     fi
     # --- End Scheduled Restart ---

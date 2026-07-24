@@ -118,6 +118,28 @@ Recibirás notificaciones automáticas para:
 
 Configura `AUTO_RESTART_HOURS=24` en tu `.env` para reiniciar el servidor cada 24 horas con advertencias in-game (15m, 10m, 5m, 1m) y guardado automático previo.
 
+---
+
+#### ⏰ 6. Horario Automático de Encendido/Apagado (`SCHEDULE_ENABLED`)
+
+Permite apagar y encender automáticamente el **proceso** del servidor de ARK (mientras el contenedor Docker sigue corriendo en segundo plano) para ahorrar CPU y memoria RAM cuando nadie está jugando.
+
+Configuración en `.env`:
+```bash
+SCHEDULE_ENABLED=true
+SCHEDULE_START=20:00
+SCHEDULE_STOP=00:00
+TZ=America/Guayaquil
+SCHEDULE_WARN_MINUTES=10
+```
+
+##### Características del Horario Automático:
+1. **Ahorro de Recursos**: Ejecuta `arkmanager stop @main` fuera del horario y `arkmanager start @main` dentro del horario.
+2. **Soporte para Ventanas Nocturnas**: Soporta horarios que cruzan la medianoche (ej. de 20:00 a 00:00 o 02:00).
+3. **Protección de Jugadores Activos**: Si llega la hora de apagado pero hay 1 o más jugadores conectados, el servidor **no se apaga** y pospone la verificación hasta que todos se desconecten.
+4. **Advertencias Previas**: Envía una alerta in-game y notificación a Discord `SCHEDULE_WARN_MINUTES` minutos antes de apagar.
+5. **Zona Horaria (`TZ`)**: Respeta la zona horaria del usuario configurada en `TZ` (ej. `America/Guayaquil`, `Europe/Madrid`).
+
 </details>
 
 ---
@@ -222,5 +244,27 @@ DISCORD_LANGUAGE=es # Options: "es" (Spanish, default) or "en" (English)
 #### ⏰ 5. Scheduled Restarts (`AUTO_RESTART_HOURS`)
 
 Set `AUTO_RESTART_HOURS=24` in `.env` for periodic restarts with 15m, 10m, 5m, 1m in-game warnings and pre-save.
+
+---
+
+#### ⏰ 6. Automatic Power Schedule (`SCHEDULE_ENABLED`)
+
+Allows automatically starting and stopping the ARK server **process** (while the Docker container continues running in background) to save CPU and RAM resources during off-peak hours.
+
+`.env` Configuration:
+```bash
+SCHEDULE_ENABLED=true
+SCHEDULE_START=20:00
+SCHEDULE_STOP=00:00
+TZ=America/Guayaquil
+SCHEDULE_WARN_MINUTES=10
+```
+
+##### Key Power Schedule Features:
+1. **Resource Saving**: Runs `arkmanager stop @main` during off-hours and `arkmanager start @main` during active hours.
+2. **Midnight-Crossing Windows**: Fully supports schedules spanning across midnight (e.g., 20:00 to 00:00 or 02:00).
+3. **Active Player Protection**: If shutdown time arrives while 1 or more players are online, the server **postpones shutdown** until all players disconnect.
+4. **Advance Warning**: Sends in-game chat broadcasts and Discord alerts `SCHEDULE_WARN_MINUTES` minutes before shutting down.
+5. **Timezone Aware (`TZ`)**: Evaluates schedule times based on the container's configured `TZ` variable (e.g., `America/Guayaquil`, `Europe/Madrid`).
 
 </details>

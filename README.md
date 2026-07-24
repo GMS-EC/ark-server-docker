@@ -48,6 +48,7 @@ Para guías detalladas paso a paso sobre conexión, configuración y administrac
 - **Restauración en 1 Comando**: Script ejecutable `restore.sh` para restaurar el último backup o uno específico con salvaguarda preventiva.
 - **Notificaciones a Discord Multi-idioma**: Alertas en tiempo real (`DISCORD_LANGUAGE=es/en`) para estado, backups, actualizaciones y reinicios.
 - **Reinicios Programados**: Reinicios automáticos periódicos (`AUTO_RESTART_HOURS`) con advertencias in-game (15m, 10m, 5m, 1m) y auto-guardado.
+- **Horario Automático de Encendido/Apagado**: Encendido y apagado programado del proceso del juego (`SCHEDULE_ENABLED`, `SCHEDULE_START`, `SCHEDULE_STOP`, `TZ`) para ahorro de CPU/RAM con protección de jugadores activos y avisos in-game.
 - **Multiplicadores de Rates por Entorno**: Control directo en `.env` para XP, Doma, Recolección, Incubación y Crianza.
 - **Soporte para Mods y Clústeres**: Instalación automática de mods de la Workshop (`MOD_IDS`) y viajes entre servidores (`CLUSTER_ID`).
 - **Healthcheck Inteligente**: Detecta cuando el servidor está online o cargando mapas/mods pesados.
@@ -125,6 +126,11 @@ services:
 | `DISCORD_WEBHOOK_URL` | (vacío) | URL del Webhook de Discord |
 | `DISCORD_LANGUAGE` | `es` | Idioma de las alertas de Discord (`es` / `en`) |
 | `AUTO_RESTART_HOURS` | `0` | Intervalo de reinicios programados en horas (0 = desactivado) |
+| `SCHEDULE_ENABLED` | `false` | Activa/desactiva el horario automático de encendido/apagado del servidor |
+| `SCHEDULE_START` | `20:00` | Hora de encendido en formato 24h HH:MM |
+| `SCHEDULE_STOP` | `00:00` | Hora de apagado en formato 24h HH:MM |
+| `TZ` | `UTC` | Zona horaria del contenedor para interpretar `SCHEDULE_START` / `SCHEDULE_STOP` |
+| `SCHEDULE_WARN_MINUTES` | `10` | Minutos de aviso previo in-game antes de apagar por horario |
 
 > 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (puertos, PUID/PGID, clústeres, rates y arkmanager).*
 
@@ -188,6 +194,7 @@ For detailed step-by-step guides on connecting, configuring, and managing your s
 - **One-Command Restoration**: Simple `restore.sh` script to restore the latest or a specific backup instantly with pre-safety backups.
 - **Multi-language Discord Webhooks**: Real-time alerts (`DISCORD_LANGUAGE=es/en`) for server status, backups, updates, and restarts.
 - **Scheduled Restarts**: Periodic automated restarts (`AUTO_RESTART_HOURS`) with in-game warnings (15m, 10m, 5m, 1m) and auto-save.
+- **Automatic Power Schedule**: Start and stop server process on a schedule (`SCHEDULE_ENABLED`, `SCHEDULE_START`, `SCHEDULE_STOP`, `TZ`) to conserve CPU/RAM with active player protection and in-game warnings.
 - **Server Rate Multipliers**: Direct `.env` configuration for XP, Taming, Harvesting, Hatching, and Maturation rates.
 - **Mod & Cluster Support**: Automatic Steam Workshop mod installation (`MOD_IDS`) and cross-server transfer configuration (`CLUSTER_ID`).
 - **Smart Healthcheck**: Accurately detects when the server is online or stuck loading heavy mods/maps.
@@ -265,6 +272,11 @@ services:
 | `DISCORD_WEBHOOK_URL` | (empty) | Discord Webhook URL for channel notifications |
 | `DISCORD_LANGUAGE` | `es` | Language for Discord notification messages (`es` / `en`) |
 | `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled) |
+| `SCHEDULE_ENABLED` | `false` | Enable/disable automatic server process power schedule |
+| `SCHEDULE_START` | `20:00` | Server power-on time in 24h HH:MM format |
+| `SCHEDULE_STOP` | `00:00` | Server power-off time in 24h HH:MM format |
+| `TZ` | `UTC` | Container timezone used to evaluate `SCHEDULE_START` / `SCHEDULE_STOP` |
+| `SCHEDULE_WARN_MINUTES` | `10` | In-game warning advance notice in minutes before scheduled shutdown |
 
 > 📌 *Check out the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the full list of advanced variables (ports, PUID/PGID, clusters, rates & arkmanager).*
 

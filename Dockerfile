@@ -20,6 +20,7 @@ RUN dpkg --add-architecture i386 && \
     gettext-base \
     procps \
     jq \
+    tzdata \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -54,6 +55,11 @@ ENV HOME=/home/steam \
     DISCORD_WEBHOOK_URL="" \
     DISCORD_LANGUAGE=es \
     AUTO_RESTART_HOURS=0 \
+    SCHEDULE_ENABLED=false \
+    SCHEDULE_START="20:00" \
+    SCHEDULE_STOP="00:00" \
+    TZ=UTC \
+    SCHEDULE_WARN_MINUTES=10 \
     XP_MULTIPLIER="" \
     TAME_SPEED_MULTIPLIER="" \
     HARVEST_AMOUNT_MULTIPLIER="" \
