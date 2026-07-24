@@ -244,10 +244,15 @@ send_discord_embed() {
     local lang="${DISCORD_LANGUAGE:-es}"
 
     case "$event_type" in
+        "STARTING")
+            color=15844367 # Yellow (#F1C40F)
+            status_text="⏳ Cargando / Starting"
+            title=$([ "$lang" = "en" ] && echo "⏳ Starting ARK Server" || echo "⏳ Cargando Servidor de ARK")
+            ;;
         "START")
             color=3066993 # Green (#2ECC71)
             status_text="🟢 Online"
-            title=$([ "$lang" = "en" ] && echo "🚀 ARK Server Started" || echo "🚀 Servidor de ARK Encendido")
+            title=$([ "$lang" = "en" ] && echo "🚀 ARK Server 100% Online" || echo "🚀 Servidor de ARK Online")
             ;;
         "SHUTDOWN_WARN")
             color=15844367 # Yellow (#F1C40F)
@@ -331,14 +336,16 @@ if [ "${DISCORD_LANGUAGE:-es}" = "en" ]; then
     _DISCORD_MSG_BACKUP_OK="Scheduled backup completed successfully."
     _DISCORD_MSG_BACKUP_FAIL="Scheduled backup creation failed."
     _DISCORD_MSG_RESTART="Initiating scheduled restart sequence (interval: ${AUTO_RESTART_HOURS}h) with in-game warnings."
-    _DISCORD_MSG_SCHEDULE_START="Server started according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    _DISCORD_MSG_SCHEDULE_STARTING="ARK server process started. Loading map and mods into memory..."
+    _DISCORD_MSG_SCHEDULE_START="Server load complete! ARK server is 100% online and ready for players to join."
     _DISCORD_MSG_SCHEDULE_WARN="Server will shut down in ${SCHEDULE_WARN_MINUTES:-10} minute(s) according to schedule."
     _DISCORD_MSG_SCHEDULE_STOP="Server shut down according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
 else
     _DISCORD_MSG_BACKUP_OK="Backup programado completado exitosamente."
     _DISCORD_MSG_BACKUP_FAIL="Falló la creación del backup programado."
     _DISCORD_MSG_RESTART="Iniciando secuencia de reinicio programado (intervalo: ${AUTO_RESTART_HOURS}h) con avisos in-game."
-    _DISCORD_MSG_SCHEDULE_START="Servidor encendido según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    _DISCORD_MSG_SCHEDULE_STARTING="Proceso de ARK iniciado. Cargando mapa y mods en memoria..."
+    _DISCORD_MSG_SCHEDULE_START="¡Carga completada! El servidor de ARK está 100% Online y disponible para conectarse."
     _DISCORD_MSG_SCHEDULE_WARN="El servidor se apagará en ${SCHEDULE_WARN_MINUTES:-10} minuto(s) según el horario programado."
     _DISCORD_MSG_SCHEDULE_STOP="Servidor apagado según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
 fi
@@ -365,6 +372,8 @@ fi
 
 if [ "$_INITIAL_IN_WINDOW" = "true" ]; then
     echo "Starting ARK server..."
+    _ONLINE_NOTIFIED=false
+    send_discord_embed "STARTING" "${_DISCORD_MSG_SCHEDULE_STARTING}"
     arkmanager start --noautoupdate @main
 else
     echo "[schedule] Server schedule enabled and outside active window (${SCHEDULE_START} - ${SCHEDULE_STOP}). Process start deferred."
@@ -377,10 +386,21 @@ _BACKUP_INTERVAL_SECS=$(( ${BACKUP_INTERVAL_HOURS:-6} * 3600 ))
 _RESTART_LAST_RUN=$(date +%s)
 _RESTART_INTERVAL_SECS=$(( ${AUTO_RESTART_HOURS:-0} * 3600 ))
 
+_ONLINE_NOTIFIED=false
+
 while true; do
     _STATUS_OUTPUT=$(arkmanager status @main 2>&1 || true)
     echo "$_STATUS_OUTPUT"
     _NOW=$(date +%s)
+
+    # Check if server is fully online and ready for players
+    if echo "$_STATUS_OUTPUT" | grep -qi "Server online:.*Yes"; then
+        if [ "$_ONLINE_NOTIFIED" = "false" ]; then
+            echo "[status] ARK Server is 100% online and accepting query connections!"
+            send_discord_embed "START" "${_DISCORD_MSG_SCHEDULE_START}"
+            _ONLINE_NOTIFIED=true
+        fi
+    fi
 
     # --- Power Schedule Monitoring ---
     _IN_WINDOW=true
@@ -415,7 +435,8 @@ while true; do
             if [ "$_IS_RUNNING" = "false" ]; then
                 echo "[schedule] Inside scheduled window (${SCHEDULE_START} - ${SCHEDULE_STOP}). Starting ARK server..."
                 _SCHEDULE_WARN_SENT=false
-                send_discord_embed "START" "${_DISCORD_MSG_SCHEDULE_START}"
+                _ONLINE_NOTIFIED=false
+                send_discord_embed "STARTING" "${_DISCORD_MSG_SCHEDULE_STARTING}"
                 arkmanager start --noautoupdate @main
             else
                 _WARN_MINS=${SCHEDULE_WARN_MINUTES:-10}
@@ -443,9 +464,11 @@ while true; do
                     send_discord_embed "SHUTDOWN" "${_DISCORD_MSG_SCHEDULE_STOP}"
                     arkmanager stop --saveworld @main
                     _SCHEDULE_WARN_SENT=false
+                    _ONLINE_NOTIFIED=false
                 fi
             else
                 _SCHEDULE_WARN_SENT=false
+                _ONLINE_NOTIFIED=false
             fi
         fi
     fi
