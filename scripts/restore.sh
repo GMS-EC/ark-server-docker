@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="/usr/local/bin:/usr/bin:/bin:/home/steam/bin:$PATH"
 set -e
 
 BACKUP_DIR="${BACKUP_DIR:-/home/steam/ark-backups}"

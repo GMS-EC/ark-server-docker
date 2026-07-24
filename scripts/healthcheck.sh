@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="/usr/local/bin:/usr/bin:/bin:/home/steam/bin:$PATH"
 set -e
 
 # 0. If schedule is enabled and server is outside window, process is expected to be stopped

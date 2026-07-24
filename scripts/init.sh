@@ -27,6 +27,7 @@ trap 'su - steam -c "arkmanager stop --saveworld @main" && exit 0' SIGTERM SIGIN
 
 # Export and pass environment variables to steam user
 su - steam -c "
+    export PATH=\"/usr/local/bin:/usr/bin:/bin:/home/steam/bin:\$PATH\"
     export PUID='${PUID}'
     export PGID='${PGID}'
     export SESSION_NAME='${SESSION_NAME}'

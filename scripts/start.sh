@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="/usr/local/bin:/usr/bin:/bin:/home/steam/bin:$PATH"
 
 validate_integer() {
     local var_name="$1"

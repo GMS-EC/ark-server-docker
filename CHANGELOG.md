@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **System Timezone Symlinking**: Updated `scripts/init.sh` to dynamically link `/etc/localtime` and `/etc/timezone` to `/usr/share/zoneinfo/${TZ}`, ensuring system utilities (`date`, `arkmanager`, `healthcheck.sh`) evaluate local time correctly.
 - **GitHub API Rate Limit Bypass**: Added `--commit=master` flag to `netinstall.sh` in Dockerfile to bypass GitHub API rate-limiting issues during GitHub Actions CI builds.
 - **Directory Creation**: Guaranteed `/var/log/arktools` and `/etc/arkmanager` creation in `mkdir -p` prior to `chown` in Dockerfile and `init.sh` to prevent container boot warnings.
+- **Binary PATH Export**: Exported `/usr/local/bin` in container scripts (`init.sh`, `start.sh`, `healthcheck.sh`, `restore.sh`) to prevent `arkmanager: command not found` errors when switching users with `su - steam`.
 
 ### Changed
 - **Documentation Refinements**: Added power schedule vs. auto-restart comparison table, HDD healthcheck tuning guide, and aligned default environment variables across README and documentation files.
