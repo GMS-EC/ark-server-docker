@@ -98,6 +98,11 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
+    mem_limit: ${MEM_LIMIT:-12G}
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_LIMIT:-12G}
     ports:
       - "7777:7777/udp"
       - "27015:27015/udp"
@@ -113,6 +118,7 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
+      - MEM_LIMIT=12G
       # --- Updates & Maintenance ---
       - UPDATE_ON_START=true
       - AUTO_RESTART_HOURS=0
@@ -138,6 +144,7 @@ services:
 | `ADMIN_PASSWORD` | `adminpass` | Contraseña de administración (`enablecheats`) y RCON |
 | `MAX_PLAYERS` | `10` | Slots máximos de jugadores |
 | `WORLD` | `TheIsland` | Nombre oficial del mapa (`TheIsland`, `Ragnarok`, etc.) |
+| `MEM_LIMIT` | `12G` | Límite máximo de memoria RAM asignada al contenedor (ej. 8G, 12G, 16G) |
 | `SERVER_PVE` | `false` | Activa modo PvE |
 | `BATTLEEYE` | `false` | Activa protección BattlEye |
 | `RCON_ENABLED` | `true` | Activa consola remota RCON |
@@ -267,6 +274,11 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
+    mem_limit: ${MEM_LIMIT:-12G}
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_LIMIT:-12G}
     ports:
       - "7777:7777/udp"
       - "27015:27015/udp"
@@ -282,6 +294,7 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
+      - MEM_LIMIT=12G
       # --- Updates & Maintenance ---
       - UPDATE_ON_START=true
       - AUTO_RESTART_HOURS=0
@@ -307,6 +320,7 @@ services:
 | `ADMIN_PASSWORD` | `adminpass` | Admin (`enablecheats`) and RCON password |
 | `MAX_PLAYERS` | `10` | Maximum player slots |
 | `WORLD` | `TheIsland` | Official map name (`TheIsland`, `Ragnarok`, etc.) |
+| `MEM_LIMIT` | `12G` | Maximum RAM memory limit allocated to the container (e.g., 8G, 12G, 16G) |
 | `SERVER_PVE` | `false` | Enable PvE mode |
 | `BATTLEEYE` | `false` | Enable BattlEye anti-cheat |
 | `RCON_ENABLED` | `true` | Enable RCON remote administration |

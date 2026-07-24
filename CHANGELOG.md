@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Documentation Refinements**: Added power schedule vs. auto-restart comparison table, HDD healthcheck tuning guide, and aligned default environment variables across README and documentation files.
+- **Container RAM Limit Variable (`MEM_LIMIT`)**: Added configurable `MEM_LIMIT` variable (default: `12G`) with `mem_limit` and `deploy.resources.limits.memory` in `docker-compose.yml`, `.env.example`, README, and configuration guides.
 
 ## [1.1.0] - 2026-07-23
 

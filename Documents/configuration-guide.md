@@ -21,11 +21,12 @@ Esta guía detalla cómo personalizar completamente tu servidor de ARK, desde la
 
 El archivo `.env` permite configurar el servidor sin necesidad de modificar archivos internamente:
 
-##### 👤 Permisos y Proceso
+##### 👤 Permisos y Recursos de Hardware
 | Variable | Valor por Defecto | Descripción Técnica |
 |----------|-------------------|---------------------|
 | `PUID` | `1000` | ID del usuario `steam` en el sistema. Asegura que los archivos guardados pertenezcan a tu usuario en Linux. |
 | `PGID` | `1000` | ID del grupo `steam` en el sistema. |
+| `MEM_LIMIT` | `12G` | Límite máximo de memoria RAM asignada al contenedor de Docker (ej. `8G`, `12G`, `16G`). Evita saturar la RAM física del servidor. |
 
 ##### 🎮 Configuración Básica del Servidor
 | Variable | Valor por Defecto | Descripción Técnica |
@@ -192,11 +193,12 @@ This guide details how to fully customize your ARK server, from environment vari
 
 #### 📄 1. Environment Variables (`.env`)
 
-##### 👤 Permissions & System
+##### 👤 Permissions & Hardware Resources
 | Variable | Default | Technical Description |
 |----------|---------|-----------------------|
 | `PUID` | `1000` | System user ID for `steam`. Ensures saved files match Linux permissions. |
 | `PGID` | `1000` | System group ID for `steam`. |
+| `MEM_LIMIT` | `12G` | Maximum RAM memory limit allocated to the Docker container (e.g., `8G`, `12G`, `16G`). Prevents host RAM exhaustion. |
 
 ##### 🎮 Basic Server Settings
 | Variable | Default | Technical Description |

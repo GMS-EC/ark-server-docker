@@ -7,6 +7,11 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
+    mem_limit: ${MEM_LIMIT:-12G}
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_LIMIT:-12G}
     ports:
       - "7777:7777/udp"
       - "27015:27015/udp"
@@ -22,6 +27,7 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=false
       - MOD_IDS=
+      - MEM_LIMIT=12G
       # --- Backup Settings ---
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6
