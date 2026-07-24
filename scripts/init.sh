@@ -12,8 +12,8 @@ if [ -n "${PUID}" ] && [ -n "${PGID}" ]; then
 fi
 
 # Fix permissions
-chown -R steam:steam /home/steam /var/log/arktools
-chown -R steam:steam /etc/arkmanager
+mkdir -p /etc/arkmanager /var/log/arktools
+chown -R steam:steam /home/steam /var/log/arktools /etc/arkmanager
 
 # Configure system timezone from TZ variable
 if [ -n "${TZ}" ] && [ -f "/usr/share/zoneinfo/${TZ}" ]; then

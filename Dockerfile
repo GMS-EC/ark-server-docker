@@ -72,8 +72,8 @@ ENV HOME=/home/steam \
 RUN curl -sL https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/netinstall.sh | bash -s steam --install-service --commit=master
 
 # Create necessary directories
-RUN mkdir -p /home/steam/steamcmd/ark /home/steam/ark-backups /var/log/arktools && \
-    chown -R steam:steam /home/steam/steamcmd/ark /home/steam/ark-backups /var/log/arktools
+RUN mkdir -p /home/steam/steamcmd/ark /home/steam/ark-backups /var/log/arktools /etc/arkmanager && \
+    chown -R steam:steam /home/steam/steamcmd/ark /home/steam/ark-backups /var/log/arktools /etc/arkmanager
 
 COPY ./scripts /home/steam/scripts/
 COPY Documents/branding /branding

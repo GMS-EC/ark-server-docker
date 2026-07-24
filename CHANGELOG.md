@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-07-24
+
+### Fixed
+- **Healthcheck Sizing for HDDs & Mods**: Updated Dockerfile `HEALTHCHECK` with `--start-period=25m`, `--timeout=30s`, and `--retries=5` to prevent false `unhealthy` container status during slow startup on mechanical HDDs with heavy mod packs.
+- **System Timezone Symlinking**: Updated `scripts/init.sh` to dynamically link `/etc/localtime` and `/etc/timezone` to `/usr/share/zoneinfo/${TZ}`, ensuring system utilities (`date`, `arkmanager`, `healthcheck.sh`) evaluate local time correctly.
+- **GitHub API Rate Limit Bypass**: Added `--commit=master` flag to `netinstall.sh` in Dockerfile to bypass GitHub API rate-limiting issues during GitHub Actions CI builds.
+- **Directory Creation**: Guaranteed `/var/log/arktools` and `/etc/arkmanager` creation in `mkdir -p` prior to `chown` in Dockerfile and `init.sh` to prevent container boot warnings.
+
+### Changed
+- **Documentation Refinements**: Added power schedule vs. auto-restart comparison table, HDD healthcheck tuning guide, and aligned default environment variables across README and documentation files.
+
 ## [1.1.0] - 2026-07-23
 
 ### Added
