@@ -333,21 +333,29 @@ EOF
 
 # Discord webhook message localization
 if [ "${DISCORD_LANGUAGE:-es}" = "en" ]; then
-    _DISCORD_MSG_BACKUP_OK="Scheduled backup completed successfully."
+    _DISCORD_MSG_BACKUP_OK="Scheduled backup completed successfully (Interval: ${BACKUP_INTERVAL_HOURS:-6}h)."
     _DISCORD_MSG_BACKUP_FAIL="Scheduled backup creation failed."
-    _DISCORD_MSG_RESTART="Initiating scheduled restart sequence (interval: ${AUTO_RESTART_HOURS}h) with in-game warnings."
+    _DISCORD_MSG_RESTART="Initiating scheduled restart sequence (Interval: ${AUTO_RESTART_HOURS}h) with in-game warnings."
     _DISCORD_MSG_SCHEDULE_STARTING="ARK server process started. Loading map and mods into memory..."
-    _DISCORD_MSG_SCHEDULE_START="Server load complete! ARK server is 100% online and ready for players to join."
-    _DISCORD_MSG_SCHEDULE_WARN="Server will shut down in ${SCHEDULE_WARN_MINUTES:-10} minute(s) according to schedule."
-    _DISCORD_MSG_SCHEDULE_STOP="Server shut down according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    if [ "${SCHEDULE_ENABLED:-false}" = "true" ]; then
+        _DISCORD_MSG_SCHEDULE_START="Server load complete! ARK server is 100% online and ready for players (Active playing hours: ${SCHEDULE_START:-20:00} to ${SCHEDULE_STOP:-00:00})."
+    else
+        _DISCORD_MSG_SCHEDULE_START="Server load complete! ARK server is 100% online and ready for players (24/7 Mode)."
+    fi
+    _DISCORD_MSG_SCHEDULE_WARN="Active playing hours (${SCHEDULE_START:-20:00} to ${SCHEDULE_STOP:-00:00}) are ending. Server will save and shut down in ${SCHEDULE_WARN_MINUTES:-10} minute(s)."
+    _DISCORD_MSG_SCHEDULE_STOP="The server has closed active playing hours (${SCHEDULE_START:-20:00} to ${SCHEDULE_STOP:-00:00}) and shut down successfully."
 else
-    _DISCORD_MSG_BACKUP_OK="Backup programado completado exitosamente."
+    _DISCORD_MSG_BACKUP_OK="Backup programado completado exitosamente (Intervalo: ${BACKUP_INTERVAL_HOURS:-6}h)."
     _DISCORD_MSG_BACKUP_FAIL="Falló la creación del backup programado."
-    _DISCORD_MSG_RESTART="Iniciando secuencia de reinicio programado (intervalo: ${AUTO_RESTART_HOURS}h) con avisos in-game."
+    _DISCORD_MSG_RESTART="Iniciando secuencia de reinicio programado (Intervalo: ${AUTO_RESTART_HOURS}h) con avisos in-game."
     _DISCORD_MSG_SCHEDULE_STARTING="Proceso de ARK iniciado. Cargando mapa y mods en memoria..."
-    _DISCORD_MSG_SCHEDULE_START="¡Carga completada! El servidor de ARK está 100% Online y disponible para conectarse."
-    _DISCORD_MSG_SCHEDULE_WARN="El servidor se apagará en ${SCHEDULE_WARN_MINUTES:-10} minuto(s) según el horario programado."
-    _DISCORD_MSG_SCHEDULE_STOP="Servidor apagado según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    if [ "${SCHEDULE_ENABLED:-false}" = "true" ]; then
+        _DISCORD_MSG_SCHEDULE_START="¡Carga completada! El servidor está 100% Online y listo para jugar (Horario activo: ${SCHEDULE_START:-20:00} a ${SCHEDULE_STOP:-00:00})."
+    else
+        _DISCORD_MSG_SCHEDULE_START="¡Carga completada! El servidor está 100% Online y disponible para los jugadores (Modo 24/7)."
+    fi
+    _DISCORD_MSG_SCHEDULE_WARN="El horario de juego activo (${SCHEDULE_START:-20:00} a ${SCHEDULE_STOP:-00:00}) está por finalizar. El servidor se guardará y apagará en ${SCHEDULE_WARN_MINUTES:-10} minuto(s)."
+    _DISCORD_MSG_SCHEDULE_STOP="El servidor ha cerrado su horario de juego (${SCHEDULE_START:-20:00} a ${SCHEDULE_STOP:-00:00}) y se ha apagado correctamente."
 fi
 
 # Initial check for power schedule before starting server
