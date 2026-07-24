@@ -370,7 +370,7 @@ while true; do
             echo "[backup] Running scheduled backup (interval: ${BACKUP_INTERVAL_HOURS:-6}h)..."
             mkdir -p "${BACKUP_DIR:-/home/steam/ark-backups}"
             if arkmanager backup @main; then
-                echo "[backup] Backup completed at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+                echo "[backup] Backup completed at $(date '+%Y-%m-%d %H:%M:%S')"
                 
                 # Backup rotation by count
                 if [ -n "${BACKUP_MAX_COUNT}" ] && [ "${BACKUP_MAX_COUNT:-0}" -gt 0 ]; then
@@ -393,7 +393,7 @@ while true; do
                     curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_BACKUP_OK}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
                 fi
             else
-                echo "[backup] WARNING: Backup failed at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+                echo "[backup] WARNING: Backup failed at $(date '+%Y-%m-%d %H:%M:%S')"
                 if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
                     curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_BACKUP_FAIL}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
                 fi
