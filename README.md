@@ -104,9 +104,9 @@ services:
         limits:
           memory: ${MEM_LIMIT:-12G}
     ports:
-      - "7777:7777/udp"
-      - "27015:27015/udp"
-      - "27020:27020/tcp"
+      - "7777:7777/udp"    # Puerto Juego (UDP) - Conexión de Jugadores
+      - "27015:27015/udp"  # Puerto Query Steam (UDP) - Buscador de Servidores
+      - "27020:27020/tcp"  # Puerto RCON (TCP) - Consola Remota y Broadcast In-Game
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -162,7 +162,15 @@ services:
 | `DISCORD_LANGUAGE` | `es` | Idioma de las alertas de Discord (`es` / `en`) |
 | `TZ` | `UTC` | Zona horaria del contenedor para horarios y logs |
 
-> 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (puertos, PUID/PGID, clústeres, rates y arkmanager).*
+#### 🔌 Puertos de Red Requeridos
+
+| Puerto | Protocolo | Variable | Descripción |
+|--------|-----------|----------|-------------|
+| `7777` | UDP | `SERVER_PORT` | Puerto principal de juego donde se transmiten las acciones de los jugadores. |
+| `27015` | UDP | `QUERY_PORT` | Puerto de consulta de Steam que permite buscar y listar el servidor in-game. |
+| `27020` | TCP | `RCON_PORT` | Puerto RCON para consola remota, administración y mensajes broadcast in-game. |
+
+> 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (PUID/PGID, clústeres, rates y arkmanager).*
 
 ### ⚠️ Limitaciones Conocidas
 
@@ -280,9 +288,9 @@ services:
         limits:
           memory: ${MEM_LIMIT:-12G}
     ports:
-      - "7777:7777/udp"
-      - "27015:27015/udp"
-      - "27020:27020/tcp"
+      - "7777:7777/udp"    # Game Port (UDP) - Player Connection
+      - "27015:27015/udp"  # Steam Query Port (UDP) - Server Browser
+      - "27020:27020/tcp"  # RCON Port (TCP) - Remote Console & In-Game Broadcast
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -338,7 +346,15 @@ services:
 | `DISCORD_LANGUAGE` | `es` | Language for Discord notification messages (`es` / `en`) |
 | `TZ` | `UTC` | Container timezone used for schedule calculation and log timestamps |
 
-> 📌 *Check out the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the full list of advanced variables (ports, PUID/PGID, clusters, rates & arkmanager).*
+#### 🔌 Required Network Ports
+
+| Port | Protocol | Variable | Description |
+|------|----------|----------|-------------|
+| `7777` | UDP | `SERVER_PORT` | Main game port for player gameplay and action traffic. |
+| `27015` | UDP | `QUERY_PORT` | Steam query port for server browsing and in-game discovery. |
+| `27020` | TCP | `RCON_PORT` | RCON port for remote console administration and in-game broadcasts. |
+
+> 📌 *Check the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the complete list of advanced variables (PUID/PGID, clusters, rates, and arkmanager).*
 
 ### ⚠️ Known Limitations
 

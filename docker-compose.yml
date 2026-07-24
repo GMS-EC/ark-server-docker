@@ -13,9 +13,9 @@ services:
         limits:
           memory: ${MEM_LIMIT:-12G}
     ports:
-      - "7777:7777/udp"
-      - "27015:27015/udp"
-      - "27020:27020/tcp"
+      - "7777:7777/udp"    # Puerto Juego (UDP) - Conexión de Jugadores
+      - "27015:27015/udp"  # Puerto Query Steam (UDP) - Buscador de Servidores
+      - "27020:27020/tcp"  # Puerto RCON (TCP) - Consola Remota y Broadcast In-Game
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -25,7 +25,7 @@ services:
       - WORLD=TheIsland
       - SERVER_PVE=false
       - BATTLEEYE=false
-      - RCON_ENABLED=false
+      - RCON_ENABLED=true
       - MOD_IDS=
       - MEM_LIMIT=12G
       # --- Backup Settings ---
