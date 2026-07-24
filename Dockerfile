@@ -69,7 +69,8 @@ ENV HOME=/home/steam \
     CRAFT_SPEED_MULTIPLIER=""
 
 # Install ark-server-tools
-RUN curl -sL https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/netinstall.sh | bash -s steam --install-service --commit=master
+RUN curl -sL https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/netinstall.sh | bash -s steam --install-service --commit=master && \
+    ln -sf /usr/local/bin/arkmanager /usr/bin/arkmanager
 
 # Create necessary directories
 RUN mkdir -p /home/steam/steamcmd/ark /home/steam/ark-backups /var/log/arktools /etc/arkmanager && \
