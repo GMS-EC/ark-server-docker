@@ -20,6 +20,7 @@ RUN dpkg --add-architecture i386 && \
     gettext-base \
     procps \
     jq \
+    python3 \
     tzdata \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -39,6 +40,8 @@ ENV HOME=/home/steam \
     QUERY_PORT=27015 \
     RCON_PORT=27020 \
     RCON_ENABLED=true \
+    WEBUI_ENABLED=false \
+    WEBUI_PORT=8080 \
     SERVER_PVE=false \
     BATTLEEYE=false \
     CLUSTER_ID="" \

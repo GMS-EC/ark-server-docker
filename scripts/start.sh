@@ -27,6 +27,7 @@ validate_integer "BACKUP_INTERVAL_HOURS" "$BACKUP_INTERVAL_HOURS"
 validate_integer "BACKUP_MAX_COUNT" "$BACKUP_MAX_COUNT"
 validate_integer "AUTO_RESTART_HOURS" "$AUTO_RESTART_HOURS"
 validate_integer "SCHEDULE_WARN_MINUTES" "${SCHEDULE_WARN_MINUTES:-10}"
+validate_integer "WEBUI_PORT" "${WEBUI_PORT:-8080}"
 
 if [ "${SCHEDULE_ENABLED:-false}" = "true" ]; then
     if [ -z "$SCHEDULE_START" ] || [ -z "$SCHEDULE_STOP" ]; then
@@ -81,6 +82,12 @@ EOF
 # Log Discord Webhook configuration if enabled
 if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
     echo "Discord Webhook notifications enabled (Rich Embeds)"
+fi
+
+# Start Web UI Dashboard if enabled
+if [ "${WEBUI_ENABLED:-false}" = "true" ]; then
+    echo "Starting Web UI dashboard on port ${WEBUI_PORT:-8080}..."
+    python3 /home/steam/scripts/webui.py > /var/log/arktools/webui.log 2>&1 &
 fi
 
 # Add Rate Multipliers if configured

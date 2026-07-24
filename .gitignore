@@ -10,3 +10,5 @@ ark-backups/
 # OS/editor noise
 .DS_Store
 *.swp
+__pycache__/
+*.pyc

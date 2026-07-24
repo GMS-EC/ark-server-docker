@@ -1,0 +1,32 @@
+# Version control
+.git
+.gitignore
+
+# Environment secrets
+.env
+.env.*
+
+# Local runtime directories & volumes
+steamcmd/
+ark-backups/
+
+# Python cache & bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Markdown documentation (only Documents/branding is needed by Dockerfile)
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+Documents/*
+!Documents/branding/
+
+# IDE & system noise
+.idea/
+.vscode/
+.DS_Store
+*.swp
+.gemini/
+.agents/

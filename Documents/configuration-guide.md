@@ -49,6 +49,8 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 | `SERVER_PVE` | `false` | Si se establece en `true`, activa el modo PvE (los jugadores no pueden atacarse ni dañar estructuras ajenas). |
 | `BATTLEEYE` | `false` | Si se establece en `true`, habilita la protección anti-trampas de BattlEye. |
 | `RCON_ENABLED` | `true` | Habilita o desactiva la consola de administración remota RCON (requerido para avisos in-game y saveworld automáticos). |
+| `WEBUI_ENABLED` | `false` | Habilita o desactiva el panel Web UI ultraligero de monitoreo en Python (< 20MB RAM). |
+| `WEBUI_PORT` | `8080` | Puerto HTTP para el panel Web UI de monitoreo (requiere autenticación con `ADMIN_PASSWORD`). |
 | `MOD_IDS` | *(vacío)* | Lista de IDs de mods de Steam Workshop separados por coma (ej. `731604991,893735676`). |
 
 ##### 🏰 Clústeres de Servidores
@@ -213,6 +215,7 @@ This guide details how to fully customize your ARK server, from environment vari
 | `SERVER_PORT` | `7777` | UDP | Main game communication port. |
 | `QUERY_PORT` | `27015` | UDP | Steam server browser and query port. |
 | `RCON_PORT` | `27020` | TCP | Remote administration RCON port for external connections. Optional (in-game broadcasts and saveworld work internally without publishing this port). |
+| `WEBUI_PORT` | `8080` | TCP | HTTP port for the lightweight Web UI monitoring dashboard. |
 
 ##### 🏰 Server Clusters
 | Variable | Default | Description |
