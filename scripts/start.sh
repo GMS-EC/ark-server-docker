@@ -78,10 +78,9 @@ arkNoPortDecrement="true"
 EOF
 
 
-# Add Discord Webhook URL if configured
+# Log Discord Webhook configuration if enabled
 if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
-    echo "discordWebhookURL=\"${DISCORD_WEBHOOK_URL}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
-    echo "Discord Webhook notifications enabled"
+    echo "Discord Webhook notifications enabled (Rich Embeds)"
 fi
 
 # Add Rate Multipliers if configured
@@ -230,23 +229,118 @@ if [ "${UPDATE_ON_START}" = "true" ]; then
     fi
 fi
 
-_SCHEDULE_WARN_SENT=false
+# Function to send rich Discord Embed notifications
+send_discord_embed() {
+    local event_type="$1"
+    local custom_msg="$2"
+
+    if [ -z "${DISCORD_WEBHOOK_URL}" ]; then
+        return 0
+    fi
+
+    local title=""
+    local color=3066993
+    local status_text="🟢 Online"
+    local lang="${DISCORD_LANGUAGE:-es}"
+
+    case "$event_type" in
+        "START")
+            color=3066993 # Green (#2ECC71)
+            status_text="🟢 Online"
+            title=$([ "$lang" = "en" ] && echo "🚀 ARK Server Started" || echo "🚀 Servidor de ARK Encendido")
+            ;;
+        "SHUTDOWN_WARN")
+            color=15844367 # Yellow (#F1C40F)
+            status_text="⚠️ Programado / Scheduled"
+            title=$([ "$lang" = "en" ] && echo "⚠️ Scheduled Shutdown Warning" || echo "⚠️ Aviso de Apagado Programado")
+            ;;
+        "SHUTDOWN")
+            color=15158332 # Red (#E74C3C)
+            status_text="🔴 Offline"
+            title=$([ "$lang" = "en" ] && echo "🛑 ARK Server Offline" || echo "🛑 Servidor de ARK Apagado")
+            ;;
+        "BACKUP_OK")
+            color=3447003 # Blue (#3498DB)
+            status_text="📦 Backup OK"
+            title=$([ "$lang" = "en" ] && echo "📦 Backup Created Successfully" || echo "📦 Copia de Seguridad Completada")
+            ;;
+        "BACKUP_FAIL")
+            color=15158332 # Red (#E74C3C)
+            status_text="⚠️ Backup Error"
+            title=$([ "$lang" = "en" ] && echo "⚠️ Backup Creation Failed" || echo "⚠️ Fallo en Copia de Seguridad")
+            ;;
+        "RESTART")
+            color=10181046 # Purple (#9B59B6)
+            status_text="🔄 Reiniciando / Restarting"
+            title=$([ "$lang" = "en" ] && echo "🔄 Server Restart Sequence" || echo "🔄 Secuencia de Reinicio Programado")
+            ;;
+        *)
+            color=3447003
+            title="ℹ️ Notificación de ARK"
+            ;;
+    esac
+
+    local timestamp
+    timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    local session_name="${SESSION_NAME:-ARK Server}"
+    local world="${WORLD:-TheIsland}"
+    local tmp_payload="/tmp/discord_embed_${RANDOM}.json"
+
+    cat <<EOF > "${tmp_payload}"
+{
+  "username": "${session_name}",
+  "avatar_url": "https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/logo.png",
+  "embeds": [
+    {
+      "title": "${title}",
+      "description": "${custom_msg}",
+      "color": ${color},
+      "fields": [
+        {
+          "name": "🎮 Servidor",
+          "value": "\`${session_name}\`",
+          "inline": true
+        },
+        {
+          "name": "🗺️ Mapa",
+          "value": "\`${world}\`",
+          "inline": true
+        },
+        {
+          "name": "📊 Estado",
+          "value": "${status_text}",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "ARK: Survival Evolved Docker",
+        "icon_url": "https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/logo.png"
+      },
+      "timestamp": "${timestamp}"
+    }
+  ]
+}
+EOF
+
+    curl -s -H "Content-Type: application/json" -X POST -d @"${tmp_payload}" "${DISCORD_WEBHOOK_URL}" > /dev/null 2>&1 || true
+    rm -f "${tmp_payload}"
+}
 
 # Discord webhook message localization
 if [ "${DISCORD_LANGUAGE:-es}" = "en" ]; then
-    _DISCORD_MSG_BACKUP_OK="📦 **[ARK Backup]** Scheduled backup completed successfully on server **${SESSION_NAME:-ARK Server}**."
-    _DISCORD_MSG_BACKUP_FAIL="⚠️ **[ARK Backup Warning]** Scheduled backup creation failed on server **${SESSION_NAME:-ARK Server}**."
-    _DISCORD_MSG_RESTART="🔄 **[ARK Server Restart]** Initiating scheduled restart sequence (interval: ${AUTO_RESTART_HOURS}h) with in-game warnings."
-    _DISCORD_MSG_SCHEDULE_START="⏰ **[ARK Power Schedule]** Server started according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
-    _DISCORD_MSG_SCHEDULE_WARN="⏰ **[ARK Power Schedule]** Server will shut down in ${SCHEDULE_WARN_MINUTES:-10} minute(s) according to schedule."
-    _DISCORD_MSG_SCHEDULE_STOP="⏰ **[ARK Power Schedule]** Server shut down according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    _DISCORD_MSG_BACKUP_OK="Scheduled backup completed successfully."
+    _DISCORD_MSG_BACKUP_FAIL="Scheduled backup creation failed."
+    _DISCORD_MSG_RESTART="Initiating scheduled restart sequence (interval: ${AUTO_RESTART_HOURS}h) with in-game warnings."
+    _DISCORD_MSG_SCHEDULE_START="Server started according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    _DISCORD_MSG_SCHEDULE_WARN="Server will shut down in ${SCHEDULE_WARN_MINUTES:-10} minute(s) according to schedule."
+    _DISCORD_MSG_SCHEDULE_STOP="Server shut down according to schedule (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
 else
-    _DISCORD_MSG_BACKUP_OK="📦 **[ARK Backup]** Backup programado completado exitosamente en el servidor **${SESSION_NAME:-ARK Server}**."
-    _DISCORD_MSG_BACKUP_FAIL="⚠️ **[ARK Backup Warning]** Falló la creación del backup programado en el servidor **${SESSION_NAME:-ARK Server}**."
-    _DISCORD_MSG_RESTART="🔄 **[ARK Server Restart]** Iniciando secuencia de reinicio programado (intervalo: ${AUTO_RESTART_HOURS}h) con avisos in-game."
-    _DISCORD_MSG_SCHEDULE_START="⏰ **[ARK Power Schedule]** Servidor encendido según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
-    _DISCORD_MSG_SCHEDULE_WARN="⏰ **[ARK Power Schedule]** El servidor se apagará en ${SCHEDULE_WARN_MINUTES:-10} minuto(s) según el horario programado."
-    _DISCORD_MSG_SCHEDULE_STOP="⏰ **[ARK Power Schedule]** Servidor apagado según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    _DISCORD_MSG_BACKUP_OK="Backup programado completado exitosamente."
+    _DISCORD_MSG_BACKUP_FAIL="Falló la creación del backup programado."
+    _DISCORD_MSG_RESTART="Iniciando secuencia de reinicio programado (intervalo: ${AUTO_RESTART_HOURS}h) con avisos in-game."
+    _DISCORD_MSG_SCHEDULE_START="Servidor encendido según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
+    _DISCORD_MSG_SCHEDULE_WARN="El servidor se apagará en ${SCHEDULE_WARN_MINUTES:-10} minuto(s) según el horario programado."
+    _DISCORD_MSG_SCHEDULE_STOP="Servidor apagado según el horario programado (${SCHEDULE_START:-20:00} - ${SCHEDULE_STOP:-00:00})."
 fi
 
 # Initial check for power schedule before starting server
@@ -321,9 +415,7 @@ while true; do
             if [ "$_IS_RUNNING" = "false" ]; then
                 echo "[schedule] Inside scheduled window (${SCHEDULE_START} - ${SCHEDULE_STOP}). Starting ARK server..."
                 _SCHEDULE_WARN_SENT=false
-                if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
-                    curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_SCHEDULE_START}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
-                fi
+                send_discord_embed "START" "${_DISCORD_MSG_SCHEDULE_START}"
                 arkmanager start --noautoupdate @main
             else
                 _WARN_MINS=${SCHEDULE_WARN_MINUTES:-10}
@@ -335,9 +427,7 @@ while true; do
                         _WARN_MSG="[HORARIO] El servidor se apagara en ${_MINUTES_UNTIL_STOP} minuto(s) segun el horario programado (${SCHEDULE_STOP})."
                     fi
                     arkmanager broadcast "${_WARN_MSG}" @main 2>/dev/null || true
-                    if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
-                        curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_SCHEDULE_WARN}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
-                    fi
+                    send_discord_embed "SHUTDOWN_WARN" "${_DISCORD_MSG_SCHEDULE_WARN}"
                     _SCHEDULE_WARN_SENT=true
                 fi
             fi
@@ -350,9 +440,7 @@ while true; do
                     echo "[schedule] Fuera de horario (${SCHEDULE_START} - ${SCHEDULE_STOP}) pero hay ${_ACTIVE_PLAYERS} jugador(es) conectado(s), posponiendo apagado..."
                 else
                     echo "[schedule] Outside scheduled window (${SCHEDULE_START} - ${SCHEDULE_STOP}) and 0 active players. Stopping ARK server..."
-                    if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
-                        curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_SCHEDULE_STOP}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
-                    fi
+                    send_discord_embed "SHUTDOWN" "${_DISCORD_MSG_SCHEDULE_STOP}"
                     arkmanager stop --saveworld @main
                     _SCHEDULE_WARN_SENT=false
                 fi
@@ -391,14 +479,10 @@ while true; do
                     fi
                 fi
 
-                if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
-                    curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_BACKUP_OK}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
-                fi
+                send_discord_embed "BACKUP_OK" "${_DISCORD_MSG_BACKUP_OK}"
             else
                 echo "[backup] WARNING: Backup failed at $(date '+%Y-%m-%d %H:%M:%S')"
-                if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
-                    curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_BACKUP_FAIL}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
-                fi
+                send_discord_embed "BACKUP_FAIL" "${_DISCORD_MSG_BACKUP_FAIL}"
             fi
             _BACKUP_LAST_RUN=$_NOW
         fi
@@ -418,9 +502,7 @@ while true; do
             _RESTART_ELAPSED=$(( _NOW - _RESTART_LAST_RUN ))
             if [ "${_RESTART_ELAPSED}" -ge "${_RESTART_INTERVAL_SECS}" ]; then
                 echo "[restart] Triggering scheduled server restart (interval: ${AUTO_RESTART_HOURS}h)..."
-                if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
-                    curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_RESTART}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
-                fi
+                send_discord_embed "RESTART" "${_DISCORD_MSG_RESTART}"
                 arkmanager restart --warn @main
                 _RESTART_LAST_RUN=$(date +%s)
             fi
