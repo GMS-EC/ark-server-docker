@@ -312,7 +312,7 @@ while true; do
             fi
         fi
 
-        _IS_RUNNING=$(pgrep "ShooterGameServer" > /dev/null 2>&1 && echo true || echo false)
+        _IS_RUNNING=$(pgrep -f "ShooterGameServer" > /dev/null 2>&1 && echo true || echo false)
 
         if [ "$_IN_WINDOW" = "true" ]; then
             if [ "$_IS_RUNNING" = "false" ]; then
@@ -405,7 +405,7 @@ while true; do
     # --- Scheduled Restart ---
     if [ "${AUTO_RESTART_HOURS:-0}" -gt 0 ]; then
         _SKIP_RESTART=false
-        if [ "${SCHEDULE_ENABLED:-false}" = "true" ] && [ "${_IN_WINDOW}" = "false" ] && ! pgrep "ShooterGameServer" > /dev/null 2>&1; then
+        if [ "${SCHEDULE_ENABLED:-false}" = "true" ] && [ "${_IN_WINDOW}" = "false" ] && ! pgrep -f "ShooterGameServer" > /dev/null 2>&1; then
             _SKIP_RESTART=true
         fi
 

@@ -19,13 +19,13 @@ if [ "${SCHEDULE_ENABLED:-false}" = "true" ] && [ -n "$SCHEDULE_START" ] && [ -n
         _IN_WINDOW=$([ "$_NOW_MINUTES" -ge "$_START_MINUTES" ] || [ "$_NOW_MINUTES" -lt "$_STOP_MINUTES" ] && echo true || echo false)
     fi
 
-    if [ "$_IN_WINDOW" = "false" ] && ! pgrep "ShooterGameServer" > /dev/null 2>&1; then
+    if [ "$_IN_WINDOW" = "false" ] && ! pgrep -f "ShooterGameServer" > /dev/null 2>&1; then
         exit 0
     fi
 fi
 
 # 1. Verify that ShooterGameServer process exists
-if ! pgrep "ShooterGameServer" > /dev/null 2>&1; then
+if ! pgrep -f "ShooterGameServer" > /dev/null 2>&1; then
     exit 1
 fi
 
