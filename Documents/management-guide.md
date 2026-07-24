@@ -146,9 +146,11 @@ SCHEDULE_WARN_MINUTES=10    # Valor por defecto: 10
 ##### Características del Horario Automático:
 1. **Ahorro de Recursos**: Ejecuta `arkmanager stop @main` fuera del horario y `arkmanager start @main` dentro del horario.
 2. **Soporte para Ventanas Nocturnas**: Soporta horarios que cruzan la medianoche (ej. de 20:00 a 00:00 o 02:00).
-3. **Protección de Jugadores Activos**: Si llega la hora de apagado pero hay 1 o más jugadores conectados, el servidor **no se apaga** y pospone la verificación hasta que todos se desconecten.
-4. **Advertencias Previas**: Envía una alerta in-game y notificación a Discord `SCHEDULE_WARN_MINUTES` minutos antes de apagar.
-5. **Zona Horaria (`TZ`)**: Respeta la zona horaria del usuario configurada en `TZ` (ej. `America/Guayaquil`, `Europe/Madrid`).
+3. **Protección de Jugadores Activos**: Si llega la hora de apagado (ej. 12:00) pero hay 1 o más jugadores conectados, el servidor **nunca desconectará a nadie en medio de una partida**. Pospondrá el apagado y esperará pacientemente a que todos los jugadores se desconecten (0 jugadores) para apagarlo de forma segura con autoguardado.
+4. **Encendido Fuera de Horario**: Si enciendes el servidor manualmente fuera de horario (ej. a las 12:30), podrás jugar sin interrupciones mientras permanezcas dentro. Si todos los jugadores se desconectan durante las horas de descanso, el sistema volverá a apagarlo automáticamente para mantener el ahorro de energía.
+5. **Transición Fluida al Iniciar (`SCHEDULE_START`)**: Si el servidor ya estaba encendido porque estabas jugando antes de la hora de inicio (ej. 20:00), el sistema **omitirá el comando de encendido** y tu partida continuará de forma 100% ininterrumpida sin sufrir reinicios ni lag.
+6. **Advertencias Únicas Previas**: Envía una sola advertencia in-game y notificación a Discord `SCHEDULE_WARN_MINUTES` minutos antes de apagar para no saturar el chat con mensajes repetitivos.
+7. **Zona Horaria (`TZ`)**: Respeta la zona horaria del usuario configurada en `TZ` (ej. `America/Guayaquil`, `Europe/Madrid`).
 
 ---
 
@@ -303,9 +305,11 @@ SCHEDULE_WARN_MINUTES=10    # Default: 10
 ##### Key Power Schedule Features:
 1. **Resource Saving**: Runs `arkmanager stop @main` during off-hours and `arkmanager start @main` during active hours.
 2. **Midnight-Crossing Windows**: Fully supports schedules spanning across midnight (e.g., 20:00 to 00:00 or 02:00).
-3. **Active Player Protection**: If shutdown time arrives while 1 or more players are online, the server **postpones shutdown** until all players disconnect.
-4. **Advance Warning**: Sends in-game chat broadcasts and Discord alerts `SCHEDULE_WARN_MINUTES` minutes before shutting down.
-5. **Timezone Aware (`TZ`)**: Evaluates schedule times based on the container's configured `TZ` variable (e.g., `America/Guayaquil`, `Europe/Madrid`).
+3. **Active Player Protection**: If shutdown time arrives (e.g., 12:00) while 1 or more players are online, the server **never kicks active players**. It postpones shutdown and waits until all players disconnect (0 players) to perform a safe auto-save shutdown.
+4. **Manual Start During Off-Hours**: If you manually start the server during off-hours (e.g., at 12:30), you can play uninterrupted as long as players remain connected. Once all players leave, the server automatically shuts down to preserve power savings.
+5. **Seamless Active Window Transition (`SCHEDULE_START`)**: If the server is already running when the active start time arrives (e.g., 20:00), the system **skips the start command**, allowing your gaming session to continue 100% uninterrupted without lag or restarts.
+6. **Single Advance Warning**: Sends a single in-game chat broadcast and Discord alert `SCHEDULE_WARN_MINUTES` minutes before scheduled shutdown without chat spam.
+7. **Timezone Aware (`TZ`)**: Evaluates schedule times based on the container's configured `TZ` variable (e.g., `America/Guayaquil`, `Europe/Madrid`).
 
 ---
 

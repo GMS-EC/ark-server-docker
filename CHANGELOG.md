@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GitHub API Rate Limit Bypass**: Added `--commit=master` flag to `netinstall.sh` in Dockerfile to bypass GitHub API rate-limiting issues during GitHub Actions CI builds.
 - **Directory Creation**: Guaranteed `/var/log/arktools` and `/etc/arkmanager` creation in `mkdir -p` prior to `chown` in Dockerfile and `init.sh` to prevent container boot warnings.
 - **Binary PATH Export**: Exported `/usr/local/bin` in container scripts (`init.sh`, `start.sh`, `healthcheck.sh`, `restore.sh`) to prevent `arkmanager: command not found` errors when switching users with `su - steam`.
+- **Local Time Log Formatting**: Updated `scripts/start.sh` backup messages to display local time format instead of forced UTC.
+- **RCON Broadcast Error Suppression**: Muted stderr output on `arkmanager broadcast` during schedule warning when RCON port is offline during early startup.
 
 ### Changed
 - **Documentation Refinements**: Added power schedule vs. auto-restart comparison table, HDD healthcheck tuning guide, and aligned default environment variables across README and documentation files.
