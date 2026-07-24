@@ -3,6 +3,7 @@ name: ark-server
 services:
   ark-server:
     image: marcusm99/ark-server-docker:latest
+    build: .        # Build locally with the local Dockerfile (use: docker compose up -d --build)
     platform: linux/amd64
     restart: unless-stopped
     container_name: ark-server

@@ -398,6 +398,9 @@ HTML_INDEX = """<!DOCTYPE html>
     </div>
 
     <script>
+        // Token injected by server — sent as a header on every API call.
+        // This avoids all browser cookie/Basic-Auth relay issues.
+        const WEBUI_TOKEN = '{{TOKEN}}';
         let _consecutiveErrors = 0;
 
         function formatBytes(bytes) {
@@ -412,7 +415,9 @@ HTML_INDEX = """<!DOCTYPE html>
 
         async function fetchStats() {
             try {
-                const res = await fetch('/api/stats', { credentials: 'same-origin' });
+                const res = await fetch('/api/stats', {
+                    headers: {'X-WebUI-Token': WEBUI_TOKEN}
+                });
                 if (!res.ok) {
                     _consecutiveErrors++;
                     // Only show error after ~75 s of real API failures (30 x 2.5 s)
@@ -466,7 +471,9 @@ HTML_INDEX = """<!DOCTYPE html>
 
         async function fetchLogs() {
             try {
-                const res = await fetch('/api/logs', { credentials: 'same-origin' });
+                const res = await fetch('/api/logs', {
+                    headers: {'X-WebUI-Token': WEBUI_TOKEN}
+                });
                 if (!res.ok) return;
                 const logs = await res.json();
                 const term = document.getElementById('terminal-body');
@@ -486,8 +493,10 @@ HTML_INDEX = """<!DOCTYPE html>
             try {
                 const res = await fetch('/api/action', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WebUI-Token': WEBUI_TOKEN
+                    },
                     body: JSON.stringify({action: actionName, message: message})
                 });
                 const data = await res.json();
@@ -527,11 +536,18 @@ class WebUIHandler(BaseHTTPRequestHandler):
         return None
 
     def check_auth(self, set_cookie_on_success=False):
-        # 1. Check session cookie first (used by fetch() on API calls)
+        # 1. Check X-WebUI-Token header (used by all JS fetch() calls)
+        #    Token is injected into the HTML at page-serve time, so it's
+        #    available to JS without any cookie or Basic Auth relay.
+        token_header = self.headers.get('X-WebUI-Token', '')
+        if token_header and token_header == _SESSION_TOKEN:
+            return True
+
+        # 2. Check session cookie (backup path)
         if self._get_session_cookie() == _SESSION_TOKEN:
             return True
 
-        # 2. Fall back to Basic Auth (used by browser on first page load)
+        # 3. Fall back to Basic Auth (used by browser on first page load)
         auth_header = self.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Basic '):
             self.send_response(401)
@@ -580,13 +596,15 @@ class WebUIHandler(BaseHTTPRequestHandler):
 
         parsed = urlparse(self.path)
         if parsed.path == '/' or parsed.path == '/index.html':
+            # Inject session token into the HTML so JS can use it as a header
+            html_content = HTML_INDEX.replace('{{TOKEN}}', _SESSION_TOKEN)
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
-            # Set session cookie so subsequent fetch() calls to /api/* are authenticated
+            # Also set cookie as backup auth mechanism
             self.send_header('Set-Cookie',
                 f'{_SESSION_COOKIE_NAME}={_SESSION_TOKEN}; HttpOnly; SameSite=Strict; Path=/')
             self.end_headers()
-            self.wfile.write(HTML_INDEX.encode('utf-8'))
+            self.wfile.write(html_content.encode('utf-8'))
         elif parsed.path == '/api/stats':
             mem = get_mem_stats()
             with _status_lock:
