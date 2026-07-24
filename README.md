@@ -100,6 +100,8 @@ services:
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6
       - BACKUP_MAX_COUNT=10
+      # --- Timezone ---
+      - TZ=UTC
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups
@@ -126,11 +128,7 @@ services:
 | `DISCORD_WEBHOOK_URL` | (vacío) | URL del Webhook de Discord |
 | `DISCORD_LANGUAGE` | `es` | Idioma de las alertas de Discord (`es` / `en`) |
 | `AUTO_RESTART_HOURS` | `0` | Intervalo de reinicios programados en horas (0 = desactivado) |
-| `SCHEDULE_ENABLED` | `false` | Activa/desactiva el horario automático de encendido/apagado del servidor |
-| `SCHEDULE_START` | `20:00` | Hora de encendido en formato 24h HH:MM |
-| `SCHEDULE_STOP` | `00:00` | Hora de apagado en formato 24h HH:MM |
-| `TZ` | `UTC` | Zona horaria del contenedor para interpretar `SCHEDULE_START` / `SCHEDULE_STOP` |
-| `SCHEDULE_WARN_MINUTES` | `10` | Minutos de aviso previo in-game antes de apagar por horario |
+| `TZ` | `UTC` | Zona horaria del contenedor para notificaciones y logs |
 
 > 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (puertos, PUID/PGID, clústeres, rates y arkmanager).*
 
@@ -246,6 +244,8 @@ services:
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6
       - BACKUP_MAX_COUNT=10
+      # --- Timezone ---
+      - TZ=UTC
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups
@@ -272,11 +272,7 @@ services:
 | `DISCORD_WEBHOOK_URL` | (empty) | Discord Webhook URL for channel notifications |
 | `DISCORD_LANGUAGE` | `es` | Language for Discord notification messages (`es` / `en`) |
 | `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled) |
-| `SCHEDULE_ENABLED` | `false` | Enable/disable automatic server process power schedule |
-| `SCHEDULE_START` | `20:00` | Server power-on time in 24h HH:MM format |
-| `SCHEDULE_STOP` | `00:00` | Server power-off time in 24h HH:MM format |
-| `TZ` | `UTC` | Container timezone used to evaluate `SCHEDULE_START` / `SCHEDULE_STOP` |
-| `SCHEDULE_WARN_MINUTES` | `10` | In-game warning advance notice in minutes before scheduled shutdown |
+| `TZ` | `UTC` | Container timezone used for notifications and log timestamps |
 
 > 📌 *Check out the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the full list of advanced variables (ports, PUID/PGID, clusters, rates & arkmanager).*
 

@@ -80,6 +80,15 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 | `DISCORD_LANGUAGE` | `es` | Idioma de los mensajes de alerta en Discord (`es` / `en`). |
 | `AUTO_RESTART_HOURS` | `0` | Intervalo en horas para reinicios automáticos con avisos in-game (0 = desactivado). |
 
+##### ⏰ Horario Automático de Encendido/Apagado y Zona Horaria
+| Variable | Valor por Defecto | Descripción |
+|----------|-------------------|-------------|
+| `SCHEDULE_ENABLED` | `false` | Activa o desactiva la función de horario de encendido/apagado del proceso del servidor de ARK. |
+| `SCHEDULE_START` | `20:00` | Hora de encendido del servidor en formato de 24 horas `HH:MM` (ej. `20:00`). |
+| `SCHEDULE_STOP` | `00:00` | Hora de apagado del servidor en formato de 24 horas `HH:MM` (ej. `00:00` o `02:00`). Soporta medianoche. |
+| `TZ` | `UTC` | Zona horaria del contenedor (ej. `America/Guayaquil`, `Europe/Madrid`). Afecta la interpretación de `SCHEDULE_START` y `SCHEDULE_STOP` y la hora de los logs. |
+| `SCHEDULE_WARN_MINUTES` | `10` | Minutos de antelación para enviar aviso in-game y notificación a Discord antes de apagar por horario (0 = desactivado). |
+
 ##### ⚡ Multiplicadores de Rates Recomendados (Solo / Dúo)
 | Variable | Descripción | Valor Oficial | Recomendado PvE Dúo |
 |----------|-------------|---------------|----------------------|
@@ -233,6 +242,15 @@ This guide details how to fully customize your ARK server, from environment vari
 | `DISCORD_WEBHOOK_URL` | *(empty)* | Discord Webhook URL for status and event channel notifications. |
 | `DISCORD_LANGUAGE` | `es` | Language for Discord alert messages (`es` / `en`). |
 | `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled). |
+
+##### ⏰ Automatic Power Schedule & Timezone
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SCHEDULE_ENABLED` | `false` | Enables or disables automatic power start/stop schedule for the ARK server process. |
+| `SCHEDULE_START` | `20:00` | Server power-on time in 24-hour `HH:MM` format (e.g. `20:00`). |
+| `SCHEDULE_STOP` | `00:00` | Server power-off time in 24-hour `HH:MM` format (e.g. `00:00` or `02:00`). Supports midnight-crossing windows. |
+| `TZ` | `UTC` | Container timezone (e.g. `America/Guayaquil`, `Europe/Madrid`). Determines how `SCHEDULE_START`, `SCHEDULE_STOP`, and log timestamps are evaluated. |
+| `SCHEDULE_WARN_MINUTES` | `10` | Advance notice in minutes to send in-game chat broadcast and Discord notification before scheduled shutdown (0 = disabled). |
 
 ##### ⚡ Recommended Server Rates (Solo / Duo)
 | Variable | Description | Official Rate | Recommended PvE Duo |

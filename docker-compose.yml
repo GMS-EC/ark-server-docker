@@ -26,6 +26,8 @@ services:
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6
       - BACKUP_MAX_COUNT=10
+      # --- Timezone ---
+      - TZ=UTC
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups
