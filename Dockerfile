@@ -1,5 +1,5 @@
 #BUILD THE SERVER IMAGE
-FROM --platform=linux/amd64 cm2network/steamcmd:root
+FROM cm2network/steamcmd:root
 
 LABEL org.opencontainers.image.title="ARK: Survival Evolved Server" \
       org.opencontainers.image.description="ARK Dedicated Server with automated backups & arkmanager"
@@ -69,10 +69,10 @@ ENV HOME=/home/steam \
     CRAFT_SPEED_MULTIPLIER=""
 
 # Install ark-server-tools
-RUN curl -sL https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/netinstall.sh | bash -s steam --install-service
+RUN curl -sL https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/netinstall.sh | bash -s steam --install-service --commit=master
 
 # Create necessary directories
-RUN mkdir -p /home/steam/steamcmd/ark /home/steam/ark-backups && \
+RUN mkdir -p /home/steam/steamcmd/ark /home/steam/ark-backups /var/log/arktools && \
     chown -R steam:steam /home/steam/steamcmd/ark /home/steam/ark-backups /var/log/arktools
 
 COPY ./scripts /home/steam/scripts/
@@ -82,7 +82,7 @@ RUN chmod +x /home/steam/scripts/*.sh
 
 WORKDIR /home/steam
 
-HEALTHCHECK --start-period=10m --interval=1m --timeout=15s \
+HEALTHCHECK --start-period=25m --interval=1m --timeout=30s --retries=5 \
             CMD /home/steam/scripts/healthcheck.sh
 
 ENTRYPOINT ["/home/steam/scripts/init.sh"]

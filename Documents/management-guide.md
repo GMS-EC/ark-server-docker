@@ -114,23 +114,33 @@ Recibirás notificaciones automáticas para:
 
 ---
 
-#### ⏰ 5. Reinicios Programados (`AUTO_RESTART_HOURS`)
+#### ⏰ 5. Reinicios Programados vs. Horario Automático de Encendido/Apagado
 
-Configura `AUTO_RESTART_HOURS=24` en tu `.env` para reiniciar el servidor cada 24 horas con advertencias in-game (15m, 10m, 5m, 1m) y guardado automático previo.
+Es importante entender la diferencia entre ambas funciones y cuándo utilizar cada una:
+
+| Función | Variable | Propósito | Comportamiento | Casos de Uso Recomendados |
+|---------|----------|-----------|----------------|---------------------------|
+| **Reinicios Programados** | `AUTO_RESTART_HOURS` | Liberar memoria RAM, prevenir lag por uso prolongado y aplicar parches de mods. | Reinicia periódicamente el proceso del servidor activo (ej. cada 24h u 48h) enviando avisos in-game previamente. | Servidores activos 24/7 o abiertos muchas horas al día. |
+| **Horario de Encendido/Apagado** | `SCHEDULE_ENABLED` | Ahorrar procesamiento (CPU) y memoria (RAM) en el equipo host. | Apaga el proceso del servidor (`ShooterGameServer`) fuera del horario y lo enciende automáticamente al entrar en el horario. | Servidores privados, de amigos o clanes con horas de juego definidas (ej. 20:00 a 02:00). |
+
+##### 💡 ¿Qué ocurre si coinciden ambas funciones?
+Si tienes ambas opciones activas (ej. `AUTO_RESTART_HOURS=48` y `SCHEDULE_ENABLED=true`) y la hora de reinicio cae **fuera del horario de juego** (cuando el servidor está apagado):
+- **Omisión Inteligente:** El sistema detecta automáticamente que el servidor se encuentra apagado por horario y **omite el reinicio**, reiniciando el contador del temporizador.
+- **Sin falsos encendidos:** Esto evita que el servidor se encienda accidentalmente en la madrugada solo para cumplir con un ciclo de reinicio.
 
 ---
 
-#### ⏰ 6. Horario Automático de Encendido/Apagado (`SCHEDULE_ENABLED`)
+#### ⏰ 6. Configuración del Horario Automático (`SCHEDULE_ENABLED`)
 
 Permite apagar y encender automáticamente el **proceso** del servidor de ARK (mientras el contenedor Docker sigue corriendo en segundo plano) para ahorrar CPU y memoria RAM cuando nadie está jugando.
 
 Configuración en `.env`:
 ```bash
-SCHEDULE_ENABLED=true
-SCHEDULE_START=20:00
-SCHEDULE_STOP=00:00
-TZ=America/Guayaquil
-SCHEDULE_WARN_MINUTES=10
+SCHEDULE_ENABLED=true       # Valor por defecto: false (requiere establecerse en true)
+SCHEDULE_START=20:00        # Valor por defecto: "20:00"
+SCHEDULE_STOP=02:00         # Valor por defecto: "00:00"
+TZ=America/Guayaquil        # Valor por defecto: UTC
+SCHEDULE_WARN_MINUTES=10    # Valor por defecto: 10
 ```
 
 ##### Características del Horario Automático:
@@ -139,6 +149,26 @@ SCHEDULE_WARN_MINUTES=10
 3. **Protección de Jugadores Activos**: Si llega la hora de apagado pero hay 1 o más jugadores conectados, el servidor **no se apaga** y pospone la verificación hasta que todos se desconecten.
 4. **Advertencias Previas**: Envía una alerta in-game y notificación a Discord `SCHEDULE_WARN_MINUTES` minutos antes de apagar.
 5. **Zona Horaria (`TZ`)**: Respeta la zona horaria del usuario configurada en `TZ` (ej. `America/Guayaquil`, `Europe/Madrid`).
+
+---
+
+#### 🩺 7. Diagnóstico y Ajuste de Salud (`HEALTHCHECK`)
+
+El comprobador de salud integrado verifica periódicamente que el proceso de ARK y los puertos de red estén respondiendo.
+
+##### ⚠️ Servidores en Disco Duro Mecánico (HDD) o con Mods Pesados:
+Si tu servidor se ejecuta desde un disco HDD mecánico o tiene varios mods de Steam instalados, la carga inicial puede tardar entre **15 y 25 minutos**.
+- Durante la carga, Docker puede mostrar temporalmente el estado en **rojo (unhealthy)** si el período de inicio (`start_period`) es inferior a lo que tarda el disco en leer los archivos.
+- **Solución:** Agrega o ajusta la sección `healthcheck` en tu `docker-compose.yml` (o en CasaOS / Portainer) para otorgar un período de inicio más holgado:
+
+```yaml
+    healthcheck:
+      test: ["CMD", "/home/steam/scripts/healthcheck.sh"]
+      interval: 1m
+      timeout: 30s
+      retries: 5
+      start_period: 25m
+```
 
 </details>
 
@@ -241,23 +271,33 @@ DISCORD_LANGUAGE=es # Options: "es" (Spanish, default) or "en" (English)
 
 ---
 
-#### ⏰ 5. Scheduled Restarts (`AUTO_RESTART_HOURS`)
+#### ⏰ 5. Scheduled Restarts vs. Automatic Power Schedule
 
-Set `AUTO_RESTART_HOURS=24` in `.env` for periodic restarts with 15m, 10m, 5m, 1m in-game warnings and pre-save.
+It is important to understand the difference between both features and when to use each:
+
+| Feature | Variable | Purpose | Behavior | Recommended Use Cases |
+|---------|----------|---------|----------|-----------------------|
+| **Scheduled Restarts** | `AUTO_RESTART_HOURS` | Free RAM memory, prevent long-term lag, and apply mod patches. | Periodically restarts the running server process (e.g. every 24h or 48h) with in-game advance warnings. | Servers running 24/7 or active for many hours a day. |
+| **Power Schedule** | `SCHEDULE_ENABLED` | Save host CPU and RAM resources during off-peak hours. | Stops the game process (`ShooterGameServer`) outside schedule and automatically starts it during schedule. | Private servers, friend groups, or small clans with defined playing hours (e.g., 20:00 to 02:00). |
+
+##### 💡 What happens if both features overlap?
+If both options are active (e.g. `AUTO_RESTART_HOURS=48` and `SCHEDULE_ENABLED=true`) and the restart interval triggers **outside scheduled playing hours** (when the server process is stopped):
+- **Smart Skip:** The system automatically detects that the server is off due to schedule and **skips the restart**, resetting the timer count.
+- **No Unintended Power-Ons:** This prevents the server from accidentally waking up in the middle of the night just to perform a restart cycle.
 
 ---
 
-#### ⏰ 6. Automatic Power Schedule (`SCHEDULE_ENABLED`)
+#### ⏰ 6. Power Schedule Setup (`SCHEDULE_ENABLED`)
 
 Allows automatically starting and stopping the ARK server **process** (while the Docker container continues running in background) to save CPU and RAM resources during off-peak hours.
 
 `.env` Configuration:
 ```bash
-SCHEDULE_ENABLED=true
-SCHEDULE_START=20:00
-SCHEDULE_STOP=00:00
-TZ=America/Guayaquil
-SCHEDULE_WARN_MINUTES=10
+SCHEDULE_ENABLED=true       # Default: false (must be set to true to enable)
+SCHEDULE_START=20:00        # Default: "20:00"
+SCHEDULE_STOP=02:00         # Default: "00:00"
+TZ=America/Guayaquil        # Default: UTC
+SCHEDULE_WARN_MINUTES=10    # Default: 10
 ```
 
 ##### Key Power Schedule Features:
@@ -266,5 +306,25 @@ SCHEDULE_WARN_MINUTES=10
 3. **Active Player Protection**: If shutdown time arrives while 1 or more players are online, the server **postpones shutdown** until all players disconnect.
 4. **Advance Warning**: Sends in-game chat broadcasts and Discord alerts `SCHEDULE_WARN_MINUTES` minutes before shutting down.
 5. **Timezone Aware (`TZ`)**: Evaluates schedule times based on the container's configured `TZ` variable (e.g., `America/Guayaquil`, `Europe/Madrid`).
+
+---
+
+#### 🩺 7. Healthcheck Diagnostics & Tuning (`HEALTHCHECK`)
+
+The built-in health check periodically verifies that the ARK process and network query ports are responding.
+
+##### ⚠️ Mechanical Hard Drives (HDD) or Heavy Mod Packs:
+If your server runs on a mechanical HDD or loads multiple Steam Workshop mods, initial startup can take **15 to 25 minutes**.
+- During startup, Docker might temporarily mark the container status as **unhealthy** if the `start_period` is shorter than the disk read time.
+- **Solution:** Add or customize the `healthcheck` section in your `docker-compose.yml` (or in CasaOS / Portainer settings) to grant a generous start period:
+
+```yaml
+    healthcheck:
+      test: ["CMD", "/home/steam/scripts/healthcheck.sh"]
+      interval: 1m
+      timeout: 30s
+      retries: 5
+      start_period: 25m
+```
 
 </details>

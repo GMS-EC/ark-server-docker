@@ -17,7 +17,7 @@ Bienvenido al centro de documentación oficial del servidor dedicado de ARK: Sur
    - **Conexión sin abrir puertos usando ZeroTier**: Configuración paso a paso para jugar con amigos sin tocar el router.
 
 2. [**⚙️ Guía de Configuración Avanzada (`configuration-guide.md`)**](configuration-guide.md#-español)
-   - Explicación completa de todas las variables de entorno (`.env`).
+   - Explicación completa de todas las variables de entorno (`.env`) y sus valores por defecto (`UPDATE_ON_START`, `SCHEDULE_ENABLED`, `BACKUP_MAX_COUNT`).
    - Multiplicadores recomendados para servidores Solo/Dúo (XP, Doma, Crianza, Crafteo).
    - Personalización directa de archivos `GameUserSettings.ini` y `Game.ini`.
    - Inyección de opciones avanzadas con `ARKMANAGER_OPTS` y flags en `ADDITIONAL_ARGS`.
@@ -25,7 +25,8 @@ Bienvenido al centro de documentación oficial del servidor dedicado de ARK: Sur
 3. [**🛠️ Guía de Administración (`management-guide.md`)**](management-guide.md#-español)
    - Comandos principales de `arkmanager`.
    - Gestión de respaldos automáticos y uso del script `restore.sh`.
-   - Notificaciones Webhook a Discord y reinicios programados.
+   - Notificaciones Webhook a Discord y diferencia entre Reinicios Programados (`AUTO_RESTART_HOURS`) vs. Horario Automático (`SCHEDULE_ENABLED`).
+   - Diagnóstico y ajuste de salud (`HEALTHCHECK`) para servidores en discos mecánicos (HDD) o con mods pesados.
 
 ---
 
@@ -39,7 +40,7 @@ Welcome to the official documentation center for the ARK: Survival Evolved Dedic
    - **Connecting without Port Forwarding via ZeroTier**: Step-by-step setup to play with friends without touching your router.
 
 2. [**⚙️ Advanced Configuration Guide (`configuration-guide.md`)**](configuration-guide.md#-english)
-   - Complete breakdown of all environment variables (`.env`).
+   - Complete breakdown of all environment variables (`.env`) and default values (`UPDATE_ON_START`, `SCHEDULE_ENABLED`, `BACKUP_MAX_COUNT`).
    - Recommended rates for Solo/Duo servers (XP, Taming, Breeding, Crafting).
    - Direct customization of `GameUserSettings.ini` and `Game.ini`.
    - Advanced options injection via `ARKMANAGER_OPTS` and custom flags in `ADDITIONAL_ARGS`.
@@ -47,4 +48,5 @@ Welcome to the official documentation center for the ARK: Survival Evolved Dedic
 3. [**🛠️ Server Management Guide (`management-guide.md`)**](management-guide.md#-english)
    - Common `arkmanager` commands.
    - Managing automatic backups and using `restore.sh`.
-   - Discord Webhook alerts and scheduled server restarts.
+   - Discord Webhook alerts and Scheduled Restarts (`AUTO_RESTART_HOURS`) vs. Power Schedule (`SCHEDULE_ENABLED`).
+   - Healthcheck diagnostics and tuning (`HEALTHCHECK`) for Mechanical HDDs or heavy mod setups.

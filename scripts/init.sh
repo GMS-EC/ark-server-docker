@@ -15,6 +15,13 @@ fi
 chown -R steam:steam /home/steam /var/log/arktools
 chown -R steam:steam /etc/arkmanager
 
+# Configure system timezone from TZ variable
+if [ -n "${TZ}" ] && [ -f "/usr/share/zoneinfo/${TZ}" ]; then
+    echo "Setting container timezone to ${TZ}"
+    ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime
+    echo "${TZ}" > /etc/timezone
+fi
+
 # Trap signals for graceful shutdown
 trap 'su - steam -c "arkmanager stop --saveworld @main" && exit 0' SIGTERM SIGINT
 
