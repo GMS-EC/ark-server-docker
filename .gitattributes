@@ -4,3 +4,7 @@
 # Force specific files to always use LF line endings
 Dockerfile text eol=lf
 *.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+.env.example text eol=lf
+

@@ -20,7 +20,7 @@ services:
       - WORLD=TheIsland
       - SERVER_PVE=false
       - BATTLEEYE=false
-      - RCON_ENABLED=true
+      - RCON_ENABLED=false
       - MOD_IDS=
       # --- Backup Settings ---
       - BACKUP_ENABLED=true

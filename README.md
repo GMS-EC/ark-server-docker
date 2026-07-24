@@ -53,13 +53,30 @@ Para guías detalladas paso a paso sobre conexión, configuración y administrac
 - **Soporte para Mods y Clústeres**: Instalación automática de mods de la Workshop (`MOD_IDS`) y viajes entre servidores (`CLUSTER_ID`).
 - **Healthcheck Inteligente**: Detecta cuando el servidor está online o cargando mapas/mods pesados.
 
-### 🖥️ Requisitos del Servidor
+### 🖥️ Requisitos del Servidor y Guía de Dimensionamiento
 
-| Recurso | Mínimo | Recomendado |
-|---------|--------|-------------|
+| Recurso | Mínimo | Recomendado (1 Mapa) |
+|---------|--------|----------------------|
 | CPU     | 2 núcleos | 4+ núcleos  |
 | RAM     | 6GB    | 8GB+        |
 | Almacenamiento | 30GB | 50GB+    |
+
+#### 📊 Referencia Orientativa de Consumo de RAM (1 Mapa)
+
+> [!NOTE]
+> *Los siguientes valores son orientativos y dependen del mapa seleccionado, la cantidad y tipo de mods instalados, y la escala de construcciones/estructuras de los jugadores.*
+
+- **Escenario Base Referencial**: Un servidor en `TheIsland` con 3 jugadores simultáneos y ~6 mods livianos (utilidad + 1 mod de criatura) opera cómodamente con **8GB de RAM**.
+- **Servidores con Mods Pesados o Mapas Extensos**: Mapas grandes (como Ragnarok, Genesis o Fjordur) o packs de mods pesados pueden requerir entre **10GB y 12GB+ de RAM** por mapa.
+
+#### 🌐 Dimensionamiento para Clústeres Multi-mapa (`CLUSTER_ID`)
+
+Si planeas configurar un **clúster multi-mapa** para permitir viajes entre servidores:
+
+1. **Instancias Independientes**: Un clúster **no** es un "único servidor más grande". Cada mapa adicional en el clúster ejecuta su propio proceso ejecutable (`ShooterGameServer`) en paralelo, con su propio archivo de guardado y configuración.
+2. **Escalamiento Lineal de RAM**: El consumo de memoria RAM escala de forma **prácticamente lineal por cada mapa adicional**, casi de forma independiente a la cantidad de jugadores conectados en cada uno (el costo base de cargar el mapa en memoria existe incluso con 0 jugadores).
+3. **Presupuesto de Memoria**: Si tu mapa base requiere 8GB de RAM, agregar un segundo mapa al clúster (ej. *ScorchedEarth* además de *TheIsland*) requerirá presupuestar aproximadamente el doble de memoria (un segundo bloque completo de memoria para la segunda instancia), y así sucesivamente por cada mapa adicional.
+4. **Monitoreo Recomendado**: Se recomienda verificar el uso real de memoria de tus contenedores mediante `docker stats` al agregar cada mapa nuevo al clúster.
 
 ### 🚀 Modo de Uso Rápido
 
@@ -197,13 +214,30 @@ For detailed step-by-step guides on connecting, configuring, and managing your s
 - **Mod & Cluster Support**: Automatic Steam Workshop mod installation (`MOD_IDS`) and cross-server transfer configuration (`CLUSTER_ID`).
 - **Smart Healthcheck**: Accurately detects when the server is online or stuck loading heavy mods/maps.
 
-### 🖥️ Server Requirements
+### 🖥️ Server Requirements & Sizing Guide
 
-| Resource | Minimum | Recommended |
-|----------|---------|-------------|
-| CPU      | 2 cores | 4+ cores    |
-| RAM      | 6GB     | 8GB+        |
-| Storage  | 30GB    | 50GB+       |
+| Resource | Minimum | Recommended (1 Map) |
+|----------|---------|---------------------|
+| CPU      | 2 cores | 4+ cores            |
+| RAM      | 6GB     | 8GB+                |
+| Storage  | 30GB    | 50GB+               |
+
+#### 📊 Orientative RAM Consumption Reference (1 Map)
+
+> [!NOTE]
+> *The following values are estimated guidelines and vary depending on the chosen map, installed mods, and player building structures.*
+
+- **Real Reference Scenario**: A server running `TheIsland` with 3 active players and ~6 lightweight mods (utility + 1 creature mod) operates comfortably with **8GB of RAM**.
+- **Heavy Mods or Large Maps**: Large expansion maps (such as Ragnarok, Genesis, or Fjordur) or heavy modpacks may require **10GB to 12GB+ of RAM** per map.
+
+#### 🌐 Sizing Guidelines for Multi-map Clusters (`CLUSTER_ID`)
+
+If you plan to deploy a **multi-map cluster** allowing players to travel between servers:
+
+1. **Independent Instances**: A cluster is **not** a single larger server. Every additional map in the cluster runs its own completely separate server process (`ShooterGameServer`) in parallel, with its own save data and configuration.
+2. **Linear RAM Scaling**: Memory consumption scales **almost linearly for each additional map**, nearly independent of the number of active players connected to each map (the base memory cost of loading the map exists even with 0 active players).
+3. **Memory Budgeting**: If your base map requires 8GB of RAM, adding a second map to the cluster (e.g. *ScorchedEarth* alongside *TheIsland*) requires budgeting approximately double the memory (an additional full memory block for the second instance), scaling further with each added map.
+4. **Recommended Monitoring**: We strongly advise monitoring real-time container memory usage with `docker stats` as you add each new map to your cluster.
 
 ### 🚀 Quick Start
 

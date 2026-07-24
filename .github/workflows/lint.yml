@@ -1,4 +1,4 @@
-name: Lint Scripts
+name: Lint & Build Check
 
 on:
   push:
@@ -6,13 +6,32 @@ on:
   pull_request:
 
 jobs:
-  shellcheck-syntax:
+  shellcheck:
+    name: ShellCheck Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Check bash syntax
         run: |
           for f in scripts/*.sh; do
-            echo "Checking $f"
+            echo "Checking syntax for $f"
             bash -n "$f"
           done
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@v2
+        with:
+          severity: warning
+
+  build-check:
+    name: Verify Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker Image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          platforms: linux/amd64
