@@ -11,10 +11,12 @@ from socketserver import ThreadingMixIn
 from urllib.parse import parse_qs, urlparse
 
 PORT = 8080
-ADMIN_PASS = os.environ.get('ADMIN_PASSWORD', 'adminpass')
-SESSION_NAME = os.environ.get('SESSION_NAME', 'ARK Server')
-WORLD_MAP = os.environ.get('WORLD', 'TheIsland')
-MAX_PLAYERS = os.environ.get('MAX_PLAYERS', '10')
+ADMIN_PASS = os.environ.get('ADMIN_PASSWORD', 'adminpass').strip('\r\n ')
+if not ADMIN_PASS:
+    ADMIN_PASS = 'adminpass'
+SESSION_NAME = os.environ.get('SESSION_NAME', 'ARK Server').strip('\r\n ')
+WORLD_MAP = os.environ.get('WORLD', 'TheIsland').strip('\r\n ')
+MAX_PLAYERS = os.environ.get('MAX_PLAYERS', '10').strip('\r\n ')
 
 # Threaded HTTP Server to prevent any request blocking
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -452,18 +454,33 @@ HTML_INDEX = """<!DOCTYPE html>
 
 class WebUIHandler(BaseHTTPRequestHandler):
     def check_auth(self):
-        if not ADMIN_PASS:
-            return True
         auth_header = self.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Basic '):
-            try:
-                encoded = auth_header.split(' ', 1)[1]
-                decoded = base64.b64decode(encoded).decode('utf-8')
-                username, password = decoded.split(':', 1)
-                if password == ADMIN_PASS:
-                    return True
-            except Exception:
-                pass
+        if not auth_header or not auth_header.startswith('Basic '):
+            self.send_response(401)
+            self.send_header('WWW-Authenticate', 'Basic realm="ARK Server Web UI"')
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'401 Unauthorized')
+            return False
+
+        try:
+            encoded = auth_header.split(' ', 1)[1].strip()
+            decoded = base64.b64decode(encoded).decode('utf-8', errors='ignore')
+            if ':' in decoded:
+                user, password = decoded.split(':', 1)
+            else:
+                password = decoded
+
+            clean_input = password.strip('\r\n ')
+            clean_expected = ADMIN_PASS.strip('\r\n ')
+
+            if clean_input == clean_expected:
+                return True
+            else:
+                print(f"[AUTH FAIL] Input password length {len(clean_input)} did not match expected length {len(clean_expected)}")
+        except Exception as e:
+            print(f"[AUTH ERROR] Exception parsing Basic Auth header: {e}")
+
         self.send_response(401)
         self.send_header('WWW-Authenticate', 'Basic realm="ARK Server Web UI"')
         self.send_header('Content-Type', 'text/plain')
