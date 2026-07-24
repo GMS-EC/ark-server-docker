@@ -172,6 +172,36 @@ Si tu servidor se ejecuta desde un disco HDD mecánico o tiene varios mods de St
       start_period: 25m
 ```
 
+---
+
+#### 📊 8. Guía de Dimensionamiento de Memoria RAM por Mapa (`WORLD`)
+
+> [!IMPORTANT]
+> **Criterio de Dimensionamiento Real:** En un servidor activo donde los jugadores construyen bases masivas y acumulan dinosaurios (con o sin mods), la memoria RAM debe presupuestarse pensando en la progresión a largo plazo para evitar cierres por falta de memoria (OOM). Ten en cuenta que **cada jugador adicional conectado consume aproximadamente entre 100 MB y 200 MB de RAM extra** (por renderizado de inventarios, estructuras cercanas y carga de dinos salvajes en su radio de visión).
+
+##### 🧩 Impacto Estimado de Mods (`MOD_IDS`) en la Memoria RAM:
+* 🛠️ **Mods Livianos (QoL y Utilidad):** *S+, SS, Awesome Spyglass, Stacking Mods, Auto Unlock.* ➔ **+50 MB a 150 MB** por mod.
+* 🦖 **Mods Medianos (Decoración y Criaturas):** *Eco's Decor, Kraken's Better Dinos, Shiny! Dinos, Additions.* ➔ **+200 MB a 500 MB** por mod.
+* ⚡ **Mods Pesados / Overhaul (Conversión Total):** *Primal Fear, Annunaki Genesis, Extinction Core, Pugnacia.* ➔ **+1.5 GB a 3 GB+** adicionales por modpack.
+
+| Mapa (`WORLD`) | 1-3 Jugadores (Vanilla) | Con Mods | 5+ Jugadores (Vanilla) | Con Mods |
+|----------------|---------------------------|----------|------------------------|----------|
+| `TheIsland` | **6 GB** | **6 - 8 GB** | **7 - 8 GB** | **8 - 10 GB** |
+| `ScorchedEarth_P` | **6 GB** | **6 - 8 GB** | **7 - 8 GB** | **8 - 10 GB** |
+| `TheCenter` | **6 - 7 GB** | **7 - 9 GB** | **8 - 9 GB** | **10 - 12 GB** |
+| `Aberration_P` | **6 - 7 GB** | **7 - 9 GB** | **8 - 10 GB** | **10 - 12 GB** |
+| `Extinction` | **7 - 8 GB** | **8 - 10 GB** | **9 - 10 GB** | **10 - 12 GB** |
+| `Valguero_P` | **7 - 8 GB** | **8 - 10 GB** | **9 - 10 GB** | **10 - 12 GB** |
+| `Ragnarok` | **7 - 8 GB** | **8 - 10 GB** | **10 - 11 GB** | **12 - 14 GB** |
+| `Genesis` (Gen 1) | **7 - 8 GB** | **8 - 10 GB** | **10 - 11 GB** | **12 - 14 GB** |
+| `CrystalIsles` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `LostIsland` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `Fjordur` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `Genesis2` (Gen 2) | **9 - 10 GB** | **10 - 12 GB** | **12 - 13 GB** | **14 - 16 GB** |
+
+> [!TIP]
+> **Optimización de Memoria SWAP en el Host:** Si tu servidor se encuentra cerca del límite de RAM recomendado, asegúrate de contar con un archivo o partición **SWAP bien configurado (4GB - 8GB) sobre discos SSD o NVMe en el sistema anfitrión (Host)**. Esto amortigua los picos temporales de consumo de memoria durante el autoguardado automático del mapa (`saveworld`), evitando caídas imprevistas por falta de memoria (OOM Kills).
+
 </details>
 
 ---
@@ -330,5 +360,35 @@ If your server runs on a mechanical HDD or loads multiple Steam Workshop mods, i
       retries: 5
       start_period: 25m
 ```
+
+---
+
+#### 📊 8. RAM Sizing Guide by Official Map (`WORLD`)
+
+> [!IMPORTANT]
+> **Real-World Sizing Guideline:** On an active server where players build massive bases and hoard tamed dinos (with or without mods), RAM allocation must be budgeted for long-term progression to prevent Out-Of-Memory (OOM) crashes. Keep in mind that **each additional connected player consumes approximately 100 MB to 200 MB of extra RAM** (due to inventory streaming, nearby structure loading, and wild dino grid activation around their vision radius).
+
+##### 🧩 Estimated RAM Impact of Steam Workshop Mods (`MOD_IDS`):
+* 🛠️ **Lightweight Mods (QoL & Utility)**: *S+, SS, Awesome Spyglass, Stacking Mods, Auto Unlock.* ➔ **~50 MB - 150 MB** per mod.
+* 🦖 **Medium Mods (Decor & Custom Creatures)**: *Eco's Decor, Kraken's Better Dinos, Shiny! Dinos, Additions.* ➔ **~200 MB - 500 MB** per mod.
+* ⚡ **Heavy / Overhaul Mods (Total Conversion)**: *Primal Fear, Annunaki Genesis, Extinction Core, Pugnacia.* ➔ **1.5 GB - 3 GB+** additional per full modpack.
+
+| Map (`WORLD`) | 1-3 Players (Vanilla) | With Mods | 5+ Players (Vanilla) | With Mods |
+|---------------|-----------------------|-----------|----------------------|-----------|
+| `TheIsland` | **6 GB** | **6 - 8 GB** | **7 - 8 GB** | **8 - 10 GB** |
+| `ScorchedEarth_P` | **6 GB** | **6 - 8 GB** | **7 - 8 GB** | **8 - 10 GB** |
+| `TheCenter` | **6 - 7 GB** | **7 - 9 GB** | **8 - 9 GB** | **10 - 12 GB** |
+| `Aberration_P` | **6 - 7 GB** | **7 - 9 GB** | **8 - 10 GB** | **10 - 12 GB** |
+| `Extinction` | **7 - 8 GB** | **8 - 10 GB** | **9 - 10 GB** | **10 - 12 GB** |
+| `Valguero_P` | **7 - 8 GB** | **8 - 10 GB** | **9 - 10 GB** | **10 - 12 GB** |
+| `Ragnarok` | **7 - 8 GB** | **8 - 10 GB** | **10 - 11 GB** | **12 - 14 GB** |
+| `Genesis` (Gen 1) | **7 - 8 GB** | **8 - 10 GB** | **10 - 11 GB** | **12 - 14 GB** |
+| `CrystalIsles` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `LostIsland` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `Fjordur` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `Genesis2` (Gen 2) | **9 - 10 GB** | **10 - 12 GB** | **12 - 13 GB** | **14 - 16 GB** |
+
+> [!TIP]
+> **Host SWAP Memory Optimization:** If your server is running close to the recommended RAM limits, ensure your **host system has a properly configured SWAP space (4GB - 8GB) on SSD or NVMe storage**. SWAP cushions temporary memory spikes during automatic world saves (`saveworld`), preventing sudden Out-Of-Memory crashes (OOM Kills).
 
 </details>

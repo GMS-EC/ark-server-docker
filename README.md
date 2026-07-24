@@ -61,13 +61,11 @@ Para guías detalladas paso a paso sobre conexión, configuración y administrac
 | RAM     | 6GB    | 8GB+        |
 | Almacenamiento | 30GB | 50GB+    |
 
-#### 📊 Referencia Orientativa de Consumo de RAM (1 Mapa)
+#### 📊 Referencia Orientativa de Consumo de RAM
 
 > [!NOTE]
-> *Los siguientes valores son orientativos y dependen del mapa seleccionado, la cantidad y tipo de mods instalados, y la escala de construcciones/estructuras de los jugadores.*
-
-- **Escenario Base Referencial**: Un servidor en `TheIsland` con 3 jugadores simultáneos y ~6 mods livianos (utilidad + 1 mod de criatura) opera cómodamente con **8GB de RAM**.
-- **Servidores con Mods Pesados o Mapas Extensos**: Mapas grandes (como Ragnarok, Genesis o Fjordur) o packs de mods pesados pueden requerir entre **10GB y 12GB+ de RAM** por mapa.
+> *Un servidor en `TheIsland` con 3 jugadores y mods de utilidad opera cómodamente con **8GB de RAM**. Mapas extensos (como Ragnarok, Genesis o Fjordur) o packs de mods pesados pueden requerir entre **10GB y 14GB+ de RAM** por mapa.*
+> 📌 *Consulta la [Guía de Administración y Dimensionamiento por Mapa](Documents/management-guide.md#-español) para ver la tabla completa de consumo de memoria RAM por cada mapa oficial.*
 
 #### 🌐 Dimensionamiento para Clústeres Multi-mapa (`CLUSTER_ID`)
 
@@ -245,13 +243,11 @@ For detailed step-by-step guides on connecting, configuring, and managing your s
 | RAM      | 6GB     | 8GB+                |
 | Storage  | 30GB    | 50GB+               |
 
-#### 📊 Orientative RAM Consumption Reference (1 Map)
+#### 📊 Orientative RAM Consumption Reference
 
 > [!NOTE]
-> *The following values are estimated guidelines and vary depending on the chosen map, installed mods, and player building structures.*
-
-- **Real Reference Scenario**: A server running `TheIsland` with 3 active players and ~6 lightweight mods (utility + 1 creature mod) operates comfortably with **8GB of RAM**.
-- **Heavy Mods or Large Maps**: Large expansion maps (such as Ragnarok, Genesis, or Fjordur) or heavy modpacks may require **10GB to 12GB+ of RAM** per map.
+> *A server running `TheIsland` with 3 active players and utility mods operates comfortably with **8GB of RAM**. Large expansion maps (such as Ragnarok, Genesis, or Fjordur) or heavy modpacks can require **10GB to 14GB+ of RAM** per map.*
+> 📌 *Check the [Server Management & Map RAM Sizing Guide](Documents/management-guide.md#-english) for the complete RAM consumption breakdown by official map.*
 
 #### 🌐 Sizing Guidelines for Multi-map Clusters (`CLUSTER_ID`)
 
