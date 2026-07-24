@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import time
+import re
 import base64
 import subprocess
 import threading
@@ -27,6 +28,7 @@ _prev_total_cpu = 0
 _prev_idle_cpu = 0
 _cpu_percent = 0.0
 _cached_server_status = "starting"
+_cached_players_online = 0
 _status_lock = threading.Lock()
 
 def update_cpu_percent():
@@ -47,33 +49,51 @@ def update_cpu_percent():
         pass
 
 def update_server_status():
-    global _cached_server_status
+    global _cached_server_status, _cached_players_online
     status = "starting"
+    players = 0
     try:
-        output = subprocess.check_output(['pgrep', '-f', 'ShooterGameServer'], stderr=subprocess.STDOUT).decode().strip()
-        if output:
+        result = subprocess.run(
+            ['pgrep', '-f', 'ShooterGameServer'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5
+        )
+        if result.returncode == 0 and result.stdout.strip():
             # Process is running, check if arkmanager reports online
             try:
-                st_cmd = subprocess.run(['arkmanager', 'status', '@main'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=4)
-                st_text = st_cmd.stdout.decode()
+                st_cmd = subprocess.run(
+                    ['arkmanager', 'status', '@main'],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=6
+                )
+                st_text = st_cmd.stdout.decode(errors='replace')
                 if 'Server online: Yes' in st_text or 'Server running: Yes' in st_text:
                     status = "online"
+                    # Try to extract active player count from status output
+                    m = re.search(r'Active Players:\s*(\d+)', st_text, re.IGNORECASE)
+                    if m:
+                        players = int(m.group(1))
                 else:
                     status = "starting"
             except Exception:
                 status = "starting"
         else:
             # Check if steamcmd or arkmanager is running updates/install
-            pg_output = subprocess.check_output(['pgrep', '-f', 'arkmanager|steamcmd'], stderr=subprocess.STDOUT).decode().strip()
-            if pg_output:
-                status = "starting"
-            else:
+            try:
+                pg2 = subprocess.run(
+                    ['pgrep', '-f', 'arkmanager|steamcmd'],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5
+                )
+                if pg2.returncode == 0 and pg2.stdout.strip():
+                    status = "starting"
+                else:
+                    status = "offline"
+            except Exception:
                 status = "offline"
     except Exception:
         status = "starting"
 
     with _status_lock:
         _cached_server_status = status
+        _cached_players_online = players
 
 def background_worker():
     while True:
@@ -123,7 +143,8 @@ def get_mem_stats():
                 free = mem_info.get('MemFree', 0)
                 buffers = mem_info.get('Buffers', 0)
                 cached = mem_info.get('Cached', 0)
-                mem_used = max(0, total - free - buffers - cached)
+                sreclaimable = mem_info.get('SReclaimable', 0)
+                mem_used = max(0, total - free - buffers - cached - sreclaimable)
         except Exception:
             pass
 
@@ -153,7 +174,11 @@ def get_recent_logs(lines=100):
             except Exception:
                 pass
     if not combined_lines:
-        return ["Iniciando proceso de ARK y cargando componentes en memoria..."]
+        return [
+            "[WebUI] Iniciando proceso de ARK y cargando componentes en memoria...",
+            "[WebUI] Los logs aparecerán aquí una vez que el servidor comience a escribirlos.",
+            f"[WebUI] Rutas monitoreadas: {', '.join(log_paths)}"
+        ]
     return combined_lines[-lines:]
 
 HTML_INDEX = """<!DOCTYPE html>
@@ -312,20 +337,22 @@ HTML_INDEX = """<!DOCTYPE html>
                 </div>
             </div>
             <div id="status-pill" class="status-pill status-starting">
-                <span id="status-text">⏳ Cargando...</span>
+                <span id="status-text">⏳ Conectando...</span>
             </div>
         </header>
+
+        <div id="api-error" style="display:none; background:rgba(248,81,73,0.15); border:1px solid rgba(248,81,73,0.4); color:#ff7b72; padding:10px 16px; border-radius:6px; margin-bottom:18px; font-size:0.9rem;">⚠️ No se pudo conectar con la API del servidor. Verifica que el WebUI esté corriendo correctamente.</div>
 
         <div class="grid">
             <div class="card">
                 <div class="card-title">Memoria RAM</div>
-                <div class="card-value" id="ram-val">0 GB / 0 GB</div>
+                <div class="card-value" id="ram-val">-- / --</div>
                 <div class="progress-bar"><div class="progress-fill" id="ram-fill" style="background:#388bfd;"></div></div>
-                <div class="card-sub" id="ram-pct">0% en uso</div>
+                <div class="card-sub" id="ram-pct">Obteniendo datos...</div>
             </div>
             <div class="card">
                 <div class="card-title">Uso de CPU</div>
-                <div class="card-value" id="cpu-val">0%</div>
+                <div class="card-value" id="cpu-val">--%</div>
                 <div class="progress-bar"><div class="progress-fill" id="cpu-fill" style="background:#2ea44f;"></div></div>
                 <div class="card-sub">Capacidad CPU Host</div>
             </div>
@@ -341,7 +368,7 @@ HTML_INDEX = """<!DOCTYPE html>
                 <span>📜 Consola / Log Servidor (live tail)</span>
                 <span style="cursor:pointer;" onclick="fetchLogs()">🔄 Actualizar</span>
             </div>
-            <div class="terminal-body" id="terminal-body">Cargando logs del sistema...</div>
+            <div class="terminal-body" id="terminal-body">Conectando con el servidor...</div>
         </div>
 
         <div class="card">
@@ -365,21 +392,40 @@ HTML_INDEX = """<!DOCTYPE html>
     </div>
 
     <script>
+        let _consecutiveErrors = 0;
+
         function formatBytes(bytes) {
-            if (bytes === 0) return '0 GB';
+            if (!bytes || bytes === 0) return '0 GB';
             const gb = bytes / (1024 * 1024 * 1024);
             return gb.toFixed(1) + ' GB';
         }
 
+        function showApiError(show) {
+            document.getElementById('api-error').style.display = show ? 'block' : 'none';
+        }
+
         async function fetchStats() {
             try {
-                const res = await fetch('/api/stats', { credentials: 'same-origin' });
-                if (!res.ok) return;
+                const res = await fetch('/api/stats', { credentials: 'include' });
+                if (res.status === 401) {
+                    // Session expired, reload to re-prompt credentials
+                    window.location.reload();
+                    return;
+                }
+                if (!res.ok) {
+                    _consecutiveErrors++;
+                    // Only show error after ~75 s of real API failures (30 x 2.5 s)
+                    // This avoids false alarms during long HDD startups (up to 25 min)
+                    if (_consecutiveErrors >= 30) showApiError(true);
+                    return;
+                }
+                _consecutiveErrors = 0;
+                showApiError(false);
                 const data = await res.json();
-                
+
                 document.getElementById('session-name').innerText = data.session_name || 'ARK Server';
                 document.getElementById('world-map').innerText = data.world || 'TheIsland';
-                
+
                 // Status
                 const pill = document.getElementById('status-pill');
                 const stText = document.getElementById('status-text');
@@ -395,28 +441,43 @@ HTML_INDEX = """<!DOCTYPE html>
                 }
 
                 // RAM
-                document.getElementById('ram-val').innerText = `${formatBytes(data.mem_used_bytes)} / ${formatBytes(data.mem_limit_bytes)}`;
-                document.getElementById('ram-pct').innerText = `${data.mem_percent}% en uso`;
-                document.getElementById('ram-fill').style.width = `${Math.min(100, data.mem_percent)}%`;
+                const memUsed = data.mem_used_bytes || 0;
+                const memLimit = data.mem_limit_bytes || 0;
+                const memPct = data.mem_percent || 0;
+                document.getElementById('ram-val').innerText = `${formatBytes(memUsed)} / ${formatBytes(memLimit)}`;
+                document.getElementById('ram-pct').innerText = `${memPct}% en uso`;
+                document.getElementById('ram-fill').style.width = `${Math.min(100, memPct)}%`;
 
                 // CPU
-                document.getElementById('cpu-val').innerText = `${data.cpu_percent}%`;
-                document.getElementById('cpu-fill').style.width = `${Math.min(100, data.cpu_percent)}%`;
+                const cpu = data.cpu_percent || 0;
+                document.getElementById('cpu-val').innerText = `${cpu}%`;
+                document.getElementById('cpu-fill').style.width = `${Math.min(100, cpu)}%`;
 
-                // Players
-                document.getElementById('players-val').innerText = `${data.players_online} / ${data.max_players}`;
-            } catch(e){}
+                // Players — only show a number when server is online
+                const maxP = data.max_players || '--';
+                const onlineP = (data.server_status === 'online') ? (data.players_online || 0) : '--';
+                document.getElementById('players-val').innerText = `${onlineP} / ${maxP}`;
+            } catch(e) {
+                _consecutiveErrors++;
+                if (_consecutiveErrors >= 30) showApiError(true);
+            }
         }
 
         async function fetchLogs() {
             try {
-                const res = await fetch('/api/logs', { credentials: 'same-origin' });
+                const res = await fetch('/api/logs', { credentials: 'include' });
                 if (!res.ok) return;
                 const logs = await res.json();
                 const term = document.getElementById('terminal-body');
-                term.innerText = logs.join('\n');
+                if (logs && logs.length > 0) {
+                    term.innerText = logs.join('\n');
+                } else {
+                    term.innerText = '[WebUI] No hay logs disponibles aún. El servidor puede estar iniciando...';
+                }
                 term.scrollTop = term.scrollHeight;
-            } catch(e){}
+            } catch(e) {
+                document.getElementById('terminal-body').innerText = '[WebUI] Error conectando con el endpoint de logs.';
+            }
         }
 
         async function triggerAction(actionName, message="") {
@@ -425,7 +486,7 @@ HTML_INDEX = """<!DOCTYPE html>
                 const res = await fetch('/api/action', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    credentials: 'same-origin',
+                    credentials: 'include',
                     body: JSON.stringify({action: actionName, message: message})
                 });
                 const data = await res.json();
@@ -444,10 +505,11 @@ HTML_INDEX = """<!DOCTYPE html>
             closeBroadcastModal();
         }
 
-        setInterval(fetchStats, 2500);
-        setInterval(fetchLogs, 3500);
+        // Fetch immediately on load, then on intervals
         fetchStats();
         fetchLogs();
+        setInterval(fetchStats, 2500);
+        setInterval(fetchLogs, 3500);
     </script>
 </body>
 </html>
@@ -510,25 +572,28 @@ class WebUIHandler(BaseHTTPRequestHandler):
             mem = get_mem_stats()
             with _status_lock:
                 st = _cached_server_status
+                players = _cached_players_online
             data = {
                 'cpu_percent': _cpu_percent,
                 'mem_used_bytes': mem['used_bytes'],
                 'mem_limit_bytes': mem['total_bytes'],
                 'mem_percent': mem['percent'],
                 'server_status': st,
-                'players_online': 0,
+                'players_online': players,
                 'max_players': MAX_PLAYERS,
                 'session_name': SESSION_NAME,
                 'world': WORLD_MAP
             }
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('Cache-Control', 'no-cache')
             self.end_headers()
             self.wfile.write(json.dumps(data).encode('utf-8'))
         elif parsed.path == '/api/logs':
             logs = get_recent_logs(100)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('Cache-Control', 'no-cache')
             self.end_headers()
             self.wfile.write(json.dumps(logs).encode('utf-8'))
         else:
