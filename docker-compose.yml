@@ -14,7 +14,7 @@ services:
       - "7777:7777/udp"    # Puerto Juego (UDP) - Conexión de Jugadores
       - "27015:27015/udp"  # Puerto Query Steam (UDP) - Buscador de Servidores
       - "27020:27020/tcp"  # Puerto RCON (TCP) - Consola Remota
-      # - "8080:8080/tcp"  # Puerto Web UI Dashboard (Descomenta si activas WEBUI_ENABLED=true)
+      - "8604:8080/tcp"    # Puerto Web UI Dashboard (Activo al establecer WEBUI_ENABLED=true)
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -28,7 +28,6 @@ services:
       - MOD_IDS=
       # --- Web UI Dashboard ---
       - WEBUI_ENABLED=false
-      - WEBUI_PORT=8080
       # --- Backup Settings ---
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6

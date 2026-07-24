@@ -7,18 +7,25 @@ import base64
 import subprocess
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 from urllib.parse import parse_qs, urlparse
 
-PORT = int(os.environ.get('WEBUI_PORT', '8080'))
+PORT = 8080
 ADMIN_PASS = os.environ.get('ADMIN_PASSWORD', 'adminpass')
 SESSION_NAME = os.environ.get('SESSION_NAME', 'ARK Server')
 WORLD_MAP = os.environ.get('WORLD', 'TheIsland')
 MAX_PLAYERS = os.environ.get('MAX_PLAYERS', '10')
 
-# Global CPU calculation cache
+# Threaded HTTP Server to prevent any request blocking
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    daemon_threads = True
+
+# Global Cached State
 _prev_total_cpu = 0
 _prev_idle_cpu = 0
 _cpu_percent = 0.0
+_cached_server_status = "starting"
+_status_lock = threading.Lock()
 
 def update_cpu_percent():
     global _prev_total_cpu, _prev_idle_cpu, _cpu_percent
@@ -37,13 +44,43 @@ def update_cpu_percent():
     except Exception:
         pass
 
-def cpu_background_worker():
+def update_server_status():
+    global _cached_server_status
+    status = "starting"
+    try:
+        output = subprocess.check_output(['pgrep', '-f', 'ShooterGameServer'], stderr=subprocess.STDOUT).decode().strip()
+        if output:
+            # Process is running, check if arkmanager reports online
+            try:
+                st_cmd = subprocess.run(['arkmanager', 'status', '@main'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=4)
+                st_text = st_cmd.stdout.decode()
+                if 'Server online: Yes' in st_text or 'Server running: Yes' in st_text:
+                    status = "online"
+                else:
+                    status = "starting"
+            except Exception:
+                status = "starting"
+        else:
+            # Check if steamcmd or arkmanager is running updates/install
+            pg_output = subprocess.check_output(['pgrep', '-f', 'arkmanager|steamcmd'], stderr=subprocess.STDOUT).decode().strip()
+            if pg_output:
+                status = "starting"
+            else:
+                status = "offline"
+    except Exception:
+        status = "starting"
+
+    with _status_lock:
+        _cached_server_status = status
+
+def background_worker():
     while True:
         update_cpu_percent()
-        time.sleep(2.5)
+        update_server_status()
+        time.sleep(3.0)
 
-cpu_thread = threading.Thread(target=cpu_background_worker, daemon=True)
-cpu_thread.start()
+bg_thread = threading.Thread(target=background_worker, daemon=True)
+bg_thread.start()
 
 def get_mem_stats():
     mem_used = 0
@@ -95,39 +132,27 @@ def get_mem_stats():
         'percent': pct
     }
 
-def get_server_status():
-    try:
-        output = subprocess.check_output(['pgrep', '-f', 'ShooterGameServer'], stderr=subprocess.STDOUT).decode()
-        if output.strip():
-            # Check if listening or online
-            status_cmd = subprocess.run(['arkmanager', 'status', '@main'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=5)
-            status_text = status_cmd.stdout.decode()
-            if 'Server online: Yes' in status_text or 'Server running: Yes' in status_text:
-                return 'online'
-            return 'starting'
-    except Exception:
-        pass
-    return 'offline'
-
-def get_recent_logs(lines=80):
+def get_recent_logs(lines=100):
     log_paths = [
         '/var/log/arktools/arkserver.log',
         '/var/log/arktools/arkmanager.log',
-        '/home/steam/steamcmd/ark/ShooterGame/Saved/Logs/ShooterGame.log'
+        '/home/steam/steamcmd/ark/ShooterGame/Saved/Logs/ShooterGame.log',
+        '/var/log/arktools/webui.log'
     ]
-    target_path = None
+    combined_lines = []
     for p in log_paths:
         if os.path.exists(p):
-            target_path = p
-            break
-    if not target_path:
-        return ["Log file not available yet. Waiting for server process output..."]
-    try:
-        with open(target_path, 'r', encoding='utf-8', errors='replace') as f:
-            all_lines = f.readlines()
-            return [l.rstrip() for l in all_lines[-lines:]]
-    except Exception as e:
-        return [f"Error reading logs: {str(e)}"]
+            try:
+                with open(p, 'r', encoding='utf-8', errors='replace') as f:
+                    file_lines = f.readlines()
+                    if file_lines:
+                        combined_lines.append(f"--- Log Source: {os.path.basename(p)} ---")
+                        combined_lines.extend([l.rstrip() for l in file_lines[-lines:]])
+            except Exception:
+                pass
+    if not combined_lines:
+        return ["Iniciando proceso de ARK y cargando componentes en memoria..."]
+    return combined_lines[-lines:]
 
 HTML_INDEX = """<!DOCTYPE html>
 <html lang="es">
@@ -222,7 +247,7 @@ HTML_INDEX = """<!DOCTYPE html>
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 0.85rem;
             padding: 14px;
-            height: 320px;
+            height: 340px;
             overflow-y: auto;
             white-space: pre-wrap;
             color: #7ee787;
@@ -314,7 +339,7 @@ HTML_INDEX = """<!DOCTYPE html>
                 <span>📜 Consola / Log Servidor (live tail)</span>
                 <span style="cursor:pointer;" onclick="fetchLogs()">🔄 Actualizar</span>
             </div>
-            <div class="terminal-body" id="terminal-body">Cargando logs...</div>
+            <div class="terminal-body" id="terminal-body">Cargando logs del sistema...</div>
         </div>
 
         <div class="card">
@@ -416,8 +441,8 @@ HTML_INDEX = """<!DOCTYPE html>
             closeBroadcastModal();
         }
 
-        setInterval(fetchStats, 3000);
-        setInterval(fetchLogs, 5000);
+        setInterval(fetchStats, 2500);
+        setInterval(fetchLogs, 3500);
         fetchStats();
         fetchLogs();
     </script>
@@ -458,7 +483,8 @@ class WebUIHandler(BaseHTTPRequestHandler):
             self.wfile.write(HTML_INDEX.encode('utf-8'))
         elif parsed.path == '/api/stats':
             mem = get_mem_stats()
-            st = get_server_status()
+            with _status_lock:
+                st = _cached_server_status
             data = {
                 'cpu_percent': _cpu_percent,
                 'mem_used_bytes': mem['used_bytes'],
@@ -475,7 +501,7 @@ class WebUIHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(data).encode('utf-8'))
         elif parsed.path == '/api/logs':
-            logs = get_recent_logs(80)
+            logs = get_recent_logs(100)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -524,7 +550,7 @@ class WebUIHandler(BaseHTTPRequestHandler):
         return
 
 def main():
-    server = HTTPServer(('0.0.0.0', PORT), WebUIHandler)
+    server = ThreadedHTTPServer(('0.0.0.0', PORT), WebUIHandler)
     print(f"ARK Server Web UI listening on port {PORT}...")
     try:
         server.serve_forever()
