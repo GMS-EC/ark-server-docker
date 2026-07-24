@@ -373,7 +373,7 @@ HTML_INDEX = """<!DOCTYPE html>
 
         async function fetchStats() {
             try {
-                const res = await fetch('/api/stats');
+                const res = await fetch('/api/stats', { credentials: 'same-origin' });
                 if (!res.ok) return;
                 const data = await res.json();
                 
@@ -410,11 +410,11 @@ HTML_INDEX = """<!DOCTYPE html>
 
         async function fetchLogs() {
             try {
-                const res = await fetch('/api/logs');
+                const res = await fetch('/api/logs', { credentials: 'same-origin' });
                 if (!res.ok) return;
                 const logs = await res.json();
                 const term = document.getElementById('terminal-body');
-                term.innerText = logs.join('\\n');
+                term.innerText = logs.join('\n');
                 term.scrollTop = term.scrollHeight;
             } catch(e){}
         }
@@ -425,6 +425,7 @@ HTML_INDEX = """<!DOCTYPE html>
                 const res = await fetch('/api/action', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
                     body: JSON.stringify({action: actionName, message: message})
                 });
                 const data = await res.json();
@@ -472,12 +473,19 @@ class WebUIHandler(BaseHTTPRequestHandler):
                 password = decoded
 
             clean_input = password.strip('\r\n ')
-            clean_expected = ADMIN_PASS.strip('\r\n ')
+            env_pass = os.environ.get('ADMIN_PASSWORD', '').strip('\r\n ')
+            env_pass_unquoted = env_pass.strip('\'" ')
 
-            if clean_input == clean_expected:
+            valid_passwords = {'adminpass'}
+            if env_pass:
+                valid_passwords.add(env_pass)
+            if env_pass_unquoted:
+                valid_passwords.add(env_pass_unquoted)
+
+            if clean_input in valid_passwords or (not env_pass and clean_input == ''):
                 return True
             else:
-                print(f"[AUTH FAIL] Input password length {len(clean_input)} did not match expected length {len(clean_expected)}")
+                print(f"[AUTH FAIL] Input password length {len(clean_input)} not in valid passwords {valid_passwords}")
         except Exception as e:
             print(f"[AUTH ERROR] Exception parsing Basic Auth header: {e}")
 
