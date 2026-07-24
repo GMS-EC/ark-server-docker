@@ -332,7 +332,7 @@ while true; do
                     else
                         _WARN_MSG="[HORARIO] El servidor se apagara en ${_MINUTES_UNTIL_STOP} minuto(s) segun el horario programado (${SCHEDULE_STOP})."
                     fi
-                    arkmanager broadcast "${_WARN_MSG}" @main || true
+                    arkmanager broadcast "${_WARN_MSG}" @main 2>/dev/null || true
                     if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
                         curl -s -H "Content-Type: application/json" -X POST -d "{\"content\": \"${_DISCORD_MSG_SCHEDULE_WARN}\"}" "${DISCORD_WEBHOOK_URL}" > /dev/null || true
                     fi
