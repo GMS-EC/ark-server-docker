@@ -5,6 +5,7 @@ import json
 import time
 import re
 import base64
+import secrets
 import subprocess
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -22,6 +23,11 @@ MAX_PLAYERS = os.environ.get('MAX_PLAYERS', '10').strip('\r\n ')
 # Threaded HTTP Server to prevent any request blocking
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
+
+# Session token: generated once at startup, stored in a cookie after Basic Auth login.
+# This avoids browser inconsistencies where Basic Auth headers are not resent in fetch() calls.
+_SESSION_TOKEN = secrets.token_hex(32)
+_SESSION_COOKIE_NAME = 'ark_webui_session'
 
 # Global Cached State
 _prev_total_cpu = 0
@@ -406,12 +412,7 @@ HTML_INDEX = """<!DOCTYPE html>
 
         async function fetchStats() {
             try {
-                const res = await fetch('/api/stats', { credentials: 'include' });
-                if (res.status === 401) {
-                    // Session expired, reload to re-prompt credentials
-                    window.location.reload();
-                    return;
-                }
+                const res = await fetch('/api/stats', { credentials: 'same-origin' });
                 if (!res.ok) {
                     _consecutiveErrors++;
                     // Only show error after ~75 s of real API failures (30 x 2.5 s)
@@ -465,7 +466,7 @@ HTML_INDEX = """<!DOCTYPE html>
 
         async function fetchLogs() {
             try {
-                const res = await fetch('/api/logs', { credentials: 'include' });
+                const res = await fetch('/api/logs', { credentials: 'same-origin' });
                 if (!res.ok) return;
                 const logs = await res.json();
                 const term = document.getElementById('terminal-body');
@@ -486,7 +487,7 @@ HTML_INDEX = """<!DOCTYPE html>
                 const res = await fetch('/api/action', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
+                    credentials: 'same-origin',
                     body: JSON.stringify({action: actionName, message: message})
                 });
                 const data = await res.json();
@@ -516,7 +517,21 @@ HTML_INDEX = """<!DOCTYPE html>
 """
 
 class WebUIHandler(BaseHTTPRequestHandler):
-    def check_auth(self):
+    def _get_session_cookie(self):
+        """Parse cookies from request headers and return the session token value if present."""
+        cookie_header = self.headers.get('Cookie', '')
+        for part in cookie_header.split(';'):
+            part = part.strip()
+            if part.startswith(_SESSION_COOKIE_NAME + '='):
+                return part[len(_SESSION_COOKIE_NAME) + 1:]
+        return None
+
+    def check_auth(self, set_cookie_on_success=False):
+        # 1. Check session cookie first (used by fetch() on API calls)
+        if self._get_session_cookie() == _SESSION_TOKEN:
+            return True
+
+        # 2. Fall back to Basic Auth (used by browser on first page load)
         auth_header = self.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Basic '):
             self.send_response(401)
@@ -545,6 +560,7 @@ class WebUIHandler(BaseHTTPRequestHandler):
                 valid_passwords.add(env_pass_unquoted)
 
             if clean_input in valid_passwords or (not env_pass and clean_input == ''):
+                # Auth OK — caller will set the session cookie when serving HTML
                 return True
             else:
                 print(f"[AUTH FAIL] Input password length {len(clean_input)} not in valid passwords {valid_passwords}")
@@ -561,11 +577,14 @@ class WebUIHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.check_auth():
             return
-        
+
         parsed = urlparse(self.path)
         if parsed.path == '/' or parsed.path == '/index.html':
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
+            # Set session cookie so subsequent fetch() calls to /api/* are authenticated
+            self.send_header('Set-Cookie',
+                f'{_SESSION_COOKIE_NAME}={_SESSION_TOKEN}; HttpOnly; SameSite=Strict; Path=/')
             self.end_headers()
             self.wfile.write(HTML_INDEX.encode('utf-8'))
         elif parsed.path == '/api/stats':
