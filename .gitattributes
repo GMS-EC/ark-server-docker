@@ -1,0 +1,10 @@
+# Set default behavior to normalize all files to LF line endings on checkout/commit
+* text=auto eol=lf
+
+# Force specific files to always use LF line endings
+Dockerfile text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+.env.example text eol=lf
+
