@@ -18,7 +18,7 @@ jobs:
             bash -n "$f"
           done
       - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@v2
+        uses: ludeeus/action-shellcheck@master
         with:
           severity: warning
 
