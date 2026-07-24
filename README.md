@@ -96,15 +96,27 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
-    mem_limit: ${MEM_LIMIT:-12G}
+    # Límite de RAM del contenedor. Cambia el valor de abajo según cuánta
+    # memoria quieras asignarle a tu servidor (ej. 8g, 12g, 16g). Este es
+    # el límite REAL aplicado por Docker (funciona sin necesidad de Swarm).
+    mem_limit: 12g
+    mem_swappiness: 0
+    # El siguiente bloque solo tiene efecto si despliegas con Docker Swarm
+    # (docker stack deploy) — en un docker compose up normal se ignora,
+    # pero no hace daño dejarlo aquí para compatibilidad futura. Si lo
+    # cambias, usa el mismo valor que pusiste arriba en mem_limit.
     deploy:
       resources:
         limits:
-          memory: ${MEM_LIMIT:-12G}
+          memory: 12g
     ports:
       - "7777:7777/udp"    # Puerto Juego (UDP) - Conexión de Jugadores
       - "27015:27015/udp"  # Puerto Query Steam (UDP) - Buscador de Servidores
-      - "27020:27020/tcp"  # Puerto RCON (TCP) - Consola Remota y Broadcast In-Game
+      # - "27020:27020/tcp"  # Descomenta solo si necesitas conectarte a RCON
+                              # desde fuera del contenedor (ej. un bot externo).
+                              # Los avisos in-game (broadcast) y saveworld
+                              # funcionan sin publicar este puerto, ya que
+                              # arkmanager se conecta por localhost.
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -116,7 +128,6 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
-      - MEM_LIMIT=12G
       # --- Updates & Maintenance ---
       - UPDATE_ON_START=true
       - AUTO_RESTART_HOURS=0
@@ -142,10 +153,9 @@ services:
 | `ADMIN_PASSWORD` | `adminpass` | Contraseña de administración (`enablecheats`) y RCON |
 | `MAX_PLAYERS` | `10` | Slots máximos de jugadores |
 | `WORLD` | `TheIsland` | Nombre oficial del mapa (`TheIsland`, `Ragnarok`, etc.) |
-| `MEM_LIMIT` | `12G` | Límite máximo de memoria RAM asignada al contenedor (ej. 8G, 12G, 16G) |
 | `SERVER_PVE` | `false` | Activa modo PvE |
 | `BATTLEEYE` | `false` | Activa protección BattlEye |
-| `RCON_ENABLED` | `true` | Activa consola remota RCON |
+| `RCON_ENABLED` | `true` | Activa consola remota RCON (requerida para avisos in-game y saveworld automáticos) |
 | `MOD_IDS` | (vacío) | IDs de mods de Steam Workshop separados por coma |
 | `UPDATE_ON_START` | `true` | Busca e instala actualizaciones de ARK y mods al iniciar |
 | `AUTO_RESTART_HOURS` | `0` | Intervalo de reinicios programados en horas (0 = desactivado) |
@@ -166,7 +176,7 @@ services:
 |--------|-----------|----------|-------------|
 | `7777` | UDP | `SERVER_PORT` | Puerto principal de juego donde se transmiten las acciones de los jugadores. |
 | `27015` | UDP | `QUERY_PORT` | Puerto de consulta de Steam que permite buscar y listar el servidor in-game. |
-| `27020` | TCP | `RCON_PORT` | Puerto RCON para consola remota, administración y mensajes broadcast in-game. |
+| `27020` | TCP | `RCON_PORT` | Puerto RCON para consola remota externa. Opcional (los avisos broadcast y saveworld funcionan internamente sin publicar este puerto). |
 
 > 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (PUID/PGID, clústeres, rates y arkmanager).*
 
@@ -278,15 +288,26 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
-    mem_limit: ${MEM_LIMIT:-12G}
+    # Container RAM limit. Change the value below depending on how much
+    # memory you want to allocate to your server (e.g. 8g, 12g, 16g). This is
+    # the REAL limit enforced by Docker (works without needing Swarm).
+    mem_limit: 12g
+    mem_swappiness: 0
+    # The following block only takes effect if deploying with Docker Swarm
+    # (docker stack deploy) — in standard docker compose up it is ignored,
+    # but harmless to leave for future compatibility. If modified, match the
+    # value set above in mem_limit.
     deploy:
       resources:
         limits:
-          memory: ${MEM_LIMIT:-12G}
+          memory: 12g
     ports:
       - "7777:7777/udp"    # Game Port (UDP) - Player Connection
       - "27015:27015/udp"  # Steam Query Port (UDP) - Server Browser
-      - "27020:27020/tcp"  # RCON Port (TCP) - Remote Console & In-Game Broadcast
+      # - "27020:27020/tcp"  # Uncomment only if external RCON connection is needed
+                              # (e.g., external Discord bot). In-game broadcasts
+                              # and saveworld work without publishing this port,
+                              # since arkmanager connects via localhost.
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -298,7 +319,6 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
-      - MEM_LIMIT=12G
       # --- Updates & Maintenance ---
       - UPDATE_ON_START=true
       - AUTO_RESTART_HOURS=0
@@ -324,10 +344,9 @@ services:
 | `ADMIN_PASSWORD` | `adminpass` | Admin (`enablecheats`) and RCON password |
 | `MAX_PLAYERS` | `10` | Maximum player slots |
 | `WORLD` | `TheIsland` | Official map name (`TheIsland`, `Ragnarok`, etc.) |
-| `MEM_LIMIT` | `12G` | Maximum RAM memory limit allocated to the container (e.g., 8G, 12G, 16G) |
 | `SERVER_PVE` | `false` | Enable PvE mode |
 | `BATTLEEYE` | `false` | Enable BattlEye anti-cheat |
-| `RCON_ENABLED` | `true` | Enable RCON remote administration |
+| `RCON_ENABLED` | `true` | Enable RCON remote administration (required for automated in-game broadcasts and saveworld) |
 | `MOD_IDS` | (empty) | Comma-separated Steam Workshop mod IDs |
 | `UPDATE_ON_START` | `true` | Check and install ARK server & mod updates on container startup |
 | `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled) |
@@ -348,7 +367,7 @@ services:
 |------|----------|----------|-------------|
 | `7777` | UDP | `SERVER_PORT` | Main game port for player gameplay and action traffic. |
 | `27015` | UDP | `QUERY_PORT` | Steam query port for server browsing and in-game discovery. |
-| `27020` | TCP | `RCON_PORT` | RCON port for remote console administration and in-game broadcasts. |
+| `27020` | TCP | `RCON_PORT` | RCON port for external remote console. Optional (in-game broadcasts and saveworld work internally without publishing this port). |
 
 > 📌 *Check the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the complete list of advanced variables (PUID/PGID, clusters, rates, and arkmanager).*
 

@@ -26,7 +26,6 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 |----------|-------------------|---------------------|
 | `PUID` | `1000` | ID del usuario `steam` en el sistema. Asegura que los archivos guardados pertenezcan a tu usuario en Linux. |
 | `PGID` | `1000` | ID del grupo `steam` en el sistema. |
-| `MEM_LIMIT` | `12G` | Límite máximo de memoria RAM asignada al contenedor de Docker (ej. `8G`, `12G`, `16G`). Evita saturar la RAM física del servidor. |
 
 ##### 🎮 Configuración Básica del Servidor
 | Variable | Valor por Defecto | Descripción Técnica |
@@ -42,14 +41,14 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 |----------|-------------------|-----------|-------------|
 | `SERVER_PORT` | `7777` | UDP | Puerto principal donde los clientes de ARK transmiten el movimiento y acciones. |
 | `QUERY_PORT` | `27015` | UDP | Puerto que responde a las búsquedas de servidores de Steam y en el buscador in-game. |
-| `RCON_PORT` | `27020` | TCP | Puerto para administración remota por RCON (ej. ARKon o scripts de comandos). |
+| `RCON_PORT` | `27020` | TCP | Puerto para administración remota externa por RCON. Opcional (los avisos broadcast y saveworld funcionan internamente sin publicar este puerto). |
 
 ##### 🛡️ Reglas y Modos de Juego
 | Variable | Valor por Defecto | Descripción |
 |----------|-------------------|-------------|
 | `SERVER_PVE` | `false` | Si se establece en `true`, activa el modo PvE (los jugadores no pueden atacarse ni dañar estructuras ajenas). |
 | `BATTLEEYE` | `false` | Si se establece en `true`, habilita la protección anti-trampas de BattlEye. |
-| `RCON_ENABLED` | `true` | Habilita o desactiva la consola de administración remota RCON. |
+| `RCON_ENABLED` | `true` | Habilita o desactiva la consola de administración remota RCON (requerido para avisos in-game y saveworld automáticos). |
 | `MOD_IDS` | *(vacío)* | Lista de IDs de mods de Steam Workshop separados por coma (ej. `731604991,893735676`). |
 
 ##### 🏰 Clústeres de Servidores
@@ -198,7 +197,6 @@ This guide details how to fully customize your ARK server, from environment vari
 |----------|---------|-----------------------|
 | `PUID` | `1000` | System user ID for `steam`. Ensures saved files match Linux permissions. |
 | `PGID` | `1000` | System group ID for `steam`. |
-| `MEM_LIMIT` | `12G` | Maximum RAM memory limit allocated to the Docker container (e.g., `8G`, `12G`, `16G`). Prevents host RAM exhaustion. |
 
 ##### 🎮 Basic Server Settings
 | Variable | Default | Technical Description |
@@ -214,7 +212,7 @@ This guide details how to fully customize your ARK server, from environment vari
 |----------|---------|----------|-------------|
 | `SERVER_PORT` | `7777` | UDP | Main game communication port. |
 | `QUERY_PORT` | `27015` | UDP | Steam server browser and query port. |
-| `RCON_PORT` | `27020` | TCP | Remote administration RCON port. |
+| `RCON_PORT` | `27020` | TCP | Remote administration RCON port for external connections. Optional (in-game broadcasts and saveworld work internally without publishing this port). |
 
 ##### 🏰 Server Clusters
 | Variable | Default | Description |

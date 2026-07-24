@@ -289,46 +289,38 @@ send_discord_embed() {
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     local session_name="${SESSION_NAME:-ARK Server}"
     local world="${WORLD:-TheIsland}"
-    local tmp_payload="/tmp/discord_embed_${RANDOM}.json"
+    local payload
 
-    cat <<EOF > "${tmp_payload}"
-{
-  "username": "${session_name}",
-  "avatar_url": "https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/logo.png",
-  "embeds": [
-    {
-      "title": "${title}",
-      "description": "${custom_msg}",
-      "color": ${color},
-      "fields": [
-        {
-          "name": "🎮 Servidor",
-          "value": "\`${session_name}\`",
-          "inline": true
-        },
-        {
-          "name": "🗺️ Mapa",
-          "value": "\`${world}\`",
-          "inline": true
-        },
-        {
-          "name": "📊 Estado",
-          "value": "${status_text}",
-          "inline": true
-        }
-      ],
-      "footer": {
-        "text": "ARK: Survival Evolved Docker",
-        "icon_url": "https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/logo.png"
-      },
-      "timestamp": "${timestamp}"
-    }
-  ]
-}
-EOF
+    payload=$(jq -n \
+        --arg username "$session_name" \
+        --arg avatar_url "https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/logo.png" \
+        --arg title "$title" \
+        --arg description "$custom_msg" \
+        --argjson color "$color" \
+        --arg session_field "$session_name" \
+        --arg world_field "$world" \
+        --arg status_field "$status_text" \
+        --arg footer_text "ARK: Survival Evolved Docker" \
+        --arg footer_icon "https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/logo.png" \
+        --arg timestamp "$timestamp" \
+        '{
+            username: $username,
+            avatar_url: $avatar_url,
+            embeds: [{
+                title: $title,
+                description: $description,
+                color: $color,
+                fields: [
+                    {name: "🎮 Servidor", value: ("`" + $session_field + "`"), inline: true},
+                    {name: "🗺️ Mapa", value: ("`" + $world_field + "`"), inline: true},
+                    {name: "📊 Estado", value: $status_field, inline: true}
+                ],
+                footer: {text: $footer_text, icon_url: $footer_icon},
+                timestamp: $timestamp
+            }]
+        }')
 
-    curl -s -H "Content-Type: application/json" -X POST -d @"${tmp_payload}" "${DISCORD_WEBHOOK_URL}" > /dev/null 2>&1 || true
-    rm -f "${tmp_payload}"
+    curl -s -H "Content-Type: application/json" -X POST -d "$payload" "${DISCORD_WEBHOOK_URL}" > /dev/null 2>&1 || true
 }
 
 # Discord webhook message localization

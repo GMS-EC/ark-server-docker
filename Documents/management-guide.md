@@ -178,6 +178,8 @@ Si tu servidor se ejecuta desde un disco HDD mecánico o tiene varios mods de St
 
 > [!IMPORTANT]
 > **Criterio de Dimensionamiento Real:** En un servidor activo donde los jugadores construyen bases masivas y acumulan dinosaurios (con o sin mods), la memoria RAM debe presupuestarse pensando en la progresión a largo plazo para evitar cierres por falta de memoria (OOM). Ten en cuenta que **cada jugador adicional conectado consume aproximadamente entre 100 MB y 200 MB de RAM extra** (por renderizado de inventarios, estructuras cercanas y carga de dinos salvajes en su radio de visión).
+>
+> *Nota: Los valores de la siguiente tabla son estimaciones orientativas basadas en reportes de la comunidad, no mediciones de laboratorio verificadas. El consumo real varía según la acumulación de estructuras/dinos a largo plazo, el hardware del host, y la versión específica del juego.*
 
 ##### 🧩 Impacto Estimado de Mods (`MOD_IDS`) en la Memoria RAM:
 * 🛠️ **Mods Livianos (QoL y Utilidad):** *S+, SS, Awesome Spyglass, Stacking Mods, Auto Unlock.* ➔ **+50 MB a 150 MB** por mod.
@@ -198,6 +200,19 @@ Si tu servidor se ejecuta desde un disco HDD mecánico o tiene varios mods de St
 | `LostIsland` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
 | `Fjordur` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
 | `Genesis2` (Gen 2) | **9 - 10 GB** | **10 - 12 GB** | **12 - 13 GB** | **14 - 16 GB** |
+
+> [!TIP]
+> **Confirmar el límite de RAM real aplicado en Docker:**
+> Para verificar que Docker está aplicando correctamente el límite de memoria `mem_limit` configurado en `docker-compose.yml`, ejecuta:
+> ```bash
+> docker inspect ark-server --format '{{.HostConfig.Memory}}'
+> ```
+> *(Devuelve el límite configurado en bytes; si devuelve `0`, no hay límite real aplicado).*
+> 
+> Para observar el consumo real en tiempo real frente al límite aplicado:
+> ```bash
+> docker stats ark-server --no-stream
+> ```
 
 > [!TIP]
 > **Optimización de Memoria SWAP en el Host:** Si tu servidor se encuentra cerca del límite de RAM recomendado, asegúrate de contar con un archivo o partición **SWAP bien configurado (4GB - 8GB) sobre discos SSD o NVMe en el sistema anfitrión (Host)**. Esto amortigua los picos temporales de consumo de memoria durante el autoguardado automático del mapa (`saveworld`), evitando caídas imprevistas por falta de memoria (OOM Kills).
@@ -367,6 +382,8 @@ If your server runs on a mechanical HDD or loads multiple Steam Workshop mods, i
 
 > [!IMPORTANT]
 > **Real-World Sizing Guideline:** On an active server where players build massive bases and hoard tamed dinos (with or without mods), RAM allocation must be budgeted for long-term progression to prevent Out-Of-Memory (OOM) crashes. Keep in mind that **each additional connected player consumes approximately 100 MB to 200 MB of extra RAM** (due to inventory streaming, nearby structure loading, and wild dino grid activation around their vision radius).
+>
+> *Note: The values in this table are orientative estimates based on community reports, not laboratory-verified measurements. Actual memory consumption varies based on long-term structure/dino accumulation, host hardware, and specific game version.*
 
 ##### 🧩 Estimated RAM Impact of Steam Workshop Mods (`MOD_IDS`):
 * 🛠️ **Lightweight Mods (QoL & Utility)**: *S+, SS, Awesome Spyglass, Stacking Mods, Auto Unlock.* ➔ **~50 MB - 150 MB** per mod.
@@ -387,6 +404,19 @@ If your server runs on a mechanical HDD or loads multiple Steam Workshop mods, i
 | `LostIsland` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
 | `Fjordur` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
 | `Genesis2` (Gen 2) | **9 - 10 GB** | **10 - 12 GB** | **12 - 13 GB** | **14 - 16 GB** |
+
+> [!TIP]
+> **Confirming the real RAM limit applied in Docker:**
+> To verify that Docker is properly enforcing the `mem_limit` configured in `docker-compose.yml`, run:
+> ```bash
+> docker inspect ark-server --format '{{.HostConfig.Memory}}'
+> ```
+> *(Returns the configured limit in bytes; if it returns `0`, no real memory limit is applied).*
+> 
+> To observe real-time memory usage against the enforced limit:
+> ```bash
+> docker stats ark-server --no-stream
+> ```
 
 > [!TIP]
 > **Host SWAP Memory Optimization:** If your server is running close to the recommended RAM limits, ensure your **host system has a properly configured SWAP space (4GB - 8GB) on SSD or NVMe storage**. SWAP cushions temporary memory spikes during automatic world saves (`saveworld`), preventing sudden Out-Of-Memory crashes (OOM Kills).

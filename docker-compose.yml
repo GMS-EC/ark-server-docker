@@ -7,15 +7,27 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
-    mem_limit: ${MEM_LIMIT:-12G}
+    # Límite de RAM del contenedor. Cambia el valor de abajo según cuánta
+    # memoria quieras asignarle a tu servidor (ej. 8g, 12g, 16g). Este es
+    # el límite REAL aplicado por Docker (funciona sin necesidad de Swarm).
+    mem_limit: 12g
+    mem_swappiness: 0
+    # El siguiente bloque solo tiene efecto si despliegas con Docker Swarm
+    # (docker stack deploy) — en un docker compose up normal se ignora,
+    # pero no hace daño dejarlo aquí para compatibilidad futura. Si lo
+    # cambias, usa el mismo valor que pusiste arriba en mem_limit.
     deploy:
       resources:
         limits:
-          memory: ${MEM_LIMIT:-12G}
+          memory: 12g
     ports:
       - "7777:7777/udp"    # Puerto Juego (UDP) - Conexión de Jugadores
       - "27015:27015/udp"  # Puerto Query Steam (UDP) - Buscador de Servidores
-      - "27020:27020/tcp"  # Puerto RCON (TCP) - Consola Remota y Broadcast In-Game
+      # - "27020:27020/tcp"  # Descomenta solo si necesitas conectarte a RCON
+                              # desde fuera del contenedor (ej. un bot externo).
+                              # Los avisos in-game (broadcast) y saveworld
+                              # funcionan sin publicar este puerto, ya que
+                              # arkmanager se conecta por localhost.
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -27,7 +39,6 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
-      - MEM_LIMIT=12G
       # --- Backup Settings ---
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6
