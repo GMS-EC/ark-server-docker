@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-07-23
+## [1.1.0] - 2026-07-23
 
 ### Added
 - **Automatic Power Schedule (`SCHEDULE_ENABLED`)**: Automated game process start/stop schedule (`SCHEDULE_START`, `SCHEDULE_STOP`, `SCHEDULE_WARN_MINUTES`, `TZ`) to conserve CPU/RAM during off-peak hours while keeping the Docker container running.
