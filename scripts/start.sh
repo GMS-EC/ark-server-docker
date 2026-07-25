@@ -370,14 +370,10 @@ if [ "${SCHEDULE_ENABLED:-false}" = "true" ]; then
     fi
 fi
 
-if [ "$_INITIAL_IN_WINDOW" = "true" ]; then
-    echo "Starting ARK server..."
-    _ONLINE_NOTIFIED=false
-    send_discord_embed "STARTING" "${_DISCORD_MSG_SCHEDULE_STARTING}"
-    arkmanager start --noautoupdate @main
-else
-    echo "[schedule] Server schedule enabled and outside active window (${SCHEDULE_START} - ${SCHEDULE_STOP}). Process start deferred."
-fi
+echo "Starting ARK server..."
+_ONLINE_NOTIFIED=false
+send_discord_embed "STARTING" "${_DISCORD_MSG_SCHEDULE_STARTING}"
+arkmanager start --noautoupdate @main
 
 # Monitor the server's status
 _BACKUP_LAST_RUN=$(date +%s)
@@ -431,6 +427,7 @@ while true; do
 
         _IS_RUNNING=$(pgrep -f "ShooterGameServer" > /dev/null 2>&1 && echo true || echo false)
 
+        # 1. If inside window and server is stopped, auto-start it
         if [ "$_IN_WINDOW" = "true" ]; then
             if [ "$_IS_RUNNING" = "false" ]; then
                 echo "[schedule] Inside scheduled window (${SCHEDULE_START} - ${SCHEDULE_STOP}). Starting ARK server..."
@@ -438,38 +435,44 @@ while true; do
                 _ONLINE_NOTIFIED=false
                 send_discord_embed "STARTING" "${_DISCORD_MSG_SCHEDULE_STARTING}"
                 arkmanager start --noautoupdate @main
-            else
-                _WARN_MINS=${SCHEDULE_WARN_MINUTES:-10}
-                if [ "$_SCHEDULE_WARN_SENT" = "false" ] && [ "$_WARN_MINS" -gt 0 ] && [ "$_MINUTES_UNTIL_STOP" -le "$_WARN_MINS" ] && [ "$_MINUTES_UNTIL_STOP" -gt 0 ]; then
-                    echo "[schedule] Sending shutdown warning (${_MINUTES_UNTIL_STOP} min remaining until ${SCHEDULE_STOP})..."
-                    if [ "${DISCORD_LANGUAGE:-es}" = "en" ]; then
-                        _WARN_MSG="[SCHEDULE] Server will shut down in ${_MINUTES_UNTIL_STOP} minute(s) according to schedule (${SCHEDULE_STOP})."
-                    else
-                        _WARN_MSG="[HORARIO] El servidor se apagara en ${_MINUTES_UNTIL_STOP} minuto(s) segun el horario programado (${SCHEDULE_STOP})."
-                    fi
-                    arkmanager broadcast "${_WARN_MSG}" @main 2>/dev/null || true
-                    send_discord_embed "SHUTDOWN_WARN" "${_DISCORD_MSG_SCHEDULE_WARN}"
-                    _SCHEDULE_WARN_SENT=true
-                fi
             fi
-        else
-            if [ "$_IS_RUNNING" = "true" ]; then
-                _ACTIVE_PLAYERS=$(echo "$_STATUS_OUTPUT" | grep -i "Active.*Players:" | grep -o '[0-9]\+' | head -n 1)
-                _ACTIVE_PLAYERS=${_ACTIVE_PLAYERS:-0}
+        fi
 
-                if [ "$_ACTIVE_PLAYERS" -gt 0 ]; then
-                    echo "[schedule] Fuera de horario (${SCHEDULE_START} - ${SCHEDULE_STOP}) pero hay ${_ACTIVE_PLAYERS} jugador(es) conectado(s), posponiendo apagado..."
+        # 2. Check for shutdown warning near SCHEDULE_STOP time
+        _WARN_MINS=${SCHEDULE_WARN_MINUTES:-10}
+        if [ "$_IS_RUNNING" = "true" ] && [ "$_WARN_MINS" -gt 0 ] && [ "$_MINUTES_UNTIL_STOP" -le "$_WARN_MINS" ] && [ "$_MINUTES_UNTIL_STOP" -gt 0 ]; then
+            if [ "$_SCHEDULE_WARN_SENT" = "false" ]; then
+                echo "[schedule] Sending shutdown warning (${_MINUTES_UNTIL_STOP} min remaining until ${SCHEDULE_STOP})..."
+                if [ "${DISCORD_LANGUAGE:-es}" = "en" ]; then
+                    _WARN_MSG="[SCHEDULE] Server will shut down in ${_MINUTES_UNTIL_STOP} minute(s) according to schedule (${SCHEDULE_STOP})."
                 else
-                    echo "[schedule] Outside scheduled window (${SCHEDULE_START} - ${SCHEDULE_STOP}) and 0 active players. Stopping ARK server..."
-                    send_discord_embed "SHUTDOWN" "${_DISCORD_MSG_SCHEDULE_STOP}"
-                    arkmanager stop --saveworld @main
-                    _SCHEDULE_WARN_SENT=false
-                    _ONLINE_NOTIFIED=false
+                    _WARN_MSG="[HORARIO] El servidor se apagara en ${_MINUTES_UNTIL_STOP} minuto(s) segun el horario programado (${SCHEDULE_STOP})."
                 fi
+                arkmanager broadcast "${_WARN_MSG}" @main 2>/dev/null || true
+                send_discord_embed "SHUTDOWN_WARN" "${_DISCORD_MSG_SCHEDULE_WARN}"
+                _SCHEDULE_WARN_SENT=true
+            fi
+        fi
+
+        # 3. Trigger shutdown ONLY at the exact transition when hitting SCHEDULE_STOP time (0 to 1 min mark)
+        if [ "$_IS_RUNNING" = "true" ] && [ "$_MINUTES_UNTIL_STOP" -eq 0 ]; then
+            _ACTIVE_PLAYERS=$(echo "$_STATUS_OUTPUT" | grep -i "Active.*Players:" | grep -o '[0-9]\+' | head -n 1)
+            _ACTIVE_PLAYERS=${_ACTIVE_PLAYERS:-0}
+
+            if [ "$_ACTIVE_PLAYERS" -gt 0 ]; then
+                echo "[schedule] Hito de apagado (${SCHEDULE_STOP}) alcanzado pero hay ${_ACTIVE_PLAYERS} jugador(es) conectado(s), posponiendo apagado..."
             else
+                echo "[schedule] Reached scheduled stop time (${SCHEDULE_STOP}) and 0 active players. Stopping ARK server..."
+                send_discord_embed "SHUTDOWN" "${_DISCORD_MSG_SCHEDULE_STOP}"
+                arkmanager stop --saveworld @main
                 _SCHEDULE_WARN_SENT=false
                 _ONLINE_NOTIFIED=false
             fi
+        fi
+
+        # Reset warning status when safely outside the stop warning window
+        if [ "$_MINUTES_UNTIL_STOP" -gt "$_WARN_MINS" ]; then
+            _SCHEDULE_WARN_SENT=false
         fi
     fi
     # --- End Power Schedule Monitoring ---
