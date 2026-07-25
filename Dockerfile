@@ -40,7 +40,6 @@ ENV HOME=/home/steam \
     QUERY_PORT=27015 \
     RCON_PORT=27020 \
     RCON_ENABLED=true \
-    WEBUI_ENABLED=false \
     SERVER_PVE=false \
     BATTLEEYE=false \
     CLUSTER_ID="" \

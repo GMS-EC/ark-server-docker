@@ -3,7 +3,6 @@ name: ark-server
 services:
   ark-server:
     image: marcusm99/ark-server-docker:latest
-    build: .        # Build locally with the local Dockerfile (use: docker compose up -d --build)
     platform: linux/amd64
     restart: unless-stopped
     container_name: ark-server
@@ -15,7 +14,6 @@ services:
       - "7777:7777/udp"    # Puerto Juego (UDP) - Conexión de Jugadores
       - "27015:27015/udp"  # Puerto Query Steam (UDP) - Buscador de Servidores
       - "27020:27020/tcp"  # Puerto RCON (TCP) - Consola Remota
-      - "8604:8080/tcp"    # Puerto Web UI Dashboard (Activo al establecer WEBUI_ENABLED=true)
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -27,8 +25,6 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
-      # --- Web UI Dashboard ---
-      - WEBUI_ENABLED=false
       # --- Backup Settings ---
       - BACKUP_ENABLED=true
       - BACKUP_INTERVAL_HOURS=6

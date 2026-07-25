@@ -42,12 +42,6 @@ if [ "${ADMIN_PASSWORD:-adminpass}" = "adminpass" ]; then
     echo "⚠️  Cámbiala en tu .env con ADMIN_PASSWORD=tu_contraseña_segura antes de exponer este servidor."
 fi
 
-# Start Web UI Dashboard immediately if enabled
-if [ "${WEBUI_ENABLED:-false}" = "true" ]; then
-    echo "Starting Web UI dashboard on port 8080..."
-    python3 /home/steam/scripts/webui.py > /var/log/arktools/webui.log 2>&1 &
-fi
-
 echo "Starting ARK server with arkmanager..."
 
 # Create arkmanager configuration

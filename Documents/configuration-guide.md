@@ -49,7 +49,6 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 | `SERVER_PVE` | `false` | Si se establece en `true`, activa el modo PvE (los jugadores no pueden atacarse ni dañar estructuras ajenas). |
 | `BATTLEEYE` | `false` | Si se establece en `true`, habilita la protección anti-trampas de BattlEye. |
 | `RCON_ENABLED` | `true` | Habilita o desactiva la consola de administración remota RCON (requerido para avisos in-game y saveworld automáticos). |
-| `WEBUI_ENABLED` | `false` | Habilita o desactiva el panel Web UI ultraligero de monitoreo en Python (< 20MB RAM, puerto 8080, autentica con `ADMIN_PASSWORD`). |
 | `MOD_IDS` | *(vacío)* | Lista de IDs de mods de Steam Workshop separados por coma (ej. `731604991,893735676`). |
 
 ##### 🏰 Clústeres de Servidores

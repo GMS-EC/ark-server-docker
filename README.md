@@ -103,7 +103,6 @@ services:
       - "7777:7777/udp"    # Puerto Juego (UDP) - Conexión de Jugadores
       - "27015:27015/udp"  # Puerto Query Steam (UDP) - Buscador de Servidores
       - "27020:27020/tcp"  # Puerto RCON (TCP) - Consola Remota y Broadcast In-Game
-      - "8604:8080/tcp"    # Puerto Web UI Dashboard (Activo al establecer WEBUI_ENABLED=true)
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -115,8 +114,6 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
-      # --- Web UI Dashboard ---
-      - WEBUI_ENABLED=false
       # --- Updates & Maintenance ---
       - UPDATE_ON_START=true
       - AUTO_RESTART_HOURS=0
@@ -152,7 +149,6 @@ services:
 | `SCHEDULE_START` | `20:00` | Hora de encendido en formato 24h (`HH:MM`) |
 | `SCHEDULE_STOP` | `00:00` | Hora de apagado en formato 24h (`HH:MM`) |
 | `SCHEDULE_WARN_MINUTES` | `10` | Minutos de aviso in-game antes de apagar por horario |
-| `WEBUI_ENABLED` | `false` | Activa el panel Web UI ultraligero de monitoreo en Python (< 20MB RAM, puerto 8080, autentica con `ADMIN_PASSWORD`) |
 | `BACKUP_ENABLED` | `true` | Activa las copias de seguridad automáticas |
 | `BACKUP_INTERVAL_HOURS` | `6` | Intervalo en horas entre cada backup |
 | `BACKUP_MAX_COUNT` | `10` | Máximo de backups a conservar |
@@ -167,7 +163,6 @@ services:
 | `7777` | UDP | `SERVER_PORT` | Puerto principal de juego donde se transmiten las acciones de los jugadores. |
 | `27015` | UDP | `QUERY_PORT` | Puerto de consulta de Steam que permite buscar y listar el servidor in-game. |
 | `27020` | TCP | `RCON_PORT` | Puerto RCON para consola remota, administración externa y avisos broadcast in-game. |
-| `8604` | TCP | `WEBUI_ENABLED` | Puerto HTTP para el panel Web UI de monitoreo en tiempo real (opcional). |
 
 > ℹ️ **Nota sobre RCON y Seguridad:** `RCON_ENABLED=true` es **obligatorio** para que los avisos in-game (`broadcast`) y autoguardados (`saveworld`) funcionen en reinicios y apagos automáticos (ya que `arkmanager` se conecta por `localhost` internamente). El puerto `27020/tcp` está publicado en `ports:` por defecto para permitir conexiones de clientes RCON externos o bots de Discord. Si **no** utilizas herramientas RCON externas, puedes comentar la línea `27020:27020/tcp` en `docker-compose.yml` para cerrar el acceso externo sin afectar los avisos internos del servidor.
 
@@ -288,7 +283,6 @@ services:
       - "7777:7777/udp"    # Game Port (UDP) - Player Connection
       - "27015:27015/udp"  # Steam Query Port (UDP) - Server Browser
       - "27020:27020/tcp"  # RCON Port (TCP) - Remote Console & In-Game Broadcast
-      - "8604:8080/tcp"    # Web UI Dashboard Port (Active when setting WEBUI_ENABLED=true)
     environment:
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
@@ -300,8 +294,6 @@ services:
       - BATTLEEYE=false
       - RCON_ENABLED=true
       - MOD_IDS=
-      # --- Web UI Dashboard ---
-      - WEBUI_ENABLED=false
       # --- Updates & Maintenance ---
       - UPDATE_ON_START=true
       - AUTO_RESTART_HOURS=0
@@ -337,7 +329,6 @@ services:
 | `SCHEDULE_START` | `20:00` | Server power-on time in 24h format (`HH:MM`) |
 | `SCHEDULE_STOP` | `00:00` | Server power-off time in 24h format (`HH:MM`) |
 | `SCHEDULE_WARN_MINUTES` | `10` | In-game advance warning notice in minutes before scheduled shutdown |
-| `WEBUI_ENABLED` | `false` | Enable lightweight Python Web UI monitoring dashboard (< 20MB RAM, port 8080, authenticates using `ADMIN_PASSWORD`) |
 | `BACKUP_ENABLED` | `true` | Enable automatic scheduled backups |
 | `BACKUP_INTERVAL_HOURS` | `6` | Backup interval in hours |
 | `BACKUP_MAX_COUNT` | `10` | Max recent backup files to retain |
@@ -352,7 +343,6 @@ services:
 | `7777` | UDP | `SERVER_PORT` | Main game port for player gameplay and action traffic. |
 | `27015` | UDP | `QUERY_PORT` | Steam query port for server browsing and in-game discovery. |
 | `27020` | TCP | `RCON_PORT` | RCON port for remote console, external administration, and in-game broadcasts. |
-| `8604` | TCP | `WEBUI_ENABLED` | HTTP port for real-time Web UI monitoring dashboard (optional). |
 
 > ℹ️ **Note on RCON & Security:** `RCON_ENABLED=true` is **mandatory** for automated in-game warning broadcasts (`broadcast`) and world saves (`saveworld`) during scheduled restarts/shutdowns (since `arkmanager` connects internally via `localhost`). Port `27020/tcp` is published under `ports:` by default to allow external RCON tools or Discord bots to connect. If you do **not** use external RCON tools, you can comment out `- "27020:27020/tcp"` in `docker-compose.yml` to block external access without impacting internal automated broadcasts.
 
