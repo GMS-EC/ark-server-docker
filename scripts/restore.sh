@@ -10,6 +10,15 @@ SAVED_ARKS_DIR="$SAVED_DIR/SavedArks"
 CONFIG_DIR="$SAVED_DIR/Config/LinuxServer"
 BACKUP_FILE="$1"
 
+# Cargar helper de Discord si existe
+if [ -f "/home/steam/scripts/discord.sh" ]; then
+    # shellcheck source=/dev/null
+    source "/home/steam/scripts/discord.sh"
+elif [ -f "$(dirname "$0")/discord.sh" ]; then
+    # shellcheck source=/dev/null
+    source "$(dirname "$0")/discord.sh"
+fi
+
 if [ -z "$BACKUP_FILE" ]; then
     echo "================================================================="
     echo "  🔄 Utilidad de Restauración de Copias de Seguridad de ARK"
@@ -106,4 +115,17 @@ echo "[restore] Restauración completada con éxito."
 echo "[restore] Reiniciando el servidor de ARK..."
 arkmanager start --noautoupdate @main
 echo "[restore] Servidor reiniciado correctamente."
+
+# Notificar a Discord la restauración exitosa
+if command -v send_discord_embed >/dev/null 2>&1; then
+    _LANG="${DISCORD_LANGUAGE:-es}"
+    _FILE_NAME=$(basename "$BACKUP_PATH")
+    if [ "$_LANG" = "en" ]; then
+        _DISCORD_MSG="Server save successfully restored from backup: \`${_FILE_NAME}\`. ARK server restarted and online."
+    else
+        _DISCORD_MSG="Servidor de ARK restaurado exitosamente desde la copia: \`${_FILE_NAME}\`. Servidor reiniciado y online."
+    fi
+    send_discord_embed "RESTORE_OK" "$_DISCORD_MSG"
+fi
+
 exit 0

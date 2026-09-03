@@ -48,6 +48,12 @@ El contenedor incluye [ARK Server Tools (`arkmanager`)](https://github.com/arkma
   docker exec -u steam ark-server arkmanager update --update-mods @main
   ```
 
+* **Reiniciar y Repoblar Dinos Salvajes (`DestroyWildDinos`):**
+  *Elimina todos los dinosaurios salvajes no domesticados para refrescar la fauna del mapa con niveles y colores nuevos. **Tus dinosaurios domesticados y construcciones no se ven afectados en absoluto**.*
+  ```bash
+  docker exec -u steam ark-server /home/steam/scripts/wipe-wild-dinos.sh
+  ```
+
 * **Reiniciar el servidor de forma segura con aviso de 15 minutos:**
   ```bash
   docker exec -u steam ark-server arkmanager restart --warn @main
@@ -107,9 +113,11 @@ DISCORD_LANGUAGE=es # Opciones: "es" (Español, por defecto) o "en" (Inglés)
 ```
 
 Recibirás notificaciones automáticas para:
-- Inicio y apagado del servidor.
-- Éxito o falla en los backups.
-- Procesos de reinicio programados.
+- Inicio (`START`), carga (`STARTING`) y apagado (`SHUTDOWN`) del servidor.
+- Copias de seguridad automáticas (`BACKUP_OK`) y manuales (`BACKUP_MANUAL`).
+- Restauraciones de partidas completadas (`RESTORE_OK`).
+- Reinicios y repoblación de fauna salvaje (`WILD_DINOS_WIPED`).
+- Procesos de reinicio programados (`RESTART`) y avisos previos de horario (`SHUTDOWN_WARN`).
 
 ---
 
@@ -258,6 +266,12 @@ The container includes [ARK Server Tools (`arkmanager`)](https://github.com/arkm
   docker exec -u steam ark-server arkmanager update --update-mods @main
   ```
 
+* **Wipe & Repopulate Wild Dinosaurs (`DestroyWildDinos`):**
+  *Eliminates all untamed wild dinos across the map to trigger fresh spawns with randomized levels. **Tamed creatures and player structures are 100% safe and untouched**.*
+  ```bash
+  docker exec -u steam ark-server /home/steam/scripts/wipe-wild-dinos.sh
+  ```
+
 * **Restart server gracefully with a 15-minute warning:**
   ```bash
   docker exec -u steam ark-server arkmanager restart --warn @main
@@ -315,6 +329,13 @@ Set `DISCORD_WEBHOOK_URL` and `DISCORD_LANGUAGE` in `.env`:
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
 DISCORD_LANGUAGE=es # Options: "es" (Spanish, default) or "en" (English)
 ```
+
+You will receive real-time rich embed notifications for:
+- Server status events: Started (`START`), loading (`STARTING`), and stopped (`SHUTDOWN`).
+- Scheduled backups (`BACKUP_OK`) and on-demand manual backups (`BACKUP_MANUAL`).
+- Completed server save restorations (`RESTORE_OK`).
+- Wild dinosaur resets (`WILD_DINOS_WIPED`).
+- Scheduled server restarts (`RESTART`) and schedule warning broadcasts (`SHUTDOWN_WARN`).
 
 ---
 

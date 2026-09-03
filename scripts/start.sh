@@ -485,7 +485,7 @@ while true; do
             mkdir -p "${BACKUP_DIR:-/home/steam/ark-backups}"
             _BACKUP_SUCCESS=false
             if [ -f "/home/steam/scripts/backup.sh" ]; then
-                if bash /home/steam/scripts/backup.sh; then
+                if IS_SCHEDULED=true bash /home/steam/scripts/backup.sh; then
                     _BACKUP_SUCCESS=true
                 fi
             else
@@ -547,9 +547,14 @@ while true; do
     fi
     # --- End Scheduled Restart ---
 
-    # --- Periodic Log Cleanup ---
+    # --- Periodic Log & Crashdump Cleanup ---
     # Purge log files older than 7 days from /var/log/arktools
     find /var/log/arktools -type f -mtime +7 -delete 2>/dev/null || true
+    # Purge crash dumps (.dmp) and old logs older than 7 days from ShooterGame/Saved/Logs
+    _ARK_LOGS_DIR="/home/steam/steamcmd/ark/ShooterGame/Saved/Logs"
+    if [ -d "$_ARK_LOGS_DIR" ]; then
+        find "$_ARK_LOGS_DIR" -type f \( -name "*.dmp" -o -name "*.log" -o -name "*.crashdump" \) -mtime +7 -delete 2>/dev/null || true
+    fi
 
     sleep 60
 done

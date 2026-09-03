@@ -13,6 +13,15 @@ WORLD="${WORLD:-TheIsland}"
 BACKUP_MAX_COUNT="${BACKUP_MAX_COUNT:-10}"
 CUSTOM_PREFIX="$1"
 
+# Cargar helper de Discord si existe
+if [ -f "/home/steam/scripts/discord.sh" ]; then
+    # shellcheck source=/dev/null
+    source "/home/steam/scripts/discord.sh"
+elif [ -f "$(dirname "$0")/discord.sh" ]; then
+    # shellcheck source=/dev/null
+    source "$(dirname "$0")/discord.sh"
+fi
+
 echo "[backup] Iniciando proceso de copia de seguridad organizada..."
 
 # 1. Guardar el estado del mundo en memoria a disco
@@ -191,6 +200,18 @@ if [ -n "$BACKUP_MAX_COUNT" ] && [ "$BACKUP_MAX_COUNT" -gt 0 ]; then
                 fi
             done
     fi
+fi
+
+# 10. Enviar notificación a Discord si fue ejecutado manualmente (fuera del loop de start.sh)
+if [ "${IS_SCHEDULED:-false}" != "true" ] && command -v send_discord_embed >/dev/null 2>&1; then
+    _LANG="${DISCORD_LANGUAGE:-es}"
+    _FILE_SIZE=$(du -h "$BACKUP_OUTPUT_PATH" 2>/dev/null | cut -f1)
+    if [ "$_LANG" = "en" ]; then
+        _DISCORD_MSG="Manual backup created successfully: \`${BACKUP_FILENAME}\` (${_FILE_SIZE})."
+    else
+        _DISCORD_MSG="Copia de seguridad manual creada exitosamente: \`${BACKUP_FILENAME}\` (${_FILE_SIZE})."
+    fi
+    send_discord_embed "BACKUP_MANUAL" "$_DISCORD_MSG"
 fi
 
 echo "[backup] Proceso finalizado exitosamente."
