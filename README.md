@@ -40,12 +40,13 @@ Para guías detalladas paso a paso sobre conexión, configuración y administrac
 
 - 🌐 [**Guía de Conexión (Steam, LAN y ZeroTier sin abrir puertos)**](Documents/connect-guide.md#-español) — Cómo conectarte tu y tus amigos paso a paso.
 - ⚙️ [**Guía de Configuración Avanzada y Edición `.ini`**](Documents/configuration-guide.md#-español) — Personalización de `.env`, rates, `GameUserSettings.ini` y `Game.ini`.
-- 🛠️ [**Guía de Administración y Restauración**](Documents/management-guide.md#-español) — Uso de `arkmanager`, notificaciones de Discord, reinicios y restauración con `restore.sh`.
+- 🛠️ [**Guía de Administración del Servidor**](Documents/management-guide.md#-español) — Uso de `arkmanager`, notificaciones de Discord, reinicios y horarios.
+- 📦 [**Guía de Copias de Seguridad y Restauración**](Documents/backup-restore-guide.md#-español) — Backups organizados (`Saved/`), restauración en 1 comando (`restore.sh`) y manual por SFTP (FileZilla).
 
 ### 🌟 Principales Capacidades
 
-- **Copias de Seguridad Automáticas**: Backups periódicos integrados con rotación inteligente por cantidad (`BACKUP_MAX_COUNT`).
-- **Restauración en 1 Comando**: Script ejecutable `restore.sh` para restaurar el último backup o uno específico con salvaguarda preventiva.
+- **Copias de Seguridad Automáticas y Estructuradas**: Backups periódicos organizados (`Saved/SavedArks`, `Saved/Config`) con rotación inteligente por cantidad (`BACKUP_MAX_COUNT`).
+- **Restauración en 1 Comando y Soporte Manual**: Script `restore.sh` para restaurar el último backup o uno específico con salvaguarda preventiva, y soporte manual arrastrando carpetas en FileZilla.
 - **Notificaciones a Discord Multi-idioma**: Alertas en tiempo real (`DISCORD_LANGUAGE=es/en`) para estado, backups, actualizaciones y reinicios.
 - **Reinicios Programados**: Reinicios automáticos periódicos (`AUTO_RESTART_HOURS`) con advertencias in-game (15m, 10m, 5m, 1m) y auto-guardado.
 - **Horario Automático de Encendido/Apagado**: Encendido y apagado programado del proceso del juego (`SCHEDULE_ENABLED`, `SCHEDULE_START`, `SCHEDULE_STOP`, `TZ`) para ahorro de CPU/RAM con protección de jugadores activos y avisos in-game.
@@ -220,12 +221,13 @@ For detailed step-by-step guides on connecting, configuring, and managing your s
 
 - 🌐 [**Connection Guide (Steam, LAN & ZeroTier without Port Forwarding)**](Documents/connect-guide.md#-english) — Step-by-step connection guide for you and friends.
 - ⚙️ [**Advanced Configuration Guide & `.ini` Customization**](Documents/configuration-guide.md#-english) — Environment variables, server rates, `GameUserSettings.ini` & `Game.ini`.
-- 🛠️ [**Server Management & Restoration Guide**](Documents/management-guide.md#-english) — `arkmanager` CLI, Discord alerts, scheduled restarts, and `restore.sh`.
+- 🛠️ [**Server Management Guide**](Documents/management-guide.md#-english) — `arkmanager` CLI, Discord alerts, scheduled restarts, and power schedule.
+- 📦 [**Backup & Restoration Guide**](Documents/backup-restore-guide.md#-english) — Clean organized backups (`Saved/`), 1-command restore (`restore.sh`), and step-by-step SFTP manual restore.
 
 ### 🌟 Core Capabilities
 
-- **Automated Scheduled Backups**: Built-in periodic backups with configurable interval and count-based rotation (`BACKUP_MAX_COUNT`).
-- **One-Command Restoration**: Simple `restore.sh` script to restore the latest or a specific backup instantly with pre-safety backups.
+- **Automated Structured Backups**: Built-in periodic backups maintaining ARK's native folder hierarchy (`Saved/SavedArks`, `Saved/Config`) with count-based rotation (`BACKUP_MAX_COUNT`).
+- **One-Command Restoration & SFTP Support**: Simple `restore.sh` script to restore the latest or a specific backup instantly with pre-safety backups, plus plug-and-play FileZilla folder drag & drop.
 - **Multi-language Discord Webhooks**: Real-time alerts (`DISCORD_LANGUAGE=es/en`) for server status, backups, updates, and restarts.
 - **Scheduled Restarts**: Periodic automated restarts (`AUTO_RESTART_HOURS`) with in-game warnings (15m, 10m, 5m, 1m) and auto-save.
 - **Automatic Power Schedule**: Start and stop server process on a schedule (`SCHEDULE_ENABLED`, `SCHEDULE_START`, `SCHEDULE_STOP`, `TZ`) to conserve CPU/RAM with active player protection and in-game warnings.

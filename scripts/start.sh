@@ -481,11 +481,22 @@ while true; do
     if [ "${BACKUP_ENABLED:-true}" = "true" ]; then
         _ELAPSED=$(( _NOW - _BACKUP_LAST_RUN ))
         if [ "${_ELAPSED}" -ge "${_BACKUP_INTERVAL_SECS}" ]; then
-            echo "[backup] Saving world state prior to scheduled backup..."
-            arkmanager saveworld @main || true
             echo "[backup] Running scheduled backup (interval: ${BACKUP_INTERVAL_HOURS:-6}h)..."
             mkdir -p "${BACKUP_DIR:-/home/steam/ark-backups}"
-            if arkmanager backup @main; then
+            _BACKUP_SUCCESS=false
+            if [ -f "/home/steam/scripts/backup.sh" ]; then
+                if bash /home/steam/scripts/backup.sh; then
+                    _BACKUP_SUCCESS=true
+                fi
+            else
+                echo "[backup] Saving world state prior to scheduled backup..."
+                arkmanager saveworld @main || true
+                if arkmanager backup @main; then
+                    _BACKUP_SUCCESS=true
+                fi
+            fi
+
+            if [ "$_BACKUP_SUCCESS" = "true" ]; then
                 echo "[backup] Backup completed at $(date '+%Y-%m-%d %H:%M:%S')"
                 
                 # Backup rotation by count

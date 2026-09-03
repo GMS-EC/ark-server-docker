@@ -67,35 +67,34 @@ BACKUP_MAX_COUNT=10
 
 ##### Características del Sistema de Backup:
 1. **Guardado Preventivo (`saveworld`)**: El contenedor fuerza la grabación del mapa a disco antes de crear cada comprimido `.tar.bz2`.
-2. **Rotación Inteligente por Cantidad (`BACKUP_MAX_COUNT`)**: Conserva únicamente los `N` respaldos más recientes y borra los más antiguos automáticamente.
-3. **Persistencia en el Host**: Las copias se guardan en `./ark-backups/` en tu PC.
+2. **Estructura Organizada (`Saved/`)**: Los respaldos respetan la jerarquía nativa de carpetas de ARK (`Saved/SavedArks` y `Saved/Config/LinuxServer`), incluyendo un archivo explicativo `LEEME_RESTAURACION.txt`.
+3. **Rotación Inteligente por Cantidad (`BACKUP_MAX_COUNT`)**: Conserva únicamente los `N` respaldos más recientes y borra los más antiguos automáticamente.
+4. **Persistencia en el Host**: Las copias se guardan en `./ark-backups/` en tu PC.
 
 > [!TIP]
 > **Recomendación sobre `BACKUP_MAX_COUNT`:** Dejar `BACKUP_MAX_COUNT` vacío o en `0` conserva todos los respaldos indefinidamente, lo cual en un servidor de larga duración puede llenar el disco con el tiempo. Con `BACKUP_INTERVAL_HOURS=6` (4 backups/día), un valor de `BACKUP_MAX_COUNT=20` conserva aproximadamente 5 días de historial de respaldos sin acumular espacio indefinidamente.
+>
+> 📖 Para una explicación completa de los archivos, restauración manual por FileZilla y comandos a demanda, consulta la [**Guía de Copias de Seguridad y Restauración**](backup-restore-guide.md#-español).
 
 ---
 
 #### 🔄 3. Guía de Restauración con `restore.sh`
 
-Para restaurar un mapa desde un backup:
+Para restaurar un mapa desde un backup de forma automática:
 
-##### Paso 1: Abrir la terminal dentro del contenedor
-```bash
-docker exec -it ark-server bash
-```
-
-##### Paso 2: Ejecutar el script de restauración
-- **Para restaurar el respaldo más reciente:**
+* **Para restaurar el respaldo más reciente:**
   ```bash
-  /home/steam/scripts/restore.sh latest
+  docker exec -it ark-server /home/steam/scripts/restore.sh latest
   ```
-- **Para restaurar un respaldo específico:**
+* **Para restaurar un respaldo específico:**
   ```bash
-  /home/steam/scripts/restore.sh main.2026-07-22_15.30.00.tar.bz2
+  docker exec -it ark-server /home/steam/scripts/restore.sh main.2026-09-02_21.53.08.tar.bz2
   ```
 
 > [!TIP]
-> **Salvaguarda Automática:** `restore.sh` genera automáticamente una copia preventivo llamada `pre_restore_safety_...` antes de descompprimir, por lo que nunca perderás el progreso actual.
+> **Salvaguarda Automática:** `restore.sh` genera automáticamente una copia preventiva llamada `pre_restore_safety_...` antes de descomprimir, por lo que nunca perderás el progreso actual. Es compatible tanto con backups nuevos organizados como con copias legadas de archivos sueltos.
+> 
+> 📖 Si prefieres realizar la restauración **manualmente por SFTP (FileZilla / WinSCP)**, consulta la [**Guía de Restauración Manual**](backup-restore-guide.md#🖐️-4-método-2-restauración-manual-por-sftp-filezilla--winscp).
 
 ---
 
@@ -278,33 +277,34 @@ BACKUP_MAX_COUNT=10
 
 ##### Key Backup Features:
 1. **Pre-Backup Saveworld**: Forces in-memory world save prior to creating `.tar.bz2` archives.
-2. **Count-Based Rotation (`BACKUP_MAX_COUNT`)**: Retains only the `N` most recent backups.
-3. **Host Persistence**: Stored in `./ark-backups/` on your host PC.
+2. **Organized Structure (`Saved/`)**: Backups maintain ARK's native directory tree (`Saved/SavedArks` and `Saved/Config/LinuxServer`) with a built-in `README_RESTORATION.txt`.
+3. **Count-Based Rotation (`BACKUP_MAX_COUNT`)**: Retains only the `N` most recent backups and purges older ones.
+4. **Host Persistence**: Stored in `./ark-backups/` on your host PC.
 
 > [!TIP]
 > **Recommendation for `BACKUP_MAX_COUNT`:** Leaving `BACKUP_MAX_COUNT` empty or set to `0` retains all backups indefinitely, which on long-running servers can fill up disk space over time. With `BACKUP_INTERVAL_HOURS=6` (4 backups/day), setting `BACKUP_MAX_COUNT=20` retains approximately 5 days of backup history without accumulating unlimited disk usage.
+>
+> 📖 For an in-depth explanation of save files, manual SFTP restoration, and on-demand commands, see the [**Backup & Restoration Guide**](backup-restore-guide.md#-english).
 
 ---
 
 #### 🔄 3. Restoration Guide using `restore.sh`
 
-##### Step 1: Open a terminal inside the container
-```bash
-docker exec -it ark-server bash
-```
+To restore a game from a backup automatically:
 
-##### Step 2: Run the restoration script
-- **To restore the latest backup:**
+* **To restore the latest backup:**
   ```bash
-  /home/steam/scripts/restore.sh latest
+  docker exec -it ark-server /home/steam/scripts/restore.sh latest
   ```
-- **To restore a specific backup:**
+* **To restore a specific backup:**
   ```bash
-  /home/steam/scripts/restore.sh main.2026-07-22_15.30.00.tar.bz2
+  docker exec -it ark-server /home/steam/scripts/restore.sh main.2026-09-02_21.53.08.tar.bz2
   ```
 
 > [!TIP]
-> **Safety Safeguard:** `restore.sh` automatically creates a safety backup named `pre_restore_safety_...` prior to restoring.
+> **Safety Safeguard:** `restore.sh` automatically creates a safety backup named `pre_restore_safety_...` prior to restoring. It supports both new organized archives and legacy flat archives.
+>
+> 📖 To perform a **manual SFTP restoration (FileZilla / WinSCP)**, see the [**Manual Restoration Guide**](backup-restore-guide.md#🖐️-4-method-2-manual-sftp-restoration-filezilla--winscp).
 
 ---
 
