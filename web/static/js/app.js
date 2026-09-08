@@ -265,6 +265,14 @@ async function fetchMetricsOnce() {
         if (document.getElementById("val-ark-ram")) document.getElementById("val-ark-ram").textContent = `${curr.ark_ram_gb} GB`;
         if (document.getElementById("val-disk")) document.getElementById("val-disk").textContent = `${curr.disk_used_gb} / ${curr.disk_total_gb} GB`;
 
+        // Actualizar Tarjeta de Supervivientes en Métricas
+        const metricPlayers = document.getElementById("val-players-metric");
+        if (metricPlayers) {
+            const pOnline = curr.players_online !== undefined ? curr.players_online : 0;
+            const pMax = curr.max_players || 20;
+            metricPlayers.textContent = `${pOnline} / ${pMax}`;
+        }
+
         // Actualizar Banner Superior
         const topStatus = document.getElementById("top-server-status");
         if (topStatus) {
@@ -279,6 +287,12 @@ async function fetchMetricsOnce() {
         if (topArkMem) topArkMem.textContent = `${curr.ark_ram_gb} GB`;
         const topDisk = document.getElementById("top-server-disk");
         if (topDisk) topDisk.textContent = `${curr.disk_used_gb} / ${curr.disk_total_gb} GB`;
+        const topPlayers = document.getElementById("top-server-players");
+        if (topPlayers) {
+            const pOnline = curr.players_online !== undefined ? curr.players_online : 0;
+            const pMax = curr.max_players || 20;
+            topPlayers.textContent = `${pOnline} / ${pMax}`;
+        }
 
         // Header Status Pill
         const statusPill = document.getElementById("status-pill");
@@ -1004,23 +1018,38 @@ async function loadClusterInstances() {
         clusterData = await res.json();
         const instances = clusterData.instances || [];
 
-        // 1. Actualizar el selector en el Header
+        // 1. Actualizar el selector en el Header (Condicional: badge si <= 1, selector si > 1)
+        const singleBadge = document.getElementById("cluster-single-badge");
+        const singleMapName = document.getElementById("cluster-single-map-name");
         const select = document.getElementById("cluster-server-select");
-        if (select) {
-            select.innerHTML = "";
-            instances.forEach(inst => {
-                const opt = document.createElement("option");
-                opt.value = inst.id;
-                const statusDot = inst.status === "RUNNING" ? "● " : "○ ";
-                let displayName = inst.name;
-                if (inst.is_primary && /servidor\s+prin/i.test(displayName)) {
-                    displayName = displayName.replace(/Servidor\s+Prin[cd]ipal/i, "Principal").replace(/\(TheIsland\)/i, "(The Island)");
-                    inst.name = displayName;
+
+        if (instances.length <= 1) {
+            if (singleBadge) {
+                singleBadge.style.display = "inline-flex";
+                if (singleMapName && instances[0]) {
+                    singleMapName.textContent = instances[0].map || "The Island";
                 }
-                opt.textContent = `${statusDot}${displayName}`;
-                if (inst.id === currentInstanceId) opt.selected = true;
-                select.appendChild(opt);
-            });
+            }
+            if (select) select.style.display = "none";
+        } else {
+            if (singleBadge) singleBadge.style.display = "none";
+            if (select) {
+                select.style.display = "inline-block";
+                select.innerHTML = "";
+                instances.forEach(inst => {
+                    const opt = document.createElement("option");
+                    opt.value = inst.id;
+                    const statusDot = inst.status === "RUNNING" ? "● " : "○ ";
+                    let displayName = inst.name;
+                    if (inst.is_primary && /servidor\s+prin/i.test(displayName)) {
+                        displayName = displayName.replace(/Servidor\s+Prin[cd]ipal/i, "Principal").replace(/\(TheIsland\)/i, "(The Island)");
+                        inst.name = displayName;
+                    }
+                    opt.textContent = `${statusDot}${displayName}`;
+                    if (inst.id === currentInstanceId) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            }
         }
 
         // 2. Actualizar tarjetas de nodos en tab-cluster
@@ -1163,6 +1192,23 @@ function onSwitchClusterServer(instanceId) {
     // Sincronizar el select del header
     const select = document.getElementById("cluster-server-select");
     if (select) select.value = instanceId;
+
+    // Actualizar datos del mapa y puertos en banner superior
+    if (clusterData && clusterData.instances) {
+        const targetInst = clusterData.instances.find(i => i.id === instanceId);
+        if (targetInst) {
+            const topPort = document.getElementById("top-server-port");
+            if (topPort && targetInst.game_port) topPort.textContent = `${targetInst.game_port} (UDP)`;
+            const topRcon = document.getElementById("top-server-rcon");
+            if (topRcon && targetInst.rcon_port) topRcon.textContent = `${targetInst.rcon_port} (Interno)`;
+            const topMap = document.getElementById("top-server-map");
+            if (topMap && targetInst.map) topMap.textContent = targetInst.map;
+            const mobMap = document.getElementById("banner-mob-map");
+            if (mobMap && targetInst.map) mobMap.textContent = targetInst.map;
+            const singleMap = document.getElementById("cluster-single-map-name");
+            if (singleMap && targetInst.map) singleMap.textContent = targetInst.map;
+        }
+    }
 
     showToast(`Cambiando contexto a nodo: ${instanceId}`, "info");
 

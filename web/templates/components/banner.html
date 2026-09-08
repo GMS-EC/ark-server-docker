@@ -28,11 +28,11 @@
       </div>
       <div class="overview-item">
         <span class="overview-label">Zona horaria:</span>
-        <span class="overview-val highlight-tz" id="top-server-timezone">America/Guayaquil</span>
+        <span class="overview-val highlight-tz" id="top-server-timezone">{{ timezone }}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">Puerto RCON:</span>
-        <span class="overview-val" id="top-server-rcon">27020 (Activo)</span>
+        <span class="overview-val" id="top-server-rcon">{{ rcon_port }} (Interno)</span>
       </div>
     </div>
 
@@ -68,7 +68,7 @@
       </div>
       <div class="overview-item">
         <span class="overview-label">Puerto de Juego:</span>
-        <span class="overview-val" id="top-server-port">7777 (UDP)</span>
+        <span class="overview-val" id="top-server-port">{{ server_port }} (UDP)</span>
       </div>
     </div>
   </div>

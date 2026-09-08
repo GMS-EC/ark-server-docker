@@ -171,13 +171,24 @@
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
       <div class="form-group">
-        <label class="form-label" for="cfg-cluster-id">ID de Clúster (Opcional)</label>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label class="form-label" for="cfg-cluster-id" style="margin-bottom: 0;">ID de Clúster</label>
+          <a href="javascript:void(0)" onclick="switchTab('cluster')" style="font-size: 0.76rem; color: #58a6ff; text-decoration: none; font-weight: 600;">Pestaña Clúster &rarr;</a>
+        </div>
         <input type="text" id="cfg-cluster-id" class="form-input" placeholder="ej: MiClusterArk">
+        <small style="color: var(--text-dim); font-size: 0.73rem; display: block; margin-top: 4px;">Identificador compartido para obeliscos y transferencias entre mapas.</small>
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="cfg-mods">Workshop Mod IDs (Comas)</label>
-        <input type="text" id="cfg-mods" class="form-input" placeholder="ej: 731604991, 893735676">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label class="form-label" style="margin-bottom: 0;">Gestor de Mods de Steam</label>
+          <a href="javascript:void(0)" onclick="switchTab('mods')" style="font-size: 0.76rem; color: #3fb950; text-decoration: none; font-weight: 600;">Explorar Mods &rarr;</a>
+        </div>
+        <div style="background: rgba(56, 139, 253, 0.07); border: 1px solid rgba(56, 139, 253, 0.25); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Administra e instala mods con 1 clic desde la pestaña dedicada.</span>
+          <button type="button" class="btn btn-outline" onclick="switchTab('mods')" style="padding: 3px 8px; font-size: 0.76rem; white-space: nowrap;">Abrir Gestor</button>
+        </div>
+        <input type="hidden" id="cfg-mods" value="">
       </div>
     </div>
 

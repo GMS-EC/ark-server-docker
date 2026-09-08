@@ -22,6 +22,19 @@
     </div>
   </div>
 
+  <!-- Banner Informativo hacia Tareas -->
+  <div style="background: rgba(56, 139, 253, 0.08); border: 1px solid rgba(56, 139, 253, 0.2); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span style="font-size: 0.82rem; color: var(--text-muted);">
+        ¿Deseas programar copias periódicas de seguridad automáticas?
+      </span>
+    </div>
+    <button type="button" class="btn btn-outline" onclick="switchTab('tasks')" style="padding: 4px 10px; font-size: 0.78rem; color: #58a6ff; border-color: rgba(56,139,253,0.3);">
+      Configurar en Tareas &rarr;
+    </button>
+  </div>
+
   <div class="table-container" style="overflow-x: auto;">
     <table class="custom-table" style="width: 100%; border-collapse: collapse; text-align: left;">
       <thead>

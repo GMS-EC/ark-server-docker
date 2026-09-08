@@ -59,16 +59,15 @@
   </nav>
 
   <div class="header-status">
-    <!-- Selector de Servidor / Mapa Activo en Clúster -->
-    <div class="cluster-selector-wrapper" style="display: inline-flex; align-items: center;">
-      <select id="cluster-server-select" class="form-select" onchange="onSwitchClusterServer(this.value)" title="Cambiar mapa / servidor activo" style="padding: 5px 12px; font-size: 0.8rem; height: 32px; background: #161b22; border: 1px solid #30363d; color: #58a6ff; font-weight: 600; cursor: pointer; border-radius: 6px;">
-        <option value="main">Principal (The Island)</option>
+    <!-- Selector de Servidor / Mapa Activo en Clúster (Dinámico) -->
+    <div class="cluster-selector-wrapper" id="cluster-selector-wrapper" style="display: inline-flex; align-items: center;">
+      <div id="cluster-single-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: 0.8rem; height: 32px; background: #161b22; border: 1px solid #30363d; color: #58a6ff; font-weight: 600; border-radius: 6px;" title="Mapa Activo">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+        <span id="cluster-single-map-name">{{ world }}</span>
+      </div>
+      <select id="cluster-server-select" class="form-select" onchange="onSwitchClusterServer(this.value)" title="Cambiar mapa / servidor activo" style="display: none; padding: 5px 12px; font-size: 0.8rem; height: 32px; background: #161b22; border: 1px solid #30363d; color: #58a6ff; font-weight: 600; cursor: pointer; border-radius: 6px;">
+        <option value="main">Principal ({{ world }})</option>
       </select>
-    </div>
-
-    <div class="status-pill {% if not is_installed %}offline{% else %}{{ status.lower() }}{% endif %}" id="status-pill">
-      <span class="status-dot"></span>
-      <span id="status-text">{% if not is_installed %}NO INSTALADO{% else %}{{ status }}{% endif %}</span>
     </div>
 
     <!-- Botón de Cerrar Sesión -->

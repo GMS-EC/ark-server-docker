@@ -211,7 +211,11 @@ async def dashboard(request: Request):
             "is_installed": is_installed,
             "metrics": current_metrics,
             "max_players": settings_data["server"]["max_players"],
-            "theme": settings.runtime_config.get("theme", "dark")
+            "theme": settings.runtime_config.get("theme", "dark"),
+            "timezone": os.getenv("TZ", "America/Guayaquil"),
+            "server_port": settings.server_port,
+            "rcon_port": settings.rcon_port,
+            "query_port": settings.query_port
         }
     )
 
@@ -514,8 +518,15 @@ async def api_player_unban(req: KickBanRequest):
 # --- Endpoints de Métricas ---
 @app.get("/api/metrics", dependencies=[Depends(require_auth)])
 async def api_metrics():
+    curr = metrics_manager.get_current_metrics()
+    try:
+        players = await player_manager.get_online_players()
+        curr["players_online"] = len(players)
+    except Exception:
+        curr["players_online"] = 0
+    curr["max_players"] = settings.max_players
     return {
-        "current": metrics_manager.get_current_metrics(),
+        "current": curr,
         "history": metrics_manager.get_history()
     }
 
