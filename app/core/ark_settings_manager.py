@@ -171,7 +171,10 @@ class ArkSettingsManager:
                 "hatch": game_settings.get("EggHatchSpeedMultiplier", os.getenv("HATCH_SPEED_MULTIPLIER", "1.0")),
                 "mature": game_settings.get("BabyMatureSpeedMultiplier", os.getenv("MATURATION_SPEED_MULTIPLIER", "1.0")),
                 "crafting": gus_settings.get("CraftingSpeedMultiplier", os.getenv("CRAFT_SPEED_MULTIPLIER", "1.0")),
-                "cuddle": game_settings.get("BabyCuddleIntervalMultiplier", "1.0")
+                "cuddle": game_settings.get("BabyCuddleIntervalMultiplier", "1.0"),
+                "day_cycle": gus_settings.get("DayCycleSpeedScale", "1.0"),
+                "day_time": gus_settings.get("DayTimeSpeedScale", "1.0"),
+                "night_time": gus_settings.get("NightTimeSpeedScale", "1.0")
             },
             "rules": {
                 "show_map_player": gus_settings.get("ShowMapPlayerLocation", "True").lower() == "true",
@@ -230,6 +233,12 @@ class ArkSettingsManager:
                 gus_updates["HarvestAmountMultiplier"] = str(m["harvest"])
             if "crafting" in m:
                 gus_updates["CraftingSpeedMultiplier"] = str(m["crafting"])
+            if "day_cycle" in m:
+                gus_updates["DayCycleSpeedScale"] = str(m["day_cycle"])
+            if "day_time" in m:
+                gus_updates["DayTimeSpeedScale"] = str(m["day_time"])
+            if "night_time" in m:
+                gus_updates["NightTimeSpeedScale"] = str(m["night_time"])
             if "mating" in m:
                 game_updates["MatingIntervalMultiplier"] = str(m["mating"])
             if "hatch" in m:

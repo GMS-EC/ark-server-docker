@@ -68,42 +68,97 @@
       </div>
     </div>
 
-    <h3 style="font-size: 0.95rem; font-weight: 600; color: #3fb950; margin-bottom: 14px;">Multiplicadores de Jugabilidad (Rates)</h3>
+    <h3 style="font-size: 0.95rem; font-weight: 600; color: #3fb950; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span>Multiplicadores de Jugabilidad (Rates)</span>
+    </h3>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
       <div class="form-group">
         <label class="form-label" for="cfg-xp">Multiplicador XP</label>
         <input type="number" step="0.5" id="cfg-xp" class="form-input" value="1.0">
+        <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          Mayor valor = más experiencia obtenida por acción (ej: 2.0 = doble de XP).
+        </small>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="cfg-taming">Velocidad de Tameo</label>
         <input type="number" step="0.5" id="cfg-taming" class="form-input" value="1.0">
+        <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          Mayor valor = dinosaurios domesticados más rápido (ej: 3.0 = triple de veloz).
+        </small>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="cfg-harvest">Cantidad de Cosecha</label>
         <input type="number" step="0.5" id="cfg-harvest" class="form-input" value="1.0">
+        <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          Mayor valor = más materiales recolectados por golpe (ej: 2.0 = el doble de recursos).
+        </small>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="cfg-hatch">Incubación de Huevos</label>
         <input type="number" step="0.5" id="cfg-hatch" class="form-input" value="1.0">
+        <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          Mayor valor = huevos fertilizados eclosionan en menos tiempo (ej: 5.0 = 5x más veloz).
+        </small>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="cfg-mature">Maduración de Crías</label>
         <input type="number" step="0.5" id="cfg-mature" class="form-input" value="1.0">
+        <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          Mayor valor = los bebés crecen a adulto más rápido (ej: 5.0 = crecen 5 veces más rápido).
+        </small>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="cfg-mating">Intervalo Apareamiento</label>
         <input type="number" step="0.1" id="cfg-mating" class="form-input" value="1.0">
+        <small style="color: #e3b341; font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          ⚠️ <strong>Menor valor</strong> = menos tiempo de espera para volver a aparear (ej: 0.2 = 80% menos espera).
+        </small>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="cfg-crafting">Velocidad de Crafteo</label>
         <input type="number" step="0.5" id="cfg-crafting" class="form-input" value="1.0">
+        <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          Mayor valor = creación acelerada de recetas y objetos en inventario y mesas.
+        </small>
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; font-weight: 600; color: #f0883e; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      <span>Ciclo de Día y Noche (Duración del Tiempo)</span>
+    </h3>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div class="form-group">
+        <label class="form-label" for="cfg-day-cycle">Escala Ciclo Completo (DayCycleSpeedScale)</label>
+        <input type="number" step="0.1" id="cfg-day-cycle" class="form-input" value="1.0">
+        <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          Velocidad general del ciclo 24h. <strong>Menor valor</strong> = el día completo (día + noche) dura más tiempo real.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-day-time">Velocidad del Día (DayTimeSpeedScale)</label>
+        <input type="number" step="0.1" id="cfg-day-time" class="form-input" value="1.0">
+        <small style="color: #38bdf8; font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          ☀️ <strong>Menor valor</strong> = el DÍA dura más tiempo real (ej: 0.5 = el día dura el doble de horas reales).
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-night-time">Velocidad de la Noche (NightTimeSpeedScale)</label>
+        <input type="number" step="0.1" id="cfg-night-time" class="form-input" value="1.0">
+        <small style="color: #a371f7; font-size: 0.72rem; display: block; margin-top: 4px; line-height: 1.3;">
+          🌙 <strong>Mayor valor</strong> = la NOCHE pasa más rápido y dura menos tiempo real (ej: 2.0 = noche dura la mitad).
+        </small>
       </div>
     </div>
 
@@ -197,8 +252,5 @@
       <input type="text" id="cfg-additional-args" class="form-input" placeholder="ej: -automanagedmods -ServerHardcore -ForceAllowCaveFlyers">
     </div>
 
-    <button type="submit" class="btn btn-primary" style="padding: 8px 24px;">
-      Guardar Configuraciones
-    </button>
   </form>
 </div>

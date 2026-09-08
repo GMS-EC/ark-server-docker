@@ -536,6 +536,9 @@ async function loadSettings() {
             document.getElementById("cfg-hatch").value = (s.multipliers && s.multipliers.hatch) || "1.0";
             document.getElementById("cfg-mature").value = (s.multipliers && s.multipliers.mature) || "1.0";
             if (document.getElementById("cfg-crafting")) document.getElementById("cfg-crafting").value = (s.multipliers && s.multipliers.crafting) || "1.0";
+            if (document.getElementById("cfg-day-cycle")) document.getElementById("cfg-day-cycle").value = (s.multipliers && s.multipliers.day_cycle) || "1.0";
+            if (document.getElementById("cfg-day-time")) document.getElementById("cfg-day-time").value = (s.multipliers && s.multipliers.day_time) || "1.0";
+            if (document.getElementById("cfg-night-time")) document.getElementById("cfg-night-time").value = (s.multipliers && s.multipliers.night_time) || "1.0";
         }
 
         // Reglas
@@ -582,7 +585,10 @@ async function saveSettings(e) {
             mating: document.getElementById("cfg-mating")?.value || "1.0",
             hatch: document.getElementById("cfg-hatch")?.value || "1.0",
             mature: document.getElementById("cfg-mature")?.value || "1.0",
-            crafting: document.getElementById("cfg-crafting")?.value || "1.0"
+            crafting: document.getElementById("cfg-crafting")?.value || "1.0",
+            day_cycle: document.getElementById("cfg-day-cycle")?.value || "1.0",
+            day_time: document.getElementById("cfg-day-time")?.value || "1.0",
+            night_time: document.getElementById("cfg-night-time")?.value || "1.0"
         },
         rules: {
             pve_mode: document.getElementById("cfg-mode")?.value === "pve",
