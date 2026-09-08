@@ -47,13 +47,13 @@ Para guías detalladas paso a paso sobre conexión, configuración y administrac
 
 - **Panel de Control Web Integrado (ARK Server Manager)**: Interfaz gráfica web moderna en el puerto `8080` (FastAPI + WebSockets) con consola en vivo, monitoreo de CPU/RAM/Disco en tiempo real, gestión de supervivientes, explorador de archivos completo y creación/restauración de backups con un solo clic.
 - **Seguridad Reforzada**: Rate limiting inteligente contra fuerza bruta (bloqueo de 10 minutos tras 5 intentos fallidos), sesiones protegidas de 60 minutos con clave criptográfica persistente y compresión Gzip nativa.
-- **Copias de Seguridad Automáticas y Estructuradas**: Backups periódicos organizados (`Saved/SavedArks`, `Saved/Config`) con rotación inteligente por cantidad (`BACKUP_MAX_COUNT`).
+- **Copias de Seguridad Automáticas y Estructuradas**: Backups periódicos organizados (`Saved/SavedArks`, `Saved/Config`) con rotación inteligente por cantidad configurable 100% desde la pestaña Tareas.
 - **Restauración en 1 Clic y Soporte Manual**: Restauración visual con un solo clic desde el panel web (con salvaguarda preventiva automática) y soporte manual arrastrando carpetas por SFTP.
-- **Notificaciones a Discord Multi-idioma**: Alertas en tiempo real (`DISCORD_LANGUAGE=es/en`) para estado, backups, actualizaciones y reinicios.
-- **Reinicios Programados**: Reinicios automáticos periódicos (`AUTO_RESTART_HOURS`) con advertencias in-game (15m, 10m, 5m, 1m) y auto-guardado.
-- **Horario Automático de Encendido/Apagado**: Encendido y apagado programado del proceso del juego (`SCHEDULE_ENABLED`, `SCHEDULE_START`, `SCHEDULE_STOP`, `TZ`) para ahorro de CPU/RAM con protección de jugadores activos y avisos in-game.
-- **Multiplicadores de Rates por Entorno**: Control directo en `.env` para XP, Doma, Recolección, Incubación y Crianza.
-- **Soporte para Mods y Clústeres**: Instalación automática de mods de la Workshop (`MOD_IDS`) y viajes entre servidores (`CLUSTER_ID`).
+- **Notificaciones a Discord Multi-idioma**: Alertas en tiempo real con selector de idioma (Español / Inglés) y matriz de eventos estilo Dockraft desde la pestaña Webhooks.
+- **Reinicios Programados**: Reinicios automáticos periódicos con advertencias in-game (15m, 10m, 5m, 1m) y auto-guardado gestionados en la pestaña Tareas.
+- **Horario Automático de Encendido/Apagado**: Encendido y apagado programado del proceso del juego para ahorro de CPU/RAM con protección de jugadores activos y avisos in-game desde la pestaña Tareas.
+- **Multiplicadores de Rates y Reglas**: Control visual e interactivo en la pestaña Ajustes para XP, Doma, Crianza, Calidad de Vida (GUS.ini) y selección de Mapa.
+- **Soporte para Mods y Clústeres**: Instalación de mods Workshop en 1 clic (pestaña Mods) y clúster multi-mapa interconectado (pestaña Clúster).
 - **Healthcheck Inteligente**: Detecta cuando el servidor está online o cargando mapas/mods pesados.
 
 ### 🖥️ Requisitos del Servidor y Guía de Dimensionamiento
@@ -368,31 +368,27 @@ services:
       icon: https://raw.githubusercontent.com/GMS-EC/ark-server-docker/main/Documents/logo.png
 ```
 
-### ⚙️ Quick Reference Environment Variables
+### ⚙️ Docker Environment Variables (Essential Infrastructure)
+
+The Docker container only requires variables for core infrastructure:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SESSION_NAME` | `ARK Server` | Server name displayed in the server browser |
-| `SERVER_PASSWORD` | (empty) | Password required to join |
-| `ADMIN_PASSWORD` | `adminpass` | Admin (`enablecheats`) and RCON password |
-| `MAX_PLAYERS` | `10` | Maximum player slots |
-| `WORLD` | `TheIsland` | Official map name (`TheIsland`, `Ragnarok`, etc.) |
-| `SERVER_PVE` | `false` | Enable PvE mode |
-| `BATTLEEYE` | `false` | Enable BattlEye anti-cheat |
-| `RCON_ENABLED` | `true` | Enable RCON remote administration (required for automated in-game broadcasts and saveworld) |
-| `MOD_IDS` | (empty) | Comma-separated Steam Workshop mod IDs |
-| `UPDATE_ON_START` | `true` | Check and install ARK server & mod updates on container startup |
-| `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled) |
-| `SCHEDULE_ENABLED` | `false` | Enable automatic power start/stop schedule |
-| `SCHEDULE_START` | `20:00` | Server power-on time in 24h format (`HH:MM`) |
-| `SCHEDULE_STOP` | `00:00` | Server power-off time in 24h format (`HH:MM`) |
-| `SCHEDULE_WARN_MINUTES` | `10` | In-game advance warning notice in minutes before scheduled shutdown |
-| `BACKUP_ENABLED` | `true` | Enable automatic scheduled backups |
-| `BACKUP_INTERVAL_HOURS` | `6` | Backup interval in hours |
-| `BACKUP_MAX_COUNT` | `10` | Max recent backup files to retain |
-| `DISCORD_WEBHOOK_URL` | (empty) | Discord Webhook URL for channel notifications |
-| `DISCORD_LANGUAGE` | `es` | Language for Discord notification messages (`es` / `en`) |
-| `TZ` | `UTC` | Container timezone used for schedule calculation and log timestamps |
+| `TZ` | `America/Guayaquil` | Container timezone for schedule synchronization and log timestamps. |
+| `PANEL_PORT` | `8080` | HTTP port to access the web administration control panel. |
+| `PANEL_USER` | `admin` | Admin username to log in to the web panel. |
+| `PANEL_PASSWORD` | `adminpassword` | Access password for the web panel (change recommended). |
+| `PUID` / `PGID` | `1000` | Linux user and group ID for mounted storage permissions (optional). |
+
+#### ⚡ 100% In-App Web Panel Centralized Features (No Docker Duplication)
+From version 2.0 onwards, all server gameplay and management settings are dynamically configured and saved via the Web UI:
+* 🔔 **Discord Webhooks**: Webhook URL, language selector (`Español` / `English`), live test button, and event filter matrix via the **Webhooks** tab.
+* ⏰ **Automations & Tasks**: Power Schedule (start/stop schedule with advance warning), automated backups, max retention rotation, automatic dino wipes, and scheduled restarts via the **Tasks** tab.
+* 🧩 **Steam Workshop Mods**: Mod search, 1-click popular presets, and auto-update toggles via the **Mods** tab.
+* 🎛️ **Rates, Map & Rules**: Map selector (`world`), Session Name, passwords, XP/Taming/Breeding multipliers, and Quality of Life toggles via the **Settings** tab.
+* 🌐 **Multi-Map Cluster**: Interconnect up to 12 official maps with automatic ports and isolated directories via the **Cluster** tab.
+
+*(Backward compatibility notice: If your container has legacy Docker variables like `DISCORD_WEBHOOK_URL` or `SCHEDULE_START`, the panel automatically imports them on first startup so no preferences are ever lost).*
 
 #### 🔌 Required Network Ports
 

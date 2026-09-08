@@ -142,14 +142,13 @@ El script guardará el mundo, generará el archivo organizado en `./ark-backups/
 
 ---
 
-#### ⚙️ 6. Variables de Entorno Relacionadas (`.env`)
+#### ⚙️ 6. Configuración en la Interfaz Web (Pestaña Tareas)
 
-| Variable | Valor por Defecto | Descripción |
-| :--- | :--- | :--- |
-| `BACKUP_ENABLED` | `true` | Habilita el ciclo de copias automáticas programadas. |
-| `BACKUP_INTERVAL_HOURS` | `6` | Horas entre cada copia automática (ej. `6` realiza 4 copias al día). |
-| `BACKUP_MAX_COUNT` | `10` | Cantidad máxima de respaldos a conservar antes de purgar los más viejos. |
-| `BACKUP_DIR` | `/home/steam/ark-backups` | Ruta dentro del contenedor donde se guardan los archivos comprimidos. |
+En la versión 2.0+, la frecuencia y retención de las copias se configuran visualmente desde la pestaña **Tareas** del Panel Web:
+* **Respaldos Automáticos Programados**: Habilita o desactiva la creación periódica sin tocar archivos de texto ni reiniciar el contenedor.
+* **Intervalo de Respaldo (Horas)**: Configurable directamente (ej. cada `6` horas realiza 4 copias automáticas diarias).
+* **Rotación por Cantidad Máxima**: Define el número de copias recientes a retener (ej. `10` o `20`). El sistema elimina automáticamente las copias más antiguas.
+* **Respaldos Manuales a Demanda**: En la pestaña **Copias de Seguridad**, puedes pulsar *Crear Copia* con un nombre personalizado en cualquier instante antes de realizar cambios mayores en tu mundo.
 
 </details>
 

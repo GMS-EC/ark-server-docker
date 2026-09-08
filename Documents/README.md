@@ -17,15 +17,15 @@ Bienvenido al centro de documentación oficial del servidor dedicado de ARK: Sur
    - **Conexión sin abrir puertos usando ZeroTier**: Configuración paso a paso para jugar con amigos sin tocar el router.
 
 2. [**⚙️ Guía de Configuración Avanzada (`configuration-guide.md`)**](configuration-guide.md#-español)
-   - Explicación completa de todas las variables de entorno (`.env`) y sus valores por defecto (`UPDATE_ON_START`, `SCHEDULE_ENABLED`, `BACKUP_MAX_COUNT`).
+   - Gestión visual de configuraciones (Ajustes, Tasas, Calidad de Vida y Mapas) sin duplicar variables en `.env`.
    - Multiplicadores recomendados para servidores Solo/Dúo (XP, Doma, Crianza, Crafteo).
-   - Personalización directa de archivos `GameUserSettings.ini` y `Game.ini`.
-   - Inyección de opciones avanzadas con `ARKMANAGER_OPTS` y flags en `ADDITIONAL_ARGS`.
+   - Personalización visual y mediante el editor `.ini` integrado (`GameUserSettings.ini` y `Game.ini`).
+   - Argumentos adicionales del ejecutable (`ADDITIONAL_ARGS`) configurados desde la web.
 
 3. [**🛠️ Guía de Administración (`management-guide.md`)**](management-guide.md#-español)
-   - Comandos principales de `arkmanager`.
+   - Comandos principales de `arkmanager` y consola RCON web interactiva.
    - Gestión de respaldos automáticos y restauración en 1 clic desde el panel web.
-   - Notificaciones Webhook a Discord y diferencia entre Reinicios Programados (`AUTO_RESTART_HOURS`) vs. Horario Automático (`SCHEDULE_ENABLED`).
+   - Notificaciones Webhook a Discord (con selector de idioma y eventos activos) y gestión de Tareas (Reinicios vs. Horario Automático).
    - Diagnóstico y ajuste de salud (`HEALTHCHECK`) para servidores en discos mecánicos (HDD) o con mods pesados.
 
 4. [**📦 Guía de Copias de Seguridad y Restauración (`backup-restore-guide.md`)**](backup-restore-guide.md#-español)
@@ -46,15 +46,15 @@ Welcome to the official documentation center for the ARK: Survival Evolved Dedic
    - **Connecting without Port Forwarding via ZeroTier**: Step-by-step setup to play with friends without touching your router.
 
 2. [**⚙️ Advanced Configuration Guide (`configuration-guide.md`)**](configuration-guide.md#-english)
-   - Complete breakdown of all environment variables (`.env`) and default values (`UPDATE_ON_START`, `SCHEDULE_ENABLED`, `BACKUP_MAX_COUNT`).
+   - Visual settings management (Settings, Rates, QoL rules, and Maps) without duplicate `.env` variables.
    - Recommended rates for Solo/Duo servers (XP, Taming, Breeding, Crafting).
-   - Direct customization of `GameUserSettings.ini` and `Game.ini`.
-   - Advanced options injection via `ARKMANAGER_OPTS` and custom flags in `ADDITIONAL_ARGS`.
+   - Visual and integrated in-app `.ini` editing (`GameUserSettings.ini` and `Game.ini`).
+   - ShooterGameServer flags and additional arguments (`ADDITIONAL_ARGS`) managed via web.
 
 3. [**🛠️ Server Management Guide (`management-guide.md`)**](management-guide.md#-english)
-   - Common `arkmanager` commands.
+   - Common `arkmanager` commands and web RCON interactive console.
    - Managing automatic backups and 1-click restore from web panel.
-   - Discord Webhook alerts and Scheduled Restarts (`AUTO_RESTART_HOURS`) vs. Power Schedule (`SCHEDULE_ENABLED`).
+   - Discord Webhook alerts (language selector and active event filters) and Tasks management (Scheduled Restarts vs. Power Schedule).
    - Healthcheck diagnostics and tuning (`HEALTHCHECK`) for Mechanical HDDs or heavy mod setups.
 
 4. [**📦 Backup and Restoration Guide (`backup-restore-guide.md`)**](backup-restore-guide.md#-english)

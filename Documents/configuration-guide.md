@@ -80,11 +80,10 @@ En la versión 2.0+, para evitar duplicaciones y reiniciar el contenedor, las si
 
 #### 🛠️ 2. Banderas Adicionales (`ADDITIONAL_ARGS`)
 
-`ADDITIONAL_ARGS` permite pasar argumentos tipo `-flag` directamente a la línea de comandos de lanzamiento del ejecutable del servidor de ARK (`ShooterGameServer`).
+Permite pasar argumentos tipo `-flag` directamente a la línea de comandos de lanzamiento del ejecutable del servidor de ARK (`ShooterGameServer`). En la versión 2.0+, se configura directamente desde el campo **Argumentos Adicionales** en la pestaña **Ajustes** del panel web:
 
-Ejemplo de uso en tu `.env`:
 ```bash
-ADDITIONAL_ARGS=-ServerHardcore -ForceAllowCaveFlyers -DisableStructureDecayPvE -AllowFlyerCarryPvE
+-ServerHardcore -ForceAllowCaveFlyers -DisableStructureDecayPvE -AllowFlyerCarryPvE
 ```
 
 ##### Banderas Populares Recomendadas:

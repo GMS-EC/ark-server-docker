@@ -71,13 +71,10 @@ El contenedor incluye [ARK Server Tools (`arkmanager`)](https://github.com/arkma
 
 #### 📦 2. Sistema de Respaldos (Backups Automáticos)
 
-Configuración en `.env`:
-```bash
-BACKUP_ENABLED=true
-BACKUP_INTERVAL_HOURS=6
-BACKUP_DIR=/home/steam/ark-backups
-BACKUP_MAX_COUNT=10
-```
+En la versión 2.0+, los respaldos automáticos se gestionan de forma visual desde la pestaña **Tareas** del Panel Web:
+* **Copias de Seguridad Automáticas**: Selector Activar / Desactivar.
+* **Intervalo de Respaldo**: Frecuencia en horas (ej. cada `6` horas realiza 4 copias al día).
+* **Copias Máximas a Retener**: Límite de retención (ej. conservar las últimas `10` copias).
 
 ##### Características del Sistema de Backup:
 1. **Guardado Preventivo (`saveworld`)**: El contenedor fuerza la grabación del mapa a disco antes de crear cada comprimido `.tar.bz2`.
@@ -114,11 +111,11 @@ Para restaurar un mapa desde un backup de forma automática:
 
 #### 🔔 4. Notificaciones Webhook a Discord
 
-Agrega tu URL de Webhook y el idioma deseado a `.env`:
-```bash
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/TU_WEBHOOK_ID/TU_WEBHOOK_TOKEN
-DISCORD_LANGUAGE=es # Opciones: "es" (Español, por defecto) o "en" (Inglés)
-```
+Configura tus notificaciones directamente desde la pestaña **Webhooks** del Panel Web:
+1. Pega tu **URL de Webhook de Discord**.
+2. Selecciona el **Idioma de las Notificaciones** (`Español` / `English`).
+3. Marca en la **Matriz de Notificaciones Activas** los eventos exactos que deseas recibir (Inicio de carga, Servidor online, Apagado, Aviso previo, Respaldos, Dino Wipe, Reinicios, Jugadores).
+4. Pulsa **Probar Notificación** para validar la conexión en vivo.
 
 Recibirás notificaciones automáticas para:
 - Inicio (`START`), carga (`STARTING`) y apagado (`SHUTDOWN`) del servidor.
@@ -145,18 +142,15 @@ Si tienes ambas opciones activas (ej. `AUTO_RESTART_HOURS=48` y `SCHEDULE_ENABLE
 
 ---
 
-#### ⏰ 6. Configuración del Horario Automático (`SCHEDULE_ENABLED`)
+#### ⏰ 6. Configuración del Horario Automático (Power Schedule)
 
-Permite apagar y encender automáticamente el **proceso** del servidor de ARK (mientras el contenedor Docker sigue corriendo en segundo plano) para ahorrar CPU y memoria RAM cuando nadie está jugando.
+Permite apagar y encender automáticamente el **proceso** del servidor de ARK (mientras el contenedor Docker y el panel web siguen corriendo en segundo plano) para ahorrar CPU y memoria RAM cuando nadie está jugando.
 
-Configuración en `.env`:
-```bash
-SCHEDULE_ENABLED=true       # Valor por defecto: false (requiere establecerse en true)
-SCHEDULE_START=20:00        # Valor por defecto: "20:00"
-SCHEDULE_STOP=02:00         # Valor por defecto: "00:00"
-TZ=America/Guayaquil        # Valor por defecto: UTC
-SCHEDULE_WARN_MINUTES=10    # Valor por defecto: 10
-```
+Se configura 100% de forma visual desde la pestaña **Tareas** del Panel Web:
+* **Horario de Encendido/Apagado**: Activado / Desactivado.
+* **Hora de Encendido (`HH:MM`)**: Hora diaria de arranque automático (ej. `20:00`).
+* **Hora de Apagado (`HH:MM`)**: Hora diaria de apagado seguro (ej. `02:00`).
+* *(La zona horaria utilizada corresponde a la variable `TZ` de tu Docker Compose, ej. `America/Guayaquil`).*
 
 ##### Características del Horario Automático:
 1. **Ahorro de Recursos**: Ejecuta `arkmanager stop @main` fuera del horario y `arkmanager start @main` dentro del horario.
@@ -332,11 +326,11 @@ To restore a game from a backup automatically:
 
 #### 🔔 4. Discord Webhook Notifications
 
-Set `DISCORD_WEBHOOK_URL` and `DISCORD_LANGUAGE` in `.env`:
-```bash
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
-DISCORD_LANGUAGE=es # Options: "es" (Spanish, default) or "en" (English)
-```
+Configure your alerts directly via the **Webhooks** tab in the Web Panel:
+1. Paste your **Discord Webhook URL**.
+2. Select notification **Language** (`Español` / `English`).
+3. Check the **Active Notification Grid** for specific events you want to receive (Server starting, Online, Shutdown, Schedule warning, Backups, Dino wipes, Restarts, Players).
+4. Click **Test Webhook** for live delivery validation.
 
 You will receive real-time rich embed notifications for:
 - Server status events: Started (`START`), loading (`STARTING`), and stopped (`SHUTDOWN`).

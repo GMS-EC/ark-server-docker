@@ -450,6 +450,7 @@ async function loadSettings() {
         // Servidor
         if (document.getElementById("cfg-session-name")) {
             document.getElementById("cfg-session-name").value = (s.server && s.server.session_name) || "";
+            if (document.getElementById("cfg-world")) document.getElementById("cfg-world").value = (s.server && s.server.world) || "TheIsland";
             document.getElementById("cfg-server-pass").value = (s.server && s.server.server_password) || "";
             document.getElementById("cfg-admin-pass").value = (s.server && s.server.admin_password) || "";
             document.getElementById("cfg-max-players").value = (s.server && s.server.max_players) || "20";
@@ -457,6 +458,7 @@ async function loadSettings() {
             if (document.getElementById("cfg-mods")) document.getElementById("cfg-mods").value = (s.server && s.server.mod_ids) || "";
             if (document.getElementById("cfg-additional-args")) document.getElementById("cfg-additional-args").value = (s.server && s.server.additional_args) || "";
             if (document.getElementById("cfg-battleeye")) document.getElementById("cfg-battleeye").value = String(!!(s.server && s.server.battleeye));
+            if (document.getElementById("cfg-update-on-start")) document.getElementById("cfg-update-on-start").value = String(s.server && s.server.update_on_start !== false);
             if (document.getElementById("cfg-autostart-server")) document.getElementById("cfg-autostart-server").value = String(s.server && s.server.autostart_server !== false);
         }
 
@@ -475,6 +477,18 @@ async function loadSettings() {
         if (document.getElementById("cfg-mode")) {
             document.getElementById("cfg-mode").value = (s.rules && s.rules.pve_mode) ? "pve" : "pvp";
         }
+        if (document.getElementById("cfg-show-map-player")) {
+            document.getElementById("cfg-show-map-player").value = String(s.rules && s.rules.show_map_player !== false);
+        }
+        if (document.getElementById("cfg-third-person")) {
+            document.getElementById("cfg-third-person").value = String(s.rules && s.rules.third_person !== false);
+        }
+        if (document.getElementById("cfg-crosshair")) {
+            document.getElementById("cfg-crosshair").value = String(s.rules && s.rules.crosshair !== false);
+        }
+        if (document.getElementById("cfg-pvp-gamma")) {
+            document.getElementById("cfg-pvp-gamma").value = String(s.rules && s.rules.pvp_gamma !== false);
+        }
     } catch (e) {
         console.error("Error al cargar configuraciones:", e);
     }
@@ -485,6 +499,7 @@ async function saveSettings(e) {
     const payload = {
         server: {
             session_name: document.getElementById("cfg-session-name")?.value || "",
+            world: document.getElementById("cfg-world")?.value || "TheIsland",
             server_password: document.getElementById("cfg-server-pass")?.value || "",
             admin_password: document.getElementById("cfg-admin-pass")?.value || "",
             max_players: parseInt(document.getElementById("cfg-max-players")?.value) || 20,
@@ -492,6 +507,7 @@ async function saveSettings(e) {
             mod_ids: document.getElementById("cfg-mods")?.value || "",
             additional_args: document.getElementById("cfg-additional-args")?.value || "",
             battleeye: document.getElementById("cfg-battleeye")?.value === "true",
+            update_on_start: document.getElementById("cfg-update-on-start")?.value === "true",
             autostart_server: document.getElementById("cfg-autostart-server")?.value === "true"
         },
         multipliers: {
@@ -504,7 +520,11 @@ async function saveSettings(e) {
             crafting: document.getElementById("cfg-crafting")?.value || "1.0"
         },
         rules: {
-            pve_mode: document.getElementById("cfg-mode")?.value === "pve"
+            pve_mode: document.getElementById("cfg-mode")?.value === "pve",
+            show_map_player: document.getElementById("cfg-show-map-player")?.value === "true",
+            third_person: document.getElementById("cfg-third-person")?.value === "true",
+            crosshair: document.getElementById("cfg-crosshair")?.value === "true",
+            pvp_gamma: document.getElementById("cfg-pvp-gamma")?.value === "true"
         }
     };
 

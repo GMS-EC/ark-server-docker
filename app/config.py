@@ -58,12 +58,15 @@ class Settings:
                 self.runtime_config["secret_key"] = self.secret_key
                 self.save_runtime_config({})
 
-        # ARK Server settings
-        self.session_name: str = os.getenv("SESSION_NAME", "ARK Server")
-        self.server_password: str = os.getenv("SERVER_PASSWORD", "")
-        self.admin_ark_password: str = os.getenv("ADMIN_PASSWORD", "adminpass")
-        self.max_players: int = int(os.getenv("MAX_PLAYERS", "20"))
-        self.world: str = os.getenv("WORLD", "TheIsland")
+        # ARK Server settings (Carga dinámica desde runtime_config con fallback a env vars)
+        self.session_name: str = self.runtime_config.get("session_name", os.getenv("SESSION_NAME", "ARK Server"))
+        self.server_password: str = self.runtime_config.get("server_password", os.getenv("SERVER_PASSWORD", ""))
+        self.admin_ark_password: str = self.runtime_config.get("admin_ark_password", os.getenv("ADMIN_PASSWORD", "adminpass"))
+        try:
+            self.max_players: int = int(self.runtime_config.get("max_players", os.getenv("MAX_PLAYERS", "20")))
+        except Exception:
+            self.max_players = 20
+        self.world: str = self.runtime_config.get("world", os.getenv("WORLD", "TheIsland"))
         self.server_port: int = int(os.getenv("SERVER_PORT", "7777"))
         self.query_port: int = int(os.getenv("QUERY_PORT", "27015"))
         self.rcon_port: int = int(os.getenv("RCON_PORT", "27020"))
@@ -80,6 +83,19 @@ class Settings:
                 data = {}
 
         # Sincronizar automáticamente variables de entorno para que nunca se pierdan
+        if "world" not in data:
+            data["world"] = os.getenv("WORLD", "TheIsland")
+        if "session_name" not in data:
+            data["session_name"] = os.getenv("SESSION_NAME", "ARK Server")
+        if "server_password" not in data:
+            data["server_password"] = os.getenv("SERVER_PASSWORD", "")
+        if "admin_ark_password" not in data:
+            data["admin_ark_password"] = os.getenv("ADMIN_PASSWORD", "adminpass")
+        if "max_players" not in data:
+            try:
+                data["max_players"] = int(os.getenv("MAX_PLAYERS", "20"))
+            except Exception:
+                data["max_players"] = 20
         if not data.get("discord_webhook_url"):
             env_wh = os.getenv("DISCORD_WEBHOOK_URL", "").strip()
             if env_wh:
@@ -119,6 +135,19 @@ class Settings:
 
     def save_runtime_config(self, new_config: Dict[str, Any]) -> None:
         self.runtime_config.update(new_config)
+        if "world" in new_config:
+            self.world = new_config["world"]
+        if "session_name" in new_config:
+            self.session_name = new_config["session_name"]
+        if "server_password" in new_config:
+            self.server_password = new_config["server_password"]
+        if "admin_ark_password" in new_config:
+            self.admin_ark_password = new_config["admin_ark_password"]
+        if "max_players" in new_config:
+            try:
+                self.max_players = int(new_config["max_players"])
+            except Exception:
+                pass
         try:
             with open(self._config_file, "w", encoding="utf-8") as f:
                 json.dump(self.runtime_config, f, indent=2)

@@ -189,17 +189,31 @@ class ArkSettingsManager:
 
         if "server" in payload:
             srv = payload["server"]
+            runtime_updates = {}
+            if "world" in srv:
+                settings.world = srv["world"]
+                runtime_updates["world"] = srv["world"]
             if "session_name" in srv:
+                settings.session_name = srv["session_name"]
+                runtime_updates["session_name"] = srv["session_name"]
                 gus_updates["SessionName"] = srv["session_name"]
             if "server_password" in srv:
+                settings.server_password = srv["server_password"]
+                runtime_updates["server_password"] = srv["server_password"]
                 gus_updates["ServerPassword"] = srv["server_password"]
             if "admin_password" in srv:
+                settings.admin_ark_password = srv["admin_password"]
+                runtime_updates["admin_ark_password"] = srv["admin_password"]
                 gus_updates["ServerAdminPassword"] = srv["admin_password"]
             if "max_players" in srv:
-                gus_updates["MaxPlayers"] = str(srv["max_players"])
+                try:
+                    settings.max_players = int(srv["max_players"])
+                    runtime_updates["max_players"] = int(srv["max_players"])
+                    gus_updates["MaxPlayers"] = str(srv["max_players"])
+                except Exception:
+                    pass
 
             # Persistir configuraciones de ejecución en runtime_config
-            runtime_updates = {}
             for k in ["mod_ids", "cluster_id", "cluster_dir_override", "additional_args", "beta", "update_on_start", "battleeye", "autostart_server"]:
                 if k in srv:
                     runtime_updates[k] = srv[k]

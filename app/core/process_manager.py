@@ -218,11 +218,23 @@ class ProcessManager:
             cmd = [sys.executable, "-c", "import time; print('[ShooterGame] ARK Server Simulation Running...'); [time.sleep(2) for _ in range(300)]"]
 
         try:
+            start_env = os.environ.copy()
+            start_env["SESSION_NAME"] = settings.session_name
+            start_env["SERVER_PASSWORD"] = settings.server_password
+            start_env["ADMIN_PASSWORD"] = settings.admin_ark_password
+            start_env["MAX_PLAYERS"] = str(settings.max_players)
+            start_env["WORLD"] = settings.world
+            start_env["MOD_IDS"] = str(settings.runtime_config.get("mod_ids", os.getenv("MOD_IDS", "")))
+            start_env["CLUSTER_ID"] = str(settings.runtime_config.get("cluster_id", os.getenv("CLUSTER_ID", "")))
+            start_env["ADDITIONAL_ARGS"] = str(settings.runtime_config.get("additional_args", os.getenv("ADDITIONAL_ARGS", "")))
+            start_env["UPDATE_ON_START"] = "true" if settings.runtime_config.get("update_on_start", True) else "false"
+            start_env["BATTLEEYE"] = "true" if settings.runtime_config.get("battleeye", False) else "false"
+
             self.process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
-                env=os.environ.copy()
+                env=start_env
             )
             self._reader_task = asyncio.create_task(self._stream_output(self.process))
             self._log_file_task = asyncio.create_task(self._stream_log_file())

@@ -3,7 +3,7 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
     <div>
       <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>Configuraciones del Servidor de ARK</span>
       </h2>
       <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.85rem;">
@@ -23,6 +23,24 @@
       <div class="form-group">
         <label class="form-label" for="cfg-session-name">Nombre de la Sesión</label>
         <input type="text" id="cfg-session-name" class="form-input" placeholder="Mi Servidor ARK">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-world">Mapa Principal (World)</label>
+        <select id="cfg-world" class="form-select">
+          <option value="TheIsland">The Island (Oficial)</option>
+          <option value="TheCenter">The Center</option>
+          <option value="ScorchedEarth_P">Scorched Earth</option>
+          <option value="Ragnarok">Ragnarok</option>
+          <option value="Aberration_P">Aberration</option>
+          <option value="Extinction">Extinction</option>
+          <option value="Valguero_P">Valguero</option>
+          <option value="Genesis">Genesis: Part 1</option>
+          <option value="CrystalIsles">Crystal Isles</option>
+          <option value="Gen2">Genesis: Part 2</option>
+          <option value="LostIsland">Lost Island</option>
+          <option value="Fjordur">Fjordur</option>
+        </select>
       </div>
 
       <div class="form-group">
@@ -88,7 +106,7 @@
       </div>
     </div>
 
-    <h3 style="font-size: 0.95rem; font-weight: 600; color: #d29922; margin-bottom: 14px;">Reglas del Servidor, Mods & Clúster</h3>
+    <h3 style="font-size: 0.95rem; font-weight: 600; color: #d29922; margin-bottom: 14px;">Reglas del Servidor & Calidad de Vida</h3>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
       <div class="form-group">
@@ -107,6 +125,50 @@
         </select>
       </div>
 
+      <div class="form-group">
+        <label class="form-label" for="cfg-update-on-start">Actualización al Iniciar</label>
+        <select id="cfg-update-on-start" class="form-select">
+          <option value="true">Activado (Verificar y actualizar ARK y Mods)</option>
+          <option value="false">Desactivado (Arranque más rápido sin verificar Steam)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-show-map-player">Superviviente en el Mapa</label>
+        <select id="cfg-show-map-player" class="form-select">
+          <option value="true">Activado (Mostrar marcador del jugador en mapa)</option>
+          <option value="false">Desactivado (Estilo hardcore sin marcador)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-third-person">Vista en 3ra Persona</label>
+        <select id="cfg-third-person" class="form-select">
+          <option value="true">Permitida (Permitir alejar cámara en 3ra persona)</option>
+          <option value="false">Bloqueada (Solo 1ra persona)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-crosshair">Retícula / Mira en Pantalla</label>
+        <select id="cfg-crosshair" class="form-select">
+          <option value="true">Activada</option>
+          <option value="false">Desactivada</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-pvp-gamma">Ajuste de Brillo (Gamma)</label>
+        <select id="cfg-pvp-gamma" class="form-select">
+          <option value="true">Permitido (Comando gamma habilitado)</option>
+          <option value="false">Bloqueado</option>
+        </select>
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; font-weight: 600; color: #a371f7; margin-bottom: 14px;">Mods, Argumentos & Clúster</h3>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
       <div class="form-group">
         <label class="form-label" for="cfg-cluster-id">ID de Clúster (Opcional)</label>
         <input type="text" id="cfg-cluster-id" class="form-input" placeholder="ej: MiClusterArk">
