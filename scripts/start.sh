@@ -55,8 +55,9 @@ if command -v arkmanager >/dev/null 2>&1; then
     echo "========================================================================"
     echo "[ARK Server Manager] Todos los mods instalados exitosamente."
     echo "[ARK Server Manager] Lanzando ejecutable ShooterGameServer..."
-    echo "[ARK Server Manager] [INFO] El servidor está cargando el mapa y los dinos en memoria RAM."
-    echo "[ARK Server Manager] [INFO] Este proceso toma entre 3 y 6 minutos. El estado permanecerá en STARTING hasta estar listo."
+    echo "[ARK Server Manager] [INFO] El servidor está cargando el mapa, dinos y mods en memoria RAM."
+    echo "[ARK Server Manager] [INFO] En discos duros mecánicos (HDD) o con mods extensos (como ARK Additions), la carga inicial puede tomar entre 15 y 25 minutos."
+    echo "[ARK Server Manager] [INFO] El estado en el panel permanecerá en STARTING (color naranja con pulso) hasta estar 100% disponible."
     echo "========================================================================"
     exec arkmanager run @main
 else

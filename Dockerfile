@@ -102,7 +102,7 @@ WORKDIR /home/steam
 
 EXPOSE 7777-7800/udp 27015-27035/udp 27020-27035/tcp 8080/tcp
 
-HEALTHCHECK --start-period=5m --interval=1m --timeout=30s --retries=5 \
+HEALTHCHECK --start-period=30m --interval=1m --timeout=30s --retries=5 \
             CMD /home/steam/scripts/healthcheck.sh
 
 ENTRYPOINT ["/home/steam/scripts/init.sh"]
