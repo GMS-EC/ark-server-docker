@@ -1,0 +1,42 @@
+<!-- TAB: BACKUPS & RESPALDOS (Dockraft Style) -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        <span>Copias de Seguridad (SavedArks)</span>
+      </h2>
+      <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.85rem;">
+        Archivos comprimidos .tar.gz de la carpeta de mundos guardados.
+      </p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button class="btn btn-outline" onclick="loadBackups()" style="padding: 6px 12px; font-size: 0.82rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span>Refrescar</span>
+      </button>
+      <button class="btn btn-primary" onclick="createBackupNow()" style="padding: 6px 14px; font-size: 0.82rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Crear Copia Ahora</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="table-container" style="overflow-x: auto;">
+    <table class="custom-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead>
+        <tr>
+          <th>Nombre de Archivo</th>
+          <th>Tamaño</th>
+          <th>Fecha de Creación</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="backups-table-body">
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 24px;">Cargando copias de seguridad...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

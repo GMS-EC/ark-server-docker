@@ -1,0 +1,79 @@
+<!-- Top Server Overview & Metrics Banner (Dockraft Identical Layout) -->
+<div class="server-overview-banner" id="server-overview-banner">
+  <!-- Mobile Summary & Toggle Header -->
+  <div class="banner-mobile-bar" id="banner-mobile-bar" role="button" tabindex="0" onclick="document.getElementById('overview-grid').classList.toggle('expanded');">
+    <div class="banner-mobile-left">
+      <span class="status-dot {% if not is_installed %}offline{% else %}{{ status.lower() }}{% endif %}" id="banner-mob-dot" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
+      <span class="banner-mob-title" id="banner-mob-title" style="font-weight: 600; font-size: 0.82rem;">Detalles del Servidor ARK</span>
+      <span class="banner-mob-pill" id="banner-mob-map" style="color: #58a6ff; font-size: 0.75rem; font-weight: 700; background: rgba(56, 139, 253, 0.1); border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 4px; padding: 1px 6px;">{{ world }}</span>
+    </div>
+    <div class="banner-mobile-right" id="banner-mobile-toggle-btn">
+      <span class="banner-toggle-hint" style="font-size: 0.74rem; color: var(--text-dim);">Detalles</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+
+  <div class="overview-grid" id="overview-grid">
+    <!-- Columna 1: Estado, Inicio, Uptime y Zona Horaria -->
+    <div class="overview-col">
+      <div class="overview-item">
+        <span class="overview-label">Estado del Servidor:</span>
+        <span class="overview-val status-text-inline {% if not is_installed %}offline{% else %}{{ status.lower() }}{% endif %}" id="top-server-status">
+          {% if not is_installed %}Sin instalar{% else %}{{ status }}{% endif %}
+        </span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Actividad:</span>
+        <span class="overview-val uptime-live" id="top-server-uptime">{{ metrics.uptime_formatted }}</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Zona horaria:</span>
+        <span class="overview-val highlight-tz" id="top-server-timezone">America/Guayaquil</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Puerto RCON:</span>
+        <span class="overview-val" id="top-server-rcon">27020 (Activo)</span>
+      </div>
+    </div>
+
+    <!-- Columna 2: CPU, Memoria, Jugadores y Rendimiento -->
+    <div class="overview-col">
+      <div class="overview-item">
+        <span class="overview-label">Uso de CPU:</span>
+        <span class="overview-val" id="top-server-cpu">{{ metrics.cpu_percent }} %</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">RAM Servidor:</span>
+        <span class="overview-val" id="top-server-ark-memory" style="font-weight: 700; color: #58a6ff;">{{ metrics.ark_ram_gb }} GB</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">RAM Total Usada:</span>
+        <span class="overview-val" id="top-server-memory">{{ metrics.ram_used_gb }} / {{ metrics.ram_total_gb }} GB</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Supervivientes:</span>
+        <span class="overview-val highlight-players" id="top-server-players">0 / {{ max_players }}</span>
+      </div>
+    </div>
+
+    <!-- Columna 3: Nombre, Mapa, Modo y Espacio en Disco -->
+    <div class="overview-col">
+      <div class="overview-item">
+        <span class="overview-label">Nombre de Sesión:</span>
+        <span class="overview-val highlight-name" id="top-server-name" style="color: #58a6ff; font-weight: 700;">{{ session_name }}</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Mapa:</span>
+        <span class="overview-val highlight-version" id="top-server-map" style="font-weight: 700; color: #3fb950;">{{ world }}</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Espacio en Disco:</span>
+        <span class="overview-val" id="top-server-disk">{{ metrics.disk_used_gb }} / {{ metrics.disk_total_gb }} GB</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Puerto de Juego:</span>
+        <span class="overview-val" id="top-server-port">7777 (UDP)</span>
+      </div>
+    </div>
+  </div>
+</div>

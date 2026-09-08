@@ -9,6 +9,8 @@
 # Local runtime directories & volumes
 steamcmd/
 ark-backups/
+clusters/
+app/data/
 
 # Python cache & bytecode
 __pycache__/

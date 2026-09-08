@@ -6,6 +6,9 @@
 # Server data (created at runtime, should not be versioned)
 steamcmd/
 ark-backups/
+clusters/
+app/data/
+data/
 
 # OS/editor noise
 .DS_Store

@@ -24,15 +24,15 @@ Bienvenido al centro de documentación oficial del servidor dedicado de ARK: Sur
 
 3. [**🛠️ Guía de Administración (`management-guide.md`)**](management-guide.md#-español)
    - Comandos principales de `arkmanager`.
-   - Gestión de respaldos automáticos y uso del script `restore.sh`.
+   - Gestión de respaldos automáticos y restauración en 1 clic desde el panel web.
    - Notificaciones Webhook a Discord y diferencia entre Reinicios Programados (`AUTO_RESTART_HOURS`) vs. Horario Automático (`SCHEDULE_ENABLED`).
    - Diagnóstico y ajuste de salud (`HEALTHCHECK`) para servidores en discos mecánicos (HDD) o con mods pesados.
 
 4. [**📦 Guía de Copias de Seguridad y Restauración (`backup-restore-guide.md`)**](backup-restore-guide.md#-español)
    - Anatomía de archivos de guardado (`.ark`, `*.arkprofile`, `*.arktribe`, `.ini`).
-   - Restauración automatizada en 1 comando con `restore.sh` y copias de seguridad preventivas.
+   - Restauración visual e inmediata desde el panel web y copias de seguridad preventivas.
    - Restauración manual detallada paso a paso por SFTP (FileZilla / WinSCP) para backups organizados y legados.
-   - Generación de backups manuales a demanda con `backup.sh`.
+   - Generación de backups manuales con nombre personalizado desde el panel web.
 
 ---
 
@@ -53,12 +53,12 @@ Welcome to the official documentation center for the ARK: Survival Evolved Dedic
 
 3. [**🛠️ Server Management Guide (`management-guide.md`)**](management-guide.md#-english)
    - Common `arkmanager` commands.
-   - Managing automatic backups and using `restore.sh`.
+   - Managing automatic backups and 1-click restore from web panel.
    - Discord Webhook alerts and Scheduled Restarts (`AUTO_RESTART_HOURS`) vs. Power Schedule (`SCHEDULE_ENABLED`).
    - Healthcheck diagnostics and tuning (`HEALTHCHECK`) for Mechanical HDDs or heavy mod setups.
 
 4. [**📦 Backup and Restoration Guide (`backup-restore-guide.md`)**](backup-restore-guide.md#-english)
    - ARK save file anatomy (`.ark`, `*.arkprofile`, `*.arktribe`, `.ini`).
-   - One-command automated restoration via `restore.sh` with automatic safety backups.
+   - Visual and immediate restoration from web panel with automatic safety backups.
    - Step-by-step manual SFTP restoration (FileZilla / WinSCP) for organized and legacy archives.
-   - On-demand manual backups via `backup.sh`.
+   - On-demand manual backups with custom names from web panel.

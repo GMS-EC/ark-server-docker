@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-09-08
+
+### Added
+- **ARK Server Manager Web Panel**: Modern, responsive web management interface built with FastAPI, WebSockets, Chart.js, and vanilla CSS inspired by Dockraft.
+- **Multi-Map Cluster Management**: Centralized management for up to 12 official ARK maps sharing the same obelisk directory (`/clusters/ArkCluster`) with automatic port and save directory isolation.
+- **Steam Workshop Mods Manager**: Integrated visual catalog with 1-click popular presets (S+, Awesome Spyglass, Dino Storage v2, etc.) and auto-updater.
+- **Web File Manager & Editor**: Integrated file explorer with syntax highlighting, file creation, editing, ZIP extraction, and direct access to map saves and cluster obelisk data.
+- **Visual Backup & Restore**: Browser-based snapshot creation, download, and one-click restore with automated safety backups.
+- **Interactive Webhooks Configurator**: Discord notification builder with embed color customization and test notification delivery.
+- **Survivor & Tribe Management**: Live player tracker with kick/ban moderation and tribe administration.
+- **Task Scheduler**: Visual interface for power schedules, automated backups, log rotation, and periodic server restarts.
+- **Security & Rate Limiting**: 5-attempt login lockout (10-minute ban), 60-minute token expiration, and persistent session encryption.
+
+### Changed
+- **Centralized Management**: Replaced obsolete standalone bash scripts with centralized web panel APIs and management background tasks.
+- **Docker Compose Ports**: Enabled active port ranges by default for Game UDP (`7777-7800`), Query UDP (`27015-27035`), and RCON TCP (`27020-27035`).
+- **Data Protection**: Automatic `AltSaveDir` isolation for all cluster maps to prevent map overwrite or accidental data loss.
+
+### Fixed
+- **Windows CRLF Compatibility**: Enforced Unix LF line endings across all bash scripts and templates, plus Docker build-time `sed` sanitization.
+
 ## [1.1.1] - 2026-07-24
 
 ### Fixed

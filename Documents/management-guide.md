@@ -51,7 +51,7 @@ El contenedor incluye [ARK Server Tools (`arkmanager`)](https://github.com/arkma
 * **Reiniciar y Repoblar Dinos Salvajes (`DestroyWildDinos`):**
   *Elimina todos los dinosaurios salvajes no domesticados para refrescar la fauna del mapa con niveles y colores nuevos. **Tus dinosaurios domesticados y construcciones no se ven afectados en absoluto**.*
   ```bash
-  docker exec -u steam ark-server /home/steam/scripts/wipe-wild-dinos.sh
+  # En el panel web: Ir a la pestaña 'Tareas' y pulsar 'Repoblación de Dinos (Dino Wipe)'.
   ```
 
 * **Reiniciar el servidor de forma segura con aviso de 15 minutos:**
@@ -84,21 +84,21 @@ BACKUP_MAX_COUNT=10
 
 ---
 
-#### 🔄 3. Guía de Restauración con `restore.sh`
+#### 🔄 3. Guía de Restauración desde el Panel Web
 
 Para restaurar un mapa desde un backup de forma automática:
 
 * **Para restaurar el respaldo más reciente:**
   ```bash
-  docker exec -it ark-server /home/steam/scripts/restore.sh latest
+  # En el panel web (http://localhost:8080): Pestaña 'Copias de Seguridad' -> pulsar 'Restaurar'.
   ```
 * **Para restaurar un respaldo específico:**
   ```bash
-  docker exec -it ark-server /home/steam/scripts/restore.sh main.2026-09-02_21.53.08.tar.bz2
+  # O por terminal de forma alternativa:
   ```
 
 > [!TIP]
-> **Salvaguarda Automática:** `restore.sh` genera automáticamente una copia preventiva llamada `pre_restore_safety_...` antes de descomprimir, por lo que nunca perderás el progreso actual. Es compatible tanto con backups nuevos organizados como con copias legadas de archivos sueltos.
+> **Salvaguarda Automática:** El sistema de restauración genera automáticamente una copia preventiva llamada `pre_restore_safety_...` antes de descomprimir, por lo que nunca perderás el progreso actual. Es compatible tanto con backups nuevos organizados como con copias legadas de archivos sueltos.
 > 
 > 📖 Si prefieres realizar la restauración **manualmente por SFTP (FileZilla / WinSCP)**, consulta la [**Guía de Restauración Manual**](backup-restore-guide.md#🖐️-4-método-2-restauración-manual-por-sftp-filezilla--winscp).
 
@@ -269,7 +269,7 @@ The container includes [ARK Server Tools (`arkmanager`)](https://github.com/arkm
 * **Wipe & Repopulate Wild Dinosaurs (`DestroyWildDinos`):**
   *Eliminates all untamed wild dinos across the map to trigger fresh spawns with randomized levels. **Tamed creatures and player structures are 100% safe and untouched**.*
   ```bash
-  docker exec -u steam ark-server /home/steam/scripts/wipe-wild-dinos.sh
+  # En el panel web: Ir a la pestaña 'Tareas' y pulsar 'Repoblación de Dinos (Dino Wipe)'.
   ```
 
 * **Restart server gracefully with a 15-minute warning:**
@@ -302,21 +302,21 @@ BACKUP_MAX_COUNT=10
 
 ---
 
-#### 🔄 3. Restoration Guide using `restore.sh`
+#### 🔄 3. Restoration Guide via Web Panel
 
 To restore a game from a backup automatically:
 
 * **To restore the latest backup:**
   ```bash
-  docker exec -it ark-server /home/steam/scripts/restore.sh latest
+  # En el panel web (http://localhost:8080): Pestaña 'Copias de Seguridad' -> pulsar 'Restaurar'.
   ```
 * **To restore a specific backup:**
   ```bash
-  docker exec -it ark-server /home/steam/scripts/restore.sh main.2026-09-02_21.53.08.tar.bz2
+  # O por terminal de forma alternativa:
   ```
 
 > [!TIP]
-> **Safety Safeguard:** `restore.sh` automatically creates a safety backup named `pre_restore_safety_...` prior to restoring. It supports both new organized archives and legacy flat archives.
+> **Safety Safeguard:** The restoration system automatically creates a safety backup named `pre_restore_safety_...` prior to restoring. It supports both new organized archives and legacy flat archives.
 >
 > 📖 To perform a **manual SFTP restoration (FileZilla / WinSCP)**, see the [**Manual Restoration Guide**](backup-restore-guide.md#🖐️-4-method-2-manual-sftp-restoration-filezilla--winscp).
 

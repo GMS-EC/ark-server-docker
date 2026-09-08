@@ -121,9 +121,14 @@ ADDITIONAL_ARGS=-ServerHardcore -ForceAllowCaveFlyers -DisableStructureDecayPvE 
 
 ---
 
-#### 📝 3. Edición Directa de Archivos `.ini` (`GameUserSettings.ini` y `Game.ini`)
+#### 📝 3. Edición de Archivos `.ini` (`GameUserSettings.ini` y `Game.ini`)
 
-Ubicación en tu PC: `./steamcmd/ark/ShooterGame/Saved/Config/LinuxServer/`
+> 💡 **¡Recomendado desde el Panel Web!**  
+> Ya no necesitas abrir terminal, SSH ni FileZilla para editar estos archivos. En el panel web (**http://localhost:8080**), puedes:
+> - **Pestaña Configuración:** Ajustar multiplicadores (XP, Tameo, Crianza), contraseñas y puertos desde formularios visuales.
+> - **Pestaña Archivos:** Abrir y editar `GameUserSettings.ini` y `Game.ini` con el editor de código integrado estilo VSCode, guardando cambios al instante.
+
+Ubicación en el sistema de archivos del host: `./steamcmd/ark/ShooterGame/Saved/Config/LinuxServer/`
 
 ##### 🔹 Edición de `GameUserSettings.ini`
 

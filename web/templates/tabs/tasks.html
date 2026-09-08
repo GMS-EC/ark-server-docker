@@ -1,0 +1,102 @@
+<!-- TAB: TAREAS PROGRAMADAS Y AUTOMATIZACIONES (Dockraft Style) -->
+<div class="card" style="margin-bottom: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Automatizaciones y Tareas Periódicas</span>
+      </h2>
+      <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.85rem;">
+        Control de horario de encendido/apagado (Power Schedule), respaldos, dino wipes y reinicios programados.
+      </p>
+    </div>
+    <button class="btn btn-primary" onclick="saveTaskSettings()" style="padding: 6px 16px; font-size: 0.84rem;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span>Guardar Horarios</span>
+    </button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <!-- Card 1: Horario de Encendido/Apagado (Power Schedule) -->
+    <div class="card" style="padding: 16px; background: var(--bg-subtle);">
+      <h3 style="font-size: 0.95rem; font-weight: 600; color: #58a6ff; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Horario de Actividad (Power Schedule)</span>
+      </h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+        Enciende el servidor a la hora fijada y lo apaga tras dar aviso in-game si no hay supervivientes conectados.
+      </p>
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label class="form-label" style="font-size: 0.78rem;">Estado del Horario:</label>
+        <select id="task-schedule-enabled" class="form-select" style="font-size: 0.85rem;">
+          <option value="false">Desactivado (Servidor 24/7)</option>
+          <option value="true">Activo (Control Horario)</option>
+        </select>
+      </div>
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <div style="flex: 1;">
+          <label class="form-label" style="font-size: 0.78rem;">Inicio (HH:MM)</label>
+          <input type="time" id="task-schedule-start" class="form-input" value="20:00" style="font-size: 0.85rem;">
+        </div>
+        <div style="flex: 1;">
+          <label class="form-label" style="font-size: 0.78rem;">Apagado (HH:MM)</label>
+          <input type="time" id="task-schedule-stop" class="form-input" value="00:00" style="font-size: 0.85rem;">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" style="font-size: 0.78rem;">Aviso Previo in-game (minutos):</label>
+        <input type="number" id="task-schedule-warn" class="form-input" min="1" max="60" value="10" style="font-size: 0.85rem;">
+      </div>
+    </div>
+
+    <!-- Card 2: Copias de Seguridad Automáticas -->
+    <div class="card" style="padding: 16px; background: var(--bg-subtle);">
+      <h3 style="font-size: 0.95rem; font-weight: 600; color: #3fb950; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span>Respaldos Automáticos</span>
+      </h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+        Genera copias comprimidas de los mundos y rota las copias antiguas para optimizar el almacenamiento.
+      </p>
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label class="form-label" style="font-size: 0.78rem;">Respaldos Periódicos:</label>
+        <select id="task-backup-enabled" class="form-select" style="font-size: 0.85rem;">
+          <option value="true">Activo</option>
+          <option value="false">Desactivado</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" style="font-size: 0.78rem;">Intervalo (cada X horas):</label>
+        <input type="number" id="task-backup-hours" class="form-input" min="1" max="168" value="6" style="font-size: 0.85rem;">
+      </div>
+    </div>
+
+    <!-- Card 3: Dino Wipe & Reinicio Automático -->
+    <div class="card" style="padding: 16px; background: var(--bg-subtle);">
+      <h3 style="font-size: 0.95rem; font-weight: 600; color: #e3b341; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span>Dino Wipe & Reinicios</span>
+      </h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+        Automatiza <code>DestroyWildDinos</code> y reinicios periódicos programados para mantener la fluidez del servidor.
+      </p>
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label class="form-label" style="font-size: 0.78rem;">Dino Wipe Automático:</label>
+        <select id="task-dino-wipe-enabled" class="form-select" style="font-size: 0.85rem;">
+          <option value="false">Desactivado</option>
+          <option value="true">Activo</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label class="form-label" style="font-size: 0.78rem;">Reinicio Automático (Horas, 0 = Off):</label>
+        <input type="number" id="task-restart-hours" class="form-input" min="0" max="720" value="0" style="font-size: 0.85rem;">
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-warning" onclick="triggerRestartSafeModal()" style="padding: 5px 12px; font-size: 0.78rem; flex: 1;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Reiniciar Ahora (5 Min)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

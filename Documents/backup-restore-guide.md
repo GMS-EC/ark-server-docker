@@ -60,33 +60,23 @@ main.2026-09-02_22.00.00.tar.bz2
 
 ---
 
-#### ⚡ 3. Método 1: Restauración Automatizada (Recomendado)
+#### ⚡ 3. Método 1: Restauración en 1 Clic desde el Panel Web (Recomendado)
 
-Este método es el más rápido, seguro y libre de errores humanos. No necesitas descomprimir nada ni mover carpetas a mano.
+Este método es el más rápido, seguro y libre de errores humanos. No necesitas abrir terminal, descomprimir archivos ni mover carpetas a mano.
 
-##### Paso 1: Colocar la copia en la carpeta de respaldos
-Asegúrate de que el archivo comprimido `.tar.bz2` que deseas restaurar se encuentra dentro de la carpeta `./ark-backups/` del host (o la carpeta que tengas montada en tu `docker-compose.yml`).
+##### Paso a Paso:
+1. Abre tu navegador y accede al panel web en **`http://localhost:8080`** (o la IP de tu servidor).
+2. Dirígete a la pestaña **Copias de Seguridad**.
+3. En la tabla de respaldos disponibles, localiza la copia que deseas recuperar y haz clic en el botón **Restaurar**. *(Si tienes un archivo de respaldo en tu PC, puedes arrastrarlo a la zona de subida del panel web para incorporarlo de inmediato)*.
+4. Confirma la acción en el diálogo de seguridad.
 
-##### Paso 2: Ejecutar el comando de restauración
-Abre una terminal en tu servidor (o vía SSH) y ejecuta:
-
-* **Para restaurar la copia más reciente automáticamente:**
-  ```bash
-  docker exec -it ark-server /home/steam/scripts/restore.sh latest
-  ```
-
-* **Para restaurar una copia específica por su nombre:**
-  ```bash
-  docker exec -it ark-server /home/steam/scripts/restore.sh main.2026-09-02_21.53.08.tar.bz2
-  ```
-
-##### ¿Qué hace el script automáticamente?
-1. **Guarda el estado actual (`saveworld`)**.
-2. **Crea un respaldo de seguridad preventivo** nombrado `pre_restore_safety_<fecha>` para que nunca pierdas tu progreso actual.
-3. **Detiene el servidor** limpiamente (`arkmanager stop`).
-4. **Detecta el formato del backup** (organizado o legado) y extrae los archivos en sus rutas exactas.
-5. **Ajusta los permisos de usuario** (`steam:steam`).
-6. **Reinicia el servidor** (`arkmanager start`).
+##### ¿Qué hace el sistema automáticamente tras bambalinas?
+1. **Guarda el estado actual del juego (`saveworld`)**.
+2. **Genera una copia de seguridad preventiva** (`pre_restore_safety_...`) para garantizar que nunca pierdas el progreso actual en caso de querer revertir la restauración.
+3. **Detiene el servidor de ARK de forma segura**.
+4. **Detecta el formato del backup** (tanto el nuevo estructurado `.tar.gz` como el legado `.tar.bz2` de arkmanager) y extrae los mapas, personajes, tribus y configuraciones en sus rutas exactas.
+5. **Ajusta permisos automáticamente** para el usuario `steam`.
+6. **Reinicia el servidor** y reanuda la transmisión de consola en vivo.
 
 ---
 
@@ -139,7 +129,7 @@ docker compose start
 Además de las copias automáticas cada `BACKUP_INTERVAL_HOURS`, puedes forzar una copia de seguridad en cualquier momento:
 
 ```bash
-docker exec -it ark-server /home/steam/scripts/backup.sh
+# En el panel web: Ir a la pestaña 'Copias de Seguridad' y pulsar 'Crear Copia de Seguridad'.
 ```
 
 El script guardará el mundo, generará el archivo organizado en `./ark-backups/` y aplicará la rotación de copias configurada (`BACKUP_MAX_COUNT`).
@@ -223,12 +213,12 @@ Open a terminal on your server (or via SSH) and run:
 
 * **To automatically restore the most recent backup:**
   ```bash
-  docker exec -it ark-server /home/steam/scripts/restore.sh latest
+  # En el panel web: Ir a la pestaña 'Copias de Seguridad' y pulsar 'Restaurar' en el respaldo deseado.
   ```
 
 * **To restore a specific backup by file name:**
   ```bash
-  docker exec -it ark-server /home/steam/scripts/restore.sh main.2026-09-02_21.53.08.tar.bz2
+  # In the web panel: Go to 'Backups' tab and click 'Restore' on the desired archive.
   ```
 
 ##### What does the script do automatically?
@@ -290,7 +280,7 @@ docker compose start
 In addition to scheduled backups every `BACKUP_INTERVAL_HOURS`, you can trigger an instant organized backup anytime:
 
 ```bash
-docker exec -it ark-server /home/steam/scripts/backup.sh
+# En el panel web: Ir a la pestaña 'Copias de Seguridad' y pulsar 'Crear Copia de Seguridad'.
 ```
 
 This saves the world, creates the organized archive in `./ark-backups/`, and applies automatic rotation (`BACKUP_MAX_COUNT`).
