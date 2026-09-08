@@ -1,17 +1,73 @@
+import os
 import time
 import asyncio
 import psutil
+from pathlib import Path
 from collections import deque
 from typing import Dict, Any, List, Optional
 
 from app.config import settings
 from app.core.process_manager import process_manager
 
+def get_cgroup_memory_limit() -> Optional[int]:
+    """Lee el límite de memoria asignado al contenedor en cgroups v2 o v1."""
+    # 1. Cgroups v2
+    cgroup2_max = Path("/sys/fs/cgroup/memory.max")
+    if cgroup2_max.exists():
+        try:
+            val = cgroup2_max.read_text().strip()
+            if val != "max" and val.isdigit():
+                return int(val)
+        except Exception:
+            pass
+
+    # 2. Cgroups v1
+    cgroup1_limit = Path("/sys/fs/cgroup/memory/memory.limit_in_bytes")
+    if cgroup1_limit.exists():
+        try:
+            val = int(cgroup1_limit.read_text().strip())
+            if val < 10**15:  # Si no hay límite suele ser ~2^63 - 1
+                return val
+        except Exception:
+            pass
+
+    # 3. Fallback variable de entorno MEM_LIMIT (ej: 8192M, 8G)
+    mem_env = os.getenv("MEM_LIMIT", "").strip().lower()
+    if mem_env:
+        try:
+            if mem_env.endswith("g"):
+                return int(float(mem_env[:-1]) * (1024**3))
+            elif mem_env.endswith("m"):
+                return int(float(mem_env[:-1]) * (1024**2))
+        except Exception:
+            pass
+
+    return None
+
+def get_cgroup_memory_usage() -> Optional[int]:
+    """Lee el consumo real de memoria del contenedor en cgroups."""
+    cgroup2_cur = Path("/sys/fs/cgroup/memory.current")
+    if cgroup2_cur.exists():
+        try:
+            val = cgroup2_cur.read_text().strip()
+            if val.isdigit():
+                return int(val)
+        except Exception:
+            pass
+
+    cgroup1_usage = Path("/sys/fs/cgroup/memory/memory.usage_in_bytes")
+    if cgroup1_usage.exists():
+        try:
+            return int(cgroup1_usage.read_text().strip())
+        except Exception:
+            pass
+
+    return None
+
 class MetricsManager:
     """
-    Monitorea en tiempo real el consumo de CPU, Memoria RAM (crítica para ARK)
+    Monitorea en tiempo real el consumo de CPU, Memoria RAM (respetando cgroups de Docker)
     y almacenamiento en disco del servidor y del contenedor.
-    Mantiene un historial de puntos para gráficos dinámicos con Chart.js.
     """
     def __init__(self, max_history: int = 60):
         self.max_history = max_history
@@ -49,17 +105,35 @@ class MetricsManager:
         vm = psutil.virtual_memory()
         cpu_pct = psutil.cpu_percent(interval=None)
 
-        # Medir memoria específica del proceso ShooterGameServer
+        # 1. Medir memoria del contenedor respetando cgroups (límites de Docker / CasaOS)
+        cgroup_limit = get_cgroup_memory_limit()
+        cgroup_usage = get_cgroup_memory_usage()
+
+        if cgroup_limit and cgroup_limit < vm.total:
+            total_ram_bytes = cgroup_limit
+            used_ram_bytes = cgroup_usage if cgroup_usage else min(vm.used, cgroup_limit)
+        else:
+            total_ram_bytes = vm.total
+            used_ram_bytes = vm.used
+
+        ram_total_gb = round(total_ram_bytes / (1024**3), 2)
+        ram_used_gb = round(used_ram_bytes / (1024**3), 2)
+        ram_pct = round((used_ram_bytes / total_ram_bytes) * 100, 1) if total_ram_bytes > 0 else 0.0
+
+        # 2. Medir memoria del proceso real ShooterGameServer directamente
         ark_ram_bytes = 0
-        ark_pid = process_manager.get_server_pid()
-        if ark_pid:
+        for p in psutil.process_iter(['pid', 'name', 'cmdline', 'memory_info']):
             try:
-                proc = psutil.Process(ark_pid)
-                ark_ram_bytes = proc.memory_info().rss
+                pname = p.info.get('name') or ''
+                pcmd = ' '.join(p.info.get('cmdline') or [])
+                if 'ShooterGameServer' in pname or 'ShooterGameServer' in pcmd:
+                    minfo = p.info.get('memory_info')
+                    if minfo:
+                        ark_ram_bytes += minfo.rss
             except Exception:
                 pass
 
-        # Espacio en disco
+        # 3. Espacio en disco
         disk_total_gb = 0.0
         disk_used_gb = 0.0
         disk_pct = 0.0
@@ -71,7 +145,7 @@ class MetricsManager:
         except Exception:
             pass
 
-        # Uptime
+        # 4. Uptime
         uptime_seconds = 0
         if process_manager.started_at and process_manager.get_status() == "RUNNING":
             uptime_seconds = int(time.time() - process_manager.started_at)
@@ -79,9 +153,9 @@ class MetricsManager:
         return {
             "status": process_manager.get_status(),
             "cpu_percent": round(cpu_pct, 1),
-            "ram_total_gb": round(vm.total / (1024**3), 2),
-            "ram_used_gb": round(vm.used / (1024**3), 2),
-            "ram_percent": round(vm.percent, 1),
+            "ram_total_gb": ram_total_gb,
+            "ram_used_gb": ram_used_gb,
+            "ram_percent": ram_pct,
             "ark_ram_gb": round(ark_ram_bytes / (1024**3), 2),
             "disk_total_gb": disk_total_gb,
             "disk_used_gb": disk_used_gb,

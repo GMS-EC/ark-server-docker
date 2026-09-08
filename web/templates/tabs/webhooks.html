@@ -7,21 +7,25 @@
         <span>Integración con Discord Webhooks</span>
       </h2>
       <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.85rem;">
-        Notificaciones enriquecidas para encendido, apagado, dino wipes y copias de seguridad.
+        Notificaciones enriquecidas con embeds para inicio, paradas programadas, dino wipes y copias de seguridad.
       </p>
     </div>
   </div>
 
-  <div class="form-group" style="max-width: 620px; margin-bottom: 18px;">
+  <div class="form-group" style="max-width: 680px; margin-bottom: 18px;">
     <label class="form-label" for="webhook-url">Discord Webhook URL</label>
-    <input type="text" id="webhook-url" class="form-input" placeholder="https://discord.com/api/webhooks/...">
+    <input type="text" id="webhook-url" class="form-input" placeholder="https://discord.com/api/webhooks/..." style="font-family: var(--font-mono); font-size: 0.85rem;">
+    <small style="color: var(--text-dim); font-size: 0.75rem; margin-top: 4px; display: block;">
+      Copia la URL del Webhook desde Discord (Ajustes del Canal &rarr; Integraciones &rarr; Webhooks).
+    </small>
   </div>
 
-  <div style="display: flex; gap: 8px;">
-    <button class="btn btn-primary" onclick="showToast('Webhook guardado correctamente.', 'success')" style="padding: 6px 16px;">
-      Guardar Webhook
+  <div style="display: flex; gap: 10px;">
+    <button class="btn btn-primary" onclick="saveWebhookSettings()" style="padding: 7px 18px; font-size: 0.84rem;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span>Guardar Webhook</span>
     </button>
-    <button class="btn btn-outline" onclick="showToast('Notificación de prueba enviada a Discord.', 'info')" style="padding: 6px 14px;">
+    <button class="btn btn-outline" onclick="testWebhookNotification()" style="padding: 7px 16px; font-size: 0.84rem;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       <span>Probar Notificación</span>
     </button>

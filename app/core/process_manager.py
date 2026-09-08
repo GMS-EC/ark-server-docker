@@ -212,8 +212,9 @@ class ProcessManager:
             )
             self._reader_task = asyncio.create_task(self._stream_output(self.process))
             self._log_file_task = asyncio.create_task(self._stream_log_file())
-            self.status = "RUNNING"
-            await self.broadcast_log(f"[ARK Server Manager] Servidor iniciado con PID {self.process.pid}.")
+            self.status = "STARTING"
+            await self.broadcast_log(f"[ARK Server Manager] Proceso de arranque iniciado (PID: {self.process.pid}). Cargando mundo y mods en memoria...")
+            asyncio.create_task(self._watch_server_readiness())
             return True
         except Exception as e:
             self.status = "OFFLINE"
@@ -264,6 +265,56 @@ class ProcessManager:
                         await asyncio.sleep(0.5)
         except Exception:
             pass
+
+    async def _watch_server_readiness(self):
+        """Monitorea hasta que ShooterGameServer responda a RCON o complete la carga."""
+        for _ in range(150):  # hasta 5 minutos
+            await asyncio.sleep(2)
+            if self.status != "STARTING":
+                return
+            
+            is_ready = False
+            # 1. Comprobación rápida vía socket TCP directo al puerto RCON
+            try:
+                import socket
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(0.8)
+                res_code = s.connect_ex((settings.rcon_host, settings.rcon_port))
+                s.close()
+                if res_code == 0:
+                    is_ready = True
+            except Exception:
+                pass
+
+            # 2. Comprobación RCON autenticado
+            if not is_ready:
+                try:
+                    if self.rcon:
+                        chat_test = await self.rcon.get_chat()
+                        if chat_test is not None:
+                            is_ready = True
+                except Exception:
+                    pass
+
+            if is_ready:
+                self.status = "RUNNING"
+                await self.broadcast_log("========================================================================")
+                await self.broadcast_log("[ARK Server Manager] [OK] ¡SERVIDOR DE ARK 100% ONLINE Y DISPONIBLE!")
+                await self.broadcast_log(f"[ARK Server Manager] Nombre de Sesión: {settings.session_name}")
+                await self.broadcast_log(f"[ARK Server Manager] Mapa: {settings.world} | Puerto de Juego: {settings.server_port} (UDP)")
+                await self.broadcast_log(f"[ARK Server Manager] RCON: {settings.rcon_port} (Activo) | Supervivientes: 0/{settings.max_players}")
+                await self.broadcast_log("========================================================================")
+                from app.core.webhook_manager import webhook_manager
+                await webhook_manager.send_discord_embed("START")
+                return
+
+        # Si pasaron los intentos pero el proceso sigue activo, marcar como RUNNING
+        if self._is_ark_process_running():
+            self.status = "RUNNING"
+            await self.broadcast_log("========================================================================")
+            await self.broadcast_log("[ARK Server Manager] [OK] ¡SERVIDOR DE ARK ONLINE Y OPERATIVO!")
+            await self.broadcast_log(f"[ARK Server Manager] Proceso ShooterGameServer activo y consumiendo recursos.")
+            await self.broadcast_log("========================================================================")
 
     async def stop_server(self, grace_seconds: int = 10) -> bool:
         if self.status == "OFFLINE" and not self._is_ark_process_running():

@@ -71,23 +71,51 @@ class Settings:
         self.rcon_enabled: bool = os.getenv("RCON_ENABLED", "true").lower() in ("true", "1", "yes")
 
     def _load_runtime_config(self) -> Dict[str, Any]:
+        data: Dict[str, Any] = {}
         if self._config_file.exists():
             try:
                 with open(self._config_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    data = json.load(f)
             except Exception:
-                pass
-        return {
-            "autostart_server": os.getenv("AUTOSTART_SERVER", "true").lower() in ("true", "1", "yes"),
-            "theme": "dark",
-            "lang": "es",
-            "auto_backup_enabled": True,
-            "auto_backup_interval_hours": 6,
-            "auto_dino_wipe_enabled": False,
-            "auto_dino_wipe_hours": 24,
-            "discord_webhook_url": os.getenv("DISCORD_WEBHOOK_URL", ""),
-            "discord_language": os.getenv("DISCORD_LANGUAGE", "es")
-        }
+                data = {}
+
+        # Sincronizar automáticamente variables de entorno para que nunca se pierdan
+        if not data.get("discord_webhook_url"):
+            env_wh = os.getenv("DISCORD_WEBHOOK_URL", "").strip()
+            if env_wh:
+                data["discord_webhook_url"] = env_wh
+
+        if "discord_language" not in data:
+            data["discord_language"] = os.getenv("DISCORD_LANGUAGE", "es")
+
+        if "schedule_enabled" not in data:
+            data["schedule_enabled"] = os.getenv("SCHEDULE_ENABLED", "false").lower() in ("true", "1", "yes")
+
+        if "schedule_start" not in data:
+            data["schedule_start"] = os.getenv("SCHEDULE_START", "20:00")
+
+        if "schedule_stop" not in data:
+            data["schedule_stop"] = os.getenv("SCHEDULE_STOP", "00:00")
+
+        if "schedule_warn_mins" not in data:
+            data["schedule_warn_mins"] = int(os.getenv("SCHEDULE_WARN_MINUTES", "10"))
+
+        if "auto_backup_enabled" not in data:
+            data["auto_backup_enabled"] = os.getenv("BACKUP_ENABLED", "true").lower() in ("true", "1", "yes")
+
+        if "auto_backup_interval_hours" not in data:
+            data["auto_backup_interval_hours"] = int(os.getenv("BACKUP_INTERVAL_HOURS", "6"))
+
+        if "backup_max_count" not in data:
+            data["backup_max_count"] = int(os.getenv("BACKUP_MAX_COUNT", "10"))
+
+        if "auto_restart_hours" not in data:
+            data["auto_restart_hours"] = int(os.getenv("AUTO_RESTART_HOURS", "0"))
+
+        if "autostart_server" not in data:
+            data["autostart_server"] = os.getenv("AUTOSTART_SERVER", "true").lower() in ("true", "1", "yes")
+
+        return data
 
     def save_runtime_config(self, new_config: Dict[str, Any]) -> None:
         self.runtime_config.update(new_config)

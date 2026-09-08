@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Data Protection**: Automatic `AltSaveDir` isolation for all cluster maps to prevent map overwrite or accidental data loss.
 
 ### Fixed
+- **Container Cgroups RAM Limit**: Accurately detects container RAM limits via cgroups v1/v2 rather than host system RAM, reflecting Docker/CasaOS resource boundaries.
+- **ShooterGameServer Live Process RAM**: Direct inspection of the ShooterGameServer process RSS instead of the arkmanager bash wrapper PID, showing true server memory consumption.
+- **Top Banner Metric Alignment**: Fixed .overview-item layout to keep values closely paired with their respective labels.
+- **Server Readiness Console Notification**: Real-time socket and RCON probe broadcasting [OK] ¡SERVIDOR DE ARK 100% ONLINE Y DISPONIBLE! in the terminal upon complete boot.
+- **Web UI & Docker Environment Auto-Sync**: Preserves and imports Docker environment variables (Discord webhooks, schedules, backup intervals) directly into runtime config so they can be edited inside the UI without duplication.
+- **Tasks & Automations Grid Alignment**: Balanced equal-height cards for power schedules, automated backups, and dino wipes.
 - **Windows CRLF Compatibility**: Enforced Unix LF line endings across all bash scripts and templates, plus Docker build-time `sed` sanitization.
 
 ## [1.1.1] - 2026-07-24

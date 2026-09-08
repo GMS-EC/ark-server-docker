@@ -53,6 +53,10 @@ function switchTab(tabId) {
         loadTaskSettings();
     }
 
+    if (tabId === "webhooks") {
+        loadWebhookSettings();
+    }
+
     if (tabId === "cluster") {
         loadClusterInstances();
         loadClusterTributes();
@@ -536,6 +540,7 @@ async function loadTaskSettings() {
         setVal("task-schedule-warn", cfg.schedule_warn_mins || 10);
         setVal("task-backup-enabled", String(cfg.auto_backup_enabled !== false));
         setVal("task-backup-hours", cfg.auto_backup_interval_hours || 6);
+        setVal("task-backup-max-count", cfg.backup_max_count || 10);
         setVal("task-dino-wipe-enabled", String(!!cfg.auto_dino_wipe_enabled));
         setVal("task-restart-hours", cfg.auto_restart_hours || 0);
     } catch (e) {
@@ -556,6 +561,7 @@ async function saveTaskSettings() {
         schedule_warn_mins: parseInt(getVal("task-schedule-warn", "10")) || 10,
         auto_backup_enabled: getVal("task-backup-enabled", "true") === "true",
         auto_backup_interval_hours: parseInt(getVal("task-backup-hours", "6")) || 6,
+        backup_max_count: parseInt(getVal("task-backup-max-count", "10")) || 10,
         auto_dino_wipe_enabled: getVal("task-dino-wipe-enabled", "false") === "true",
         auto_restart_hours: parseInt(getVal("task-restart-hours", "0")) || 0
     };
@@ -1546,5 +1552,60 @@ async function loadActivityLogs() {
         `).join("");
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 14px; color: #ff7b72;">Error al cargar el historial de actividad.</td></tr>`;
+    }
+}
+
+// --- Webhooks de Discord ---
+async function loadWebhookSettings() {
+    try {
+        const res = await fetch("/api/webhooks");
+        const data = await res.json();
+        const input = document.getElementById("webhook-url");
+        if (input && data.url) {
+            input.value = data.url;
+        }
+    } catch (e) {
+        console.error("Error al cargar webhook:", e);
+    }
+}
+
+async function saveWebhookSettings() {
+    const input = document.getElementById("webhook-url");
+    const url = input ? input.value.trim() : "";
+    try {
+        const res = await fetch("/api/webhooks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: url, language: "es" })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast("Webhook guardado correctamente.", "success");
+        } else {
+            showToast("Error al guardar webhook.", "error");
+        }
+    } catch (e) {
+        showToast("Error de conexión al guardar webhook.", "error");
+    }
+}
+
+async function testWebhookNotification() {
+    const input = document.getElementById("webhook-url");
+    const url = input ? input.value.trim() : "";
+    if (!url) {
+        showToast("Por favor ingresa primero la URL del Webhook.", "error");
+        return;
+    }
+    showToast("Enviando notificación de prueba a Discord...", "info");
+    try {
+        const res = await fetch("/api/webhooks/test", { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+            showToast("¡Notificación entregada con éxito a tu canal de Discord!", "success");
+        } else {
+            showToast(data.error || "No se pudo entregar la notificación a Discord.", "error");
+        }
+    } catch (e) {
+        showToast("Error al probar notificación de Discord.", "error");
     }
 }

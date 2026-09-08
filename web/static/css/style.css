@@ -193,8 +193,8 @@ body {
 .overview-item {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 8px;
   font-size: 0.86rem;
   line-height: 1.5;
   padding: 3px 0;
@@ -212,7 +212,7 @@ body {
   color: #f0f6fc;
   font-weight: 600;
   font-size: 0.85rem;
-  text-align: right;
+  text-align: left;
   word-break: break-all;
 }
 

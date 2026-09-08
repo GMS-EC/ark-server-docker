@@ -528,6 +528,33 @@ async def api_save_settings(payload: Dict[str, Any]):
     return {"success": ok}
 
 
+# --- Endpoints de Webhooks Discord ---
+@app.get("/api/webhooks", dependencies=[Depends(require_auth)])
+async def api_get_webhooks():
+    return {
+        "url": settings.runtime_config.get("discord_webhook_url", "") or os.getenv("DISCORD_WEBHOOK_URL", ""),
+        "language": settings.runtime_config.get("discord_language", "es") or os.getenv("DISCORD_LANGUAGE", "es")
+    }
+
+@app.post("/api/webhooks", dependencies=[Depends(require_auth)])
+async def api_save_webhooks(req: Dict[str, Any]):
+    url = req.get("url", "").strip()
+    lang = req.get("language", "es").strip()
+    settings.save_runtime_config({
+        "discord_webhook_url": url,
+        "discord_language": lang
+    })
+    activity_manager.log("Webhooks", "URL de Webhook de Discord actualizada")
+    return {"success": True}
+
+@app.post("/api/webhooks/test", dependencies=[Depends(require_auth)])
+async def api_test_webhook():
+    ok = await webhook_manager.send_discord_embed("START", "Notificación de prueba enviada exitosamente desde el panel web de ARK Server Manager.")
+    if ok:
+        activity_manager.log("Webhooks", "Notificación de prueba enviada a Discord con éxito")
+        return {"success": True}
+    return {"success": False, "error": "No se pudo entregar el mensaje. Verifica que la URL del Webhook sea válida."}
+
 # --- Endpoints de Tareas y Automatizaciones ---
 @app.get("/api/tasks/config", dependencies=[Depends(require_auth)])
 async def api_get_tasks_config():
@@ -539,6 +566,7 @@ async def api_get_tasks_config():
         "schedule_warn_mins": int(cfg.get("schedule_warn_mins", 10)),
         "auto_backup_enabled": cfg.get("auto_backup_enabled", True),
         "auto_backup_interval_hours": int(cfg.get("auto_backup_interval_hours", 6)),
+        "backup_max_count": int(cfg.get("backup_max_count", 10)),
         "auto_dino_wipe_enabled": cfg.get("auto_dino_wipe_enabled", False),
         "auto_restart_hours": int(cfg.get("auto_restart_hours", 0))
     }
