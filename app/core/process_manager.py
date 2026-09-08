@@ -286,35 +286,58 @@ class ProcessManager:
                 while self.status in ("STARTING", "RUNNING"):
                     line = f.readline()
                     if line:
-                        await self.broadcast_log(f"[ShooterGame] {line}")
+                        clean_l = line.rstrip("\r\n")
+                        if clean_l:
+                            await self.broadcast_log(f"[ShooterGame] {clean_l}")
                     else:
                         await asyncio.sleep(0.5)
+                        f.seek(f.tell())
         except Exception:
             pass
+
+    async def is_server_ready(self) -> bool:
+        """Comprueba si el servidor de ARK está listo conectándose al puerto RCON."""
+        # 1. Intentar conectar al puerto RCON vía TCP
+        try:
+            _, writer = await asyncio.wait_for(
+                asyncio.open_connection("127.0.0.1", settings.rcon_port),
+                timeout=1.5
+            )
+            writer.close()
+            await writer.wait_closed()
+            return True
+        except Exception:
+            pass
+
+        # 2. Intentar autenticar con cliente RCON
+        try:
+            if self.rcon:
+                ok = await self.rcon.connect(timeout=2.0)
+                if ok:
+                    chat = await self.rcon.get_chat()
+                    if chat is not None:
+                        return True
+        except Exception:
+            pass
+
+        return False
 
     async def _watch_server_readiness(self):
         """Monitorea hasta que ShooterGameServer responda a RCON o complete la carga."""
         start_time = time.time()
         last_heartbeat = start_time
+        await self.broadcast_log("[ARK Server Manager] [INFO] Monitor de disponibilidad activo. Verificando inicio de ShooterGameServer...")
 
         while self.status == "STARTING" and self._is_ark_process_running():
-            await asyncio.sleep(2.5)
+            await asyncio.sleep(3.0)
             if self.status != "STARTING":
                 return
 
             now = time.time()
             elapsed_sec = int(now - start_time)
 
-            # Comprobación de disponibilidad
-            is_ready = self.is_server_ready()
-            if not is_ready:
-                try:
-                    if self.rcon:
-                        chat_test = await self.rcon.get_chat()
-                        if chat_test is not None:
-                            is_ready = True
-                except Exception:
-                    pass
+            # Comprobación de disponibilidad (async await)
+            is_ready = await self.is_server_ready()
 
             if is_ready:
                 self.status = "RUNNING"

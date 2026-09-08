@@ -31,13 +31,17 @@ if command -v arkmanager >/dev/null 2>&1; then
 
     # 2. Instalar o verificar mods Workshop configurados
     if [ -n "$MOD_IDS" ]; then
-        echo "[ARK Server Manager] Verificando e instalando mods Workshop: $MOD_IDS"
+        echo "[ARK Server Manager] Verificando mods Workshop: $MOD_IDS"
         IFS=',' read -ra MODS <<< "$MOD_IDS"
         for mod in "${MODS[@]}"; do
             mod=$(echo "$mod" | tr -d ' ')
             [ -z "$mod" ] && continue
-            echo "[ARK Server Manager] Comprobando mod ID: $mod"
-            arkmanager installmod "$mod" @main 2>/dev/null || true
+            if [ ! -d "/home/steam/steamcmd/ark/ShooterGame/Content/Mods/$mod" ]; then
+                echo "[ARK Server Manager] Mod $mod no detectado. Descargando e instalando con SteamCMD..."
+                arkmanager installmod "$mod" @main || true
+            else
+                echo "[ARK Server Manager] Mod $mod ya instalado en ShooterGame/Content/Mods/$mod."
+            fi
         done
     fi
 

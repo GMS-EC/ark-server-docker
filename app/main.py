@@ -50,6 +50,10 @@ async def lifespan(app: FastAPI):
     metrics_manager.start()
     task_scheduler.start_loop()
 
+    # Si el servidor ya está corriendo en el host (ej. reinicio de panel), sincronizar estado a RUNNING
+    if process_manager._is_ark_process_running():
+        process_manager.status = "RUNNING"
+
     # Autoinicio si el servidor ya está instalado (producción) o si está activo en runtime_config
     autostart_cfg = settings.runtime_config.get("autostart_server", os.getenv("AUTOSTART_SERVER", "true").lower() in ("true", "1", "yes"))
     if autostart_cfg and process_manager.is_installed():
