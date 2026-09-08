@@ -147,12 +147,11 @@ services:
       # --- Updates & Maintenance ---
       - UPDATE_ON_START=true
       - AUTO_RESTART_HOURS=0
-      # --- Backup Settings ---
-      - BACKUP_ENABLED=true
-      - BACKUP_INTERVAL_HOURS=6
-      - BACKUP_MAX_COUNT=10
       # --- Timezone ---
       - TZ=UTC
+
+      # En v2.0+, Webhooks, Horarios, Respaldos, Dino Wipes, Mods y Tasas
+      # se configuran y administran 100% dentro del Panel Web.
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups
@@ -161,7 +160,9 @@ services:
       icon: https://raw.githubusercontent.com/GMS-EC/ark-server-docker/main/Documents/logo.png
 ```
 
-### ⚙️ Referencia Rápida de Variables de Entorno
+### ⚙️ Referencia de Variables de Entorno de Docker
+
+Las variables en Docker se limitan a la infraestructura esencial:
 
 | Variable | Valor por Defecto | Descripción |
 |----------|-------------------|-------------|
@@ -170,26 +171,26 @@ services:
 | `PANEL_PASSWORD` | `adminpassword` | Contraseña de acceso al panel web (¡cámbiala en producción!) |
 | `AUTOSTART_SERVER` | `true` | Iniciar el servidor de ARK automáticamente al encender el contenedor |
 | `SESSION_NAME` | `ARK Server` | Nombre del servidor visible en el buscador |
-| `SERVER_PASSWORD` | (vacío) | Contraseña para unirse al servidor |
+| `SERVER_PASSWORD` | *(vacío)* | Contraseña para unirse al servidor |
 | `ADMIN_PASSWORD` | `adminpass` | Contraseña de administración (`enablecheats`) y RCON |
 | `MAX_PLAYERS` | `10` | Slots máximos de jugadores |
 | `WORLD` | `TheIsland` | Nombre oficial del mapa (`TheIsland`, `Ragnarok`, etc.) |
 | `SERVER_PVE` | `false` | Activa modo PvE |
 | `BATTLEEYE` | `false` | Activa protección BattlEye |
 | `RCON_ENABLED` | `true` | Activa consola remota RCON (requerida para avisos in-game y saveworld automáticos) |
-| `MOD_IDS` | (vacío) | IDs de mods de Steam Workshop separados por coma |
 | `UPDATE_ON_START` | `true` | Busca e instala actualizaciones de ARK y mods al iniciar |
-| `AUTO_RESTART_HOURS` | `0` | Intervalo de reinicios programados en horas (0 = desactivado) |
-| `SCHEDULE_ENABLED` | `false` | Activa el horario automático de encendido/apagado |
-| `SCHEDULE_START` | `20:00` | Hora de encendido en formato 24h (`HH:MM`) |
-| `SCHEDULE_STOP` | `00:00` | Hora de apagado en formato 24h (`HH:MM`) |
-| `SCHEDULE_WARN_MINUTES` | `10` | Minutos de aviso in-game antes de apagar por horario |
-| `BACKUP_ENABLED` | `true` | Activa las copias de seguridad automáticas |
-| `BACKUP_INTERVAL_HOURS` | `6` | Intervalo en horas entre cada backup |
-| `BACKUP_MAX_COUNT` | `10` | Máximo de backups a conservar |
-| `DISCORD_WEBHOOK_URL` | (vacío) | URL del Webhook de Discord |
-| `DISCORD_LANGUAGE` | `es` | Idioma de las alertas de Discord (`es` / `en`) |
+| `ADDITIONAL_ARGS` | *(vacío)* | Argumentos adicionales de inicio (`-crossplay`, `-NoBattlEye`, etc.) |
 | `TZ` | `UTC` | Zona horaria del contenedor para horarios y logs |
+
+#### ⚡ Funciones Centralizadas 100% en el Panel Web (Sin Duplicación en Docker)
+A partir de la versión 2.0+, las siguientes funciones se gestionan y guardan dinámicamente desde la interfaz web, sin necesidad de definir variables en Docker:
+* 🔔 **Webhooks de Discord**: URL del webhook, idioma y prueba de notificación en vivo desde la pestaña **Webhooks**.
+* ⏰ **Automatizaciones y Tareas**: Horario de actividad (Power Schedule con encendido/apagado programado), respaldos periódicos, rotación de copias máximas, dino wipes automáticos y reinicios programados desde la pestaña **Tareas**.
+* 🧩 **Mods de Steam Workshop**: Búsqueda, presets populares en 1 clic y auto-actualización desde la pestaña **Mods**.
+* 🎛️ **Tasas y Multiplicadores**: Multiplicadores de XP, domesticación, recolección y crianza desde la pestaña **Ajustes**.
+* 🌐 **Clúster Multi-Mapa**: Gestión de hasta 12 mapas vinculados con puertos y carpetas automáticas desde la pestaña **Clúster**.
+
+*(Nota de compatibilidad: Si tu contenedor posee variables de Docker previas como `DISCORD_WEBHOOK_URL` o `SCHEDULE_START`, el panel las importa automáticamente en el primer arranque para mantener todas tus preferencias sin pérdida).*
 
 #### 🔌 Puertos de Red Requeridos
 
@@ -364,12 +365,11 @@ services:
       # --- Updates & Maintenance ---
       - UPDATE_ON_START=true
       - AUTO_RESTART_HOURS=0
-      # --- Backup Settings ---
-      - BACKUP_ENABLED=true
-      - BACKUP_INTERVAL_HOURS=6
-      - BACKUP_MAX_COUNT=10
       # --- Timezone ---
       - TZ=UTC
+
+      # En v2.0+, Webhooks, Horarios, Respaldos, Dino Wipes, Mods y Tasas
+      # se configuran y administran 100% dentro del Panel Web.
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups

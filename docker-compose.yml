@@ -8,9 +8,9 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
-    # Límite de RAM del contenedor. Cambia el valor según cuánta
-    # memoria quieras asignarle a tu servidor (ej. 8g, 12g, 16g).
-    mem_limit: 12g
+    # Límite de memoria RAM asignada al contenedor (ej: 8g, 12g, 16g).
+    # El panel detecta automáticamente este límite vía Cgroups v1/v2.
+    mem_limit: 8g
     ports:
       - "8080:8080"                    # Panel Web ARK Server Manager (HTTP)
       - "7777-7800:7777-7800/udp"      # Puertos de Juego UDP (Principal + hasta 12 Mapas Clúster)
@@ -23,7 +23,7 @@ services:
       - PANEL_PASSWORD=adminpassword
       - AUTOSTART_SERVER=true
 
-      # --- Configuración Esencial del Servidor de ARK ---
+      # --- Configuración Base del Servidor de ARK ---
       - SESSION_NAME=ARK Server
       - SERVER_PASSWORD=
       - ADMIN_PASSWORD=adminpass
@@ -35,19 +35,17 @@ services:
       - SERVER_PVE=false
       - BATTLEEYE=false
       - RCON_ENABLED=true
-      - MOD_IDS=
-
-      # --- Clúster Multi-Mapa (Opcional) ---
-      - CLUSTER_ID=ArkCluster
-      - CLUSTER_DIR_OVERRIDE=/home/steam/clusters
-
-      # --- Copias de Seguridad ---
-      - BACKUP_ENABLED=true
-      - BACKUP_INTERVAL_HOURS=6
-      - BACKUP_MAX_COUNT=10
+      - ADDITIONAL_ARGS=
 
       # --- Zona Horaria ---
       - TZ=UTC
+
+      # NOTA IMPORTANTE (Versión 2.0+):
+      # Todas las configuraciones avanzadas (Webhooks de Discord, Horarios de
+      # actividad, Respaldos periódicos, Dino Wipes, Reinicios automáticos,
+      # Mods de Workshop, Multiplicadores de tasas y Mapas de clúster)
+      # se configuran, guardan y administran directamente desde la Interfaz Web
+      # sin necesidad de duplicar variables en Docker.
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups

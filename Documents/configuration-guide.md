@@ -69,25 +69,18 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 | `ADDITIONAL_ARGS` | *(vacío)* | Argumentos adicionales tipo `-flag` para el ejecutable (ej. `-ServerHardcore -ForceAllowCaveFlyers`). |
 | `ARKMANAGER_OPTS` | *(vacío)* | Entradas crudas separadas por salto de línea para inyectar directamente en `arkmanager.cfg`. |
 
-##### 📦 Backups, Notificaciones y Reinicios
-| Variable | Valor por Defecto | Descripción |
-|----------|-------------------|-------------|
-| `BACKUP_ENABLED` | `true` | Habilita o desactiva las copias de seguridad automáticas programadas. |
-| `BACKUP_INTERVAL_HOURS` | `6` | Intervalo en horas entre cada respaldo automático. |
-| `BACKUP_DIR` | `/home/steam/ark-backups` | Directorio dentro del contenedor donde se almacenan las copias. |
-| `BACKUP_MAX_COUNT` | `10` | Número máximo de respaldos a conservar (los más viejos se eliminan automáticamente). |
-| `DISCORD_WEBHOOK_URL` | *(vacío)* | URL del Webhook de Discord para notificaciones de estado y eventos. |
-| `DISCORD_LANGUAGE` | `es` | Idioma de los mensajes de alerta en Discord (`es` / `en`). |
-| `AUTO_RESTART_HOURS` | `0` | Intervalo en horas para reinicios automáticos con avisos in-game (0 = desactivado). |
+##### ⚡ Configuración Centralizada en la Interfaz Web (Versión 2.0+)
+En la versión 2.0+, para evitar duplicaciones y reiniciar el contenedor, las siguientes áreas se configuran **100% dentro del Panel Web**:
+* **Webhooks de Discord** (Pestaña *Webhooks*): URL del Webhook, idioma (`es` / `en`) y botón para probar notificaciones en vivo.
+* **Automatizaciones y Horarios** (Pestaña *Tareas*):
+  - **Power Schedule**: Horario de encendido y apagado (`HH:MM`) con aviso in-game previo.
+  - **Respaldos Automáticos**: Intervalo (cada X horas) y copias máximas a retener.
+  - **Dino Wipes y Reinicios Programados**: `DestroyWildDinos` periódico y reinicio con cuenta regresiva de 5 minutos.
+* **Mods Workshop** (Pestaña *Mods*): Búsqueda, instalación en 1 clic de presets populares y actualización de mods.
+* **Tasas y Multiplicadores** (Pestaña *Ajustes*): Multiplicadores de XP, tameo, recolección y crianza guardados directamente en `GameUserSettings.ini`.
+* **Clúster Multi-Mapa** (Pestaña *Clúster*): Gestión de hasta 12 mapas interconectados por obeliscos con puertos automáticos.
 
-##### ⏰ Horario Automático de Encendido/Apagado y Zona Horaria
-| Variable | Valor por Defecto | Descripción |
-|----------|-------------------|-------------|
-| `SCHEDULE_ENABLED` | `false` | Activa o desactiva la función de horario de encendido/apagado del proceso del servidor de ARK. |
-| `SCHEDULE_START` | `20:00` | Hora de encendido del servidor en formato de 24 horas `HH:MM` (ej. `20:00`). |
-| `SCHEDULE_STOP` | `00:00` | Hora de apagado del servidor en formato de 24 horas `HH:MM` (ej. `00:00` o `02:00`). Soporta medianoche. |
-| `TZ` | `UTC` | Zona horaria del contenedor (ej. `America/Guayaquil`, `Europe/Madrid`). Afecta la interpretación de `SCHEDULE_START` y `SCHEDULE_STOP` y la hora de los logs. |
-| `SCHEDULE_WARN_MINUTES` | `10` | Minutos de antelación para enviar aviso in-game y notificación a Discord antes de apagar por horario (0 = desactivado). |
+*(Nota: Cualquier variable definida previamente en Docker es importada automáticamente al iniciar el servidor para no perder ninguna configuración).*
 
 ##### ⚡ Multiplicadores de Rates Recomendados (Solo / Dúo)
 | Variable | Descripción | Valor Oficial | Recomendado PvE Dúo |

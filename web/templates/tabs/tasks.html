@@ -1,4 +1,4 @@
-<!-- TAB: TAREAS PROGRAMADAS Y AUTOMATIZACIONES (Symmetrical Balanced Grid) -->
+<!-- TAB: TAREAS PROGRAMADAS Y AUTOMATIZACIONES (Symmetrical Balanced Vertical Layout) -->
 <div class="card" style="margin-bottom: 20px;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
     <div>
@@ -7,7 +7,7 @@
         <span>Automatizaciones y Tareas Periódicas</span>
       </h2>
       <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.85rem;">
-        Control de horario de encendido/apagado (Power Schedule), respaldos automáticos, dino wipes y reinicios.
+        Control de horario de encendido/apagado (Power Schedule), respaldos automáticos, dino wipes y reinicios programados.
       </p>
     </div>
     <button class="btn btn-primary" onclick="saveTaskSettings()" style="padding: 7px 18px; font-size: 0.84rem;">
@@ -17,7 +17,7 @@
   </div>
 
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 16px; align-items: stretch;">
-    <!-- Card 1: Horario de Encendido/Apagado (Power Schedule) -->
+    <!-- Card 1: Horario de Encendido/Apagado (Power Schedule) - 100% Vertical -->
     <div class="card" style="padding: 18px; background: var(--bg-subtle); display: flex; flex-direction: column; justify-content: space-between;">
       <div>
         <h3 style="font-size: 0.95rem; font-weight: 600; color: #58a6ff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
@@ -30,31 +30,30 @@
         
         <div class="form-group" style="margin-bottom: 12px;">
           <label class="form-label" style="font-size: 0.78rem;">Estado del Horario:</label>
-          <select id="task-schedule-enabled" class="form-select" style="font-size: 0.85rem;">
+          <select id="task-schedule-enabled" class="form-select" style="font-size: 0.85rem; width: 100%;">
             <option value="false">Desactivado (Servidor 24/7)</option>
             <option value="true">Activo (Control Horario)</option>
           </select>
         </div>
         
-        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-          <div style="flex: 1;">
-            <label class="form-label" style="font-size: 0.78rem;">Inicio (HH:MM)</label>
-            <input type="time" id="task-schedule-start" class="form-input" value="20:00" style="font-size: 0.85rem;">
-          </div>
-          <div style="flex: 1;">
-            <label class="form-label" style="font-size: 0.78rem;">Apagado (HH:MM)</label>
-            <input type="time" id="task-schedule-stop" class="form-input" value="00:00" style="font-size: 0.85rem;">
-          </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 0.78rem;">Hora de Inicio (HH:MM):</label>
+          <input type="time" id="task-schedule-start" class="form-input" value="20:00" style="font-size: 0.85rem; width: 100%;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 0.78rem;">Hora de Apagado (HH:MM):</label>
+          <input type="time" id="task-schedule-stop" class="form-input" value="00:00" style="font-size: 0.85rem; width: 100%;">
         </div>
       </div>
       
       <div class="form-group" style="margin-bottom: 0;">
         <label class="form-label" style="font-size: 0.78rem;">Aviso Previo in-game (minutos):</label>
-        <input type="number" id="task-schedule-warn" class="form-input" min="1" max="60" value="10" style="font-size: 0.85rem;">
+        <input type="number" id="task-schedule-warn" class="form-input" min="1" max="60" value="10" style="font-size: 0.85rem; width: 100%;">
       </div>
     </div>
 
-    <!-- Card 2: Copias de Seguridad Automáticas -->
+    <!-- Card 2: Copias de Seguridad Automáticas - 100% Vertical -->
     <div class="card" style="padding: 18px; background: var(--bg-subtle); display: flex; flex-direction: column; justify-content: space-between;">
       <div>
         <h3 style="font-size: 0.95rem; font-weight: 600; color: #3fb950; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
@@ -67,7 +66,7 @@
         
         <div class="form-group" style="margin-bottom: 12px;">
           <label class="form-label" style="font-size: 0.78rem;">Respaldos Periódicos:</label>
-          <select id="task-backup-enabled" class="form-select" style="font-size: 0.85rem;">
+          <select id="task-backup-enabled" class="form-select" style="font-size: 0.85rem; width: 100%;">
             <option value="true">Activo</option>
             <option value="false">Desactivado</option>
           </select>
@@ -75,17 +74,24 @@
         
         <div class="form-group" style="margin-bottom: 12px;">
           <label class="form-label" style="font-size: 0.78rem;">Intervalo (cada X horas):</label>
-          <input type="number" id="task-backup-hours" class="form-input" min="1" max="168" value="6" style="font-size: 0.85rem;">
+          <input type="number" id="task-backup-hours" class="form-input" min="1" max="168" value="6" style="font-size: 0.85rem; width: 100%;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 0.78rem;">Copias Máximas a Conservar:</label>
+          <input type="number" id="task-backup-max-count" class="form-input" min="1" max="100" value="10" style="font-size: 0.85rem; width: 100%;">
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom: 0;">
-        <label class="form-label" style="font-size: 0.78rem;">Copias Máximas a Conservar:</label>
-        <input type="number" id="task-backup-max-count" class="form-input" min="1" max="100" value="10" style="font-size: 0.85rem;">
+      <div style="margin-bottom: 0;">
+        <button type="button" class="btn btn-secondary" onclick="createBackupNow()" style="padding: 7px 14px; font-size: 0.80rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          <span>Crear Respaldo Ahora</span>
+        </button>
       </div>
     </div>
 
-    <!-- Card 3: Dino Wipe & Reinicio Automático -->
+    <!-- Card 3: Dino Wipe & Reinicio Automático - 100% Vertical -->
     <div class="card" style="padding: 18px; background: var(--bg-subtle); display: flex; flex-direction: column; justify-content: space-between;">
       <div>
         <h3 style="font-size: 0.95rem; font-weight: 600; color: #e3b341; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
@@ -98,7 +104,7 @@
         
         <div class="form-group" style="margin-bottom: 12px;">
           <label class="form-label" style="font-size: 0.78rem;">Dino Wipe Automático:</label>
-          <select id="task-dino-wipe-enabled" class="form-select" style="font-size: 0.85rem;">
+          <select id="task-dino-wipe-enabled" class="form-select" style="font-size: 0.85rem; width: 100%;">
             <option value="false">Desactivado</option>
             <option value="true">Activo</option>
           </select>
@@ -106,14 +112,21 @@
         
         <div class="form-group" style="margin-bottom: 12px;">
           <label class="form-label" style="font-size: 0.78rem;">Reinicio Automático (Horas, 0 = Off):</label>
-          <input type="number" id="task-restart-hours" class="form-input" min="0" max="720" value="0" style="font-size: 0.85rem;">
+          <input type="number" id="task-restart-hours" class="form-input" min="0" max="720" value="0" style="font-size: 0.85rem; width: 100%;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <button type="button" class="btn btn-secondary" onclick="triggerDinoWipe()" style="padding: 7px 14px; font-size: 0.80rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span>Ejecutar Dino Wipe Ahora</span>
+          </button>
         </div>
       </div>
 
-      <div style="display: flex; gap: 8px;">
-        <button type="button" class="btn btn-warning" onclick="triggerRestartSafeModal()" style="padding: 7px 14px; font-size: 0.80rem; flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <div style="margin-bottom: 0;">
+        <button type="button" class="btn btn-warning" onclick="triggerRestartSafeModal()" style="padding: 7px 14px; font-size: 0.80rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          <span>Reiniciar Ahora (5 Min)</span>
+          <span>Reiniciar Servidor (Aviso 5 Min)</span>
         </button>
       </div>
     </div>

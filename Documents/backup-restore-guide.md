@@ -13,6 +13,12 @@
 
 ### 📦 Guía de Copias de Seguridad y Restauración
 
+> 🚀 **Gestión Visual desde el Panel Web (Versión 2.0+)**:
+> A partir de la versión 2.0, ya no necesitas acceder a la consola del servidor ni ejecutar comandos manuales:
+> 1. **Crear Respaldos**: Desde la pestaña **Tareas** o **Respaldos**, haz clic en **"Crear Respaldo Ahora"** para generar una copia instantánea con guardado del mundo en caliente.
+> 2. **Automatización**: En la pestaña **Tareas**, define el intervalo (ej. cada 3 o 6 horas) y la cantidad máxima de copias a conservar (rotación automática sin saturar disco).
+> 3. **Restauración 1-Clic**: En la pestaña **Respaldos**, visualiza la lista de copias con su fecha y tamaño, y restáuralas o descárgalas directamente a tu PC desde el navegador.
+
 Esta guía detalla el funcionamiento del sistema de copias de seguridad de tu servidor de ARK, qué contiene cada archivo guardado y cómo restaurar tu partida tanto de forma **100% automatizada por comando** como de forma **manual por SFTP (FileZilla / WinSCP)**.
 
 ---

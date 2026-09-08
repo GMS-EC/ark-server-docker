@@ -13,6 +13,14 @@
 
 ### 🛠️ Guía de Administración del Servidor
 
+> 💡 **Administración Centralizada en Versión 2.0+**:
+> A partir de la versión 2.0, todas las tareas diarias se gestionan desde el nuevo panel web interactivo **ARK Server Manager** (`http://TU_IP:8080`):
+> * 🖥️ **Consola en Vivo & Quick RCON**: Envía broadcasts al juego, ejecuta `SaveWorld`, `DestroyWildDinos` y comandos cheats con un solo clic.
+> * 👥 **Jugadores & Tribus**: Visualiza supervivientes online, expulsa (kick) o banea infractores en tiempo real.
+> * 🔔 **Integración con Discord**: Configura Webhooks directamente desde la UI con pruebas en vivo.
+> * 📂 **Explorador & Editor de Archivos**: Edita `GameUserSettings.ini` y `Game.ini` directamente desde el navegador con resaltado de sintaxis.
+> * ⏰ **Automatizaciones**: Configura horarios de encendido/apagado, reinicios automáticos y respaldos sin tocar terminales ni variables de Docker.
+
 Esta guía cubre las operaciones diarias de mantenimiento, gestión de respaldos, restauración en un clic, alertas a Discord y reinicios automáticos.
 
 ---
