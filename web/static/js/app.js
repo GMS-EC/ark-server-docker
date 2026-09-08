@@ -1557,15 +1557,33 @@ async function loadActivityLogs() {
     }
 }
 
-// --- Webhooks de Discord ---
+// --- Webhooks de Discord (Dockraft Style) ---
 async function loadWebhookSettings() {
     try {
         const res = await fetch("/api/webhooks");
         const data = await res.json();
+        
         const input = document.getElementById("webhook-url");
-        if (input && data.url) {
-            input.value = data.url;
-        }
+        if (input && data.url) input.value = data.url;
+
+        const langSelect = document.getElementById("webhook-lang");
+        if (langSelect && data.language) langSelect.value = data.language;
+
+        const ev = data.events || {};
+        const setCheck = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.checked = val !== false;
+        };
+
+        setCheck("wh-evt-start", ev.start);
+        setCheck("wh-evt-starting", ev.starting);
+        setCheck("wh-evt-shutdown", ev.shutdown);
+        setCheck("wh-evt-shutdown-warn", ev.shutdown_warn);
+        setCheck("wh-evt-backup", ev.backup);
+        setCheck("wh-evt-dino-wipe", ev.dino_wipe);
+        setCheck("wh-evt-restart", ev.restart);
+        const elPlayers = document.getElementById("wh-evt-players");
+        if (elPlayers) elPlayers.checked = !!ev.players;
     } catch (e) {
         console.error("Error al cargar webhook:", e);
     }
@@ -1574,15 +1592,33 @@ async function loadWebhookSettings() {
 async function saveWebhookSettings() {
     const input = document.getElementById("webhook-url");
     const url = input ? input.value.trim() : "";
+    const lang = document.getElementById("webhook-lang")?.value || "es";
+
+    const getCheck = (id, fallback) => {
+        const el = document.getElementById(id);
+        return el ? el.checked : fallback;
+    };
+
+    const eventsPayload = {
+        start: getCheck("wh-evt-start", true),
+        starting: getCheck("wh-evt-starting", true),
+        shutdown: getCheck("wh-evt-shutdown", true),
+        shutdown_warn: getCheck("wh-evt-shutdown-warn", true),
+        backup: getCheck("wh-evt-backup", true),
+        dino_wipe: getCheck("wh-evt-dino-wipe", true),
+        restart: getCheck("wh-evt-restart", true),
+        players: getCheck("wh-evt-players", false)
+    };
+
     try {
         const res = await fetch("/api/webhooks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: url, language: "es" })
+            body: JSON.stringify({ url: url, language: lang, events: eventsPayload })
         });
         const data = await res.json();
         if (data.success) {
-            showToast("Webhook guardado correctamente.", "success");
+            showToast("Configuración de Webhook guardada exitosamente.", "success");
         } else {
             showToast("Error al guardar webhook.", "error");
         }

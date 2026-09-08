@@ -17,57 +17,40 @@ Esta guía detalla cómo personalizar completamente tu servidor de ARK, desde la
 
 ---
 
-#### 📄 1. Variables de Entorno (`.env`)
+#### 📄 1. Variables de Entorno de Docker (`.env`)
 
-El archivo `.env` permite configurar el servidor sin necesidad de modificar archivos internamente:
+En la arquitectura v2.0, el archivo `.env` y el `docker-compose.yml` se reservan **exclusivamente para la infraestructura técnica** del contenedor:
 
-##### 👤 Permisos y Recursos de Hardware
 | Variable | Valor por Defecto | Descripción Técnica |
 |----------|-------------------|---------------------|
-| `PUID` | `1000` | ID del usuario `steam` en el sistema. Asegura que los archivos guardados pertenezcan a tu usuario en Linux. |
-| `PGID` | `1000` | ID del grupo `steam` en el sistema. |
+| `TZ` | `America/Guayaquil` | Zona horaria del contenedor para programaciones y registros de consola. |
+| `PANEL_PORT` | `8080` | Puerto HTTP donde escucha el panel de administración web. |
+| `PANEL_USER` | `admin` | Usuario administrador para iniciar sesión en la interfaz gráfica. |
+| `PANEL_PASSWORD` | `adminpassword` | Contraseña para iniciar sesión en el panel web. |
+| `PUID` / `PGID` | `1000` | ID de usuario y grupo de Linux para asegurar permisos en los volúmenes montados. |
 
-##### 🎮 Configuración Básica del Servidor
-| Variable | Valor por Defecto | Descripción Técnica |
-|----------|-------------------|---------------------|
-| `SESSION_NAME` | `ARK Server` | El nombre con el que el servidor aparecerá en la lista global de ARK y en Steam. |
-| `SERVER_PASSWORD` | *(vacío)* | Contraseña obligatoria para ingresar al servidor. Dejar en blanco para acceso público. |
-| `ADMIN_PASSWORD` | `adminpass` | Contraseña para usar comandos de administrador en el chat (`enablecheats TU_CONTRASEÑA`). |
-| `MAX_PLAYERS` | `10` | Cantidad máxima de slots/jugadores simultáneos permitidos. |
-| `WORLD` | `TheIsland` | Nombre oficial del mapa a cargar (`TheIsland`, `ScorchedEarth_P`, `TheCenter`, `Ragnarok`, `Aberration_P`, `Extinction`, `Valguero_P`, `Genesis`, `CrystalIsles`, `Genesis2`, `LostIsland`, `Fjordur`). |
+---
 
-##### 🔌 Puertos de Red
-| Variable | Valor por Defecto | Protocolo | Descripción |
-|----------|-------------------|-----------|-------------|
-| `SERVER_PORT` | `7777` | UDP | Puerto principal donde los clientes de ARK transmiten el movimiento y acciones. |
-| `QUERY_PORT` | `27015` | UDP | Puerto que responde a las búsquedas de servidores de Steam y en el buscador in-game. |
-| `RCON_PORT` | `27020` | TCP | Puerto para administración remota externa por RCON. Opcional (los avisos broadcast y saveworld funcionan internamente sin publicar este puerto). |
+#### 🎮 2. Configuración Centralizada en el Panel Web (100% In-App)
 
-##### 🛡️ Reglas y Modos de Juego
-| Variable | Valor por Defecto | Descripción |
-|----------|-------------------|-------------|
-| `SERVER_PVE` | `false` | Si se establece en `true`, activa el modo PvE (los jugadores no pueden atacarse ni dañar estructuras ajenas). |
-| `BATTLEEYE` | `false` | Si se establece en `true`, habilita la protección anti-trampas de BattlEye. |
-| `RCON_ENABLED` | `true` | Habilita o desactiva la consola de administración remota RCON (requerido para avisos in-game y saveworld automáticos). |
-| `MOD_IDS` | *(vacío)* | Lista de IDs de mods de Steam Workshop separados por coma (ej. `731604991,893735676`). |
+Para eliminar duplicidades, evitar reiniciar contenedores y brindar una experiencia moderna (estilo Dockraft), toda la configuración del juego se gestiona de forma interactiva y visual desde el navegador web:
 
-##### 🏰 Clústeres de Servidores
-| Variable | Valor por Defecto | Descripción |
-|----------|-------------------|-------------|
-| `CLUSTER_ID` | *(vacío)* | Identificador para conectar varios servidores en un clúster y permitir viajes entre mapas. |
-| `CLUSTER_DIR_OVERRIDE` | *(vacío)* | Ruta personalizada para el directorio compartido de datos del clúster. |
-
-##### 🔄 Actualizaciones y Ramas de Steam
-| Variable | Valor por Defecto | Descripción |
-|----------|-------------------|-------------|
-| `BETA` | `public` | Rama de actualización en Steam (`public`, `preaquatica`, etc.). |
-| `UPDATE_ON_START` | `true` | Si se establece en `true`, verifica e instala actualizaciones del servidor y mods al arrancar. |
-
-##### 🛠️ Opciones Avanzadas de arkmanager y Consola
-| Variable | Valor por Defecto | Descripción |
-|----------|-------------------|-------------|
-| `ADDITIONAL_ARGS` | *(vacío)* | Argumentos adicionales tipo `-flag` para el ejecutable (ej. `-ServerHardcore -ForceAllowCaveFlyers`). |
-| `ARKMANAGER_OPTS` | *(vacío)* | Entradas crudas separadas por salto de línea para inyectar directamente en `arkmanager.cfg`. |
+* 🎛️ **Pestaña Ajustes (Settings)**:
+  - **Identidad & Acceso**: Nombre de la Sesión (`SessionName`), Contraseña de Entrada (`ServerPassword`), Contraseña Admin / RCON (`ServerAdminPassword`), Límite Máximo de Supervivientes (`MaxPlayers`), y selector de **Autoinicio del Servidor**.
+  - **Multiplicadores de Tasas (Rates)**: XP, Tameo, Cosecha, Crianza, Eclosión e Intervalo de Apareamiento guardados directamente en `GameUserSettings.ini` y `Game.ini`.
+  - **Modos y Reglas**: Alternar PvE / PvP, visualización de supervivientes en el mapa, retícula y vista en 3ra persona.
+* 🧩 **Pestaña Mods**:
+  - Búsqueda en Steam Workshop, presets populares en 1 clic (Awesome Spyglass, Dino Storage v2, S+, etc.) y actualización automática de mods.
+* ⏰ **Pestaña Tareas (Tasks)**:
+  - **Power Schedule**: Horario de encendido y apagado diario (`HH:MM`) con avisos in-game.
+  - **Respaldos Automáticos**: Intervalo en horas y rotación de copias máximas a conservar.
+  - **Dino Wipes y Reinicios Programados**: `DestroyWildDinos` periódico y reinicios con aviso de 5 minutos.
+* 🔔 **Pestaña Webhooks (Discord)**:
+  - URL del webhook de Discord e **idioma de los mensajes** (`Español` / `English`).
+  - **Matriz de Eventos Activos**: Casillas para activar/desactivar notificaciones individuales (Inicio de carga, Servidor online, Apagado, Aviso por horario, Respaldos, Dino Wipe, Reinicios y Jugadores).
+  - Botón de **Probar Notificación** en vivo.
+* 🌐 **Pestaña Clúster**:
+  - Creación y vinculación de hasta 12 mapas oficiales interconectados por obeliscos compartidos (`/clusters/ArkCluster`) con aislamiento automático de carpetas y puertos sin colisiones.
 
 ##### ⚡ Configuración Centralizada en la Interfaz Web (Versión 2.0+)
 En la versión 2.0+, para evitar duplicaciones y reiniciar el contenedor, las siguientes áreas se configuran **100% dentro del Panel Web**:

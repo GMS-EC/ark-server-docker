@@ -160,27 +160,17 @@ services:
       icon: https://raw.githubusercontent.com/GMS-EC/ark-server-docker/main/Documents/logo.png
 ```
 
-### ⚙️ Referencia de Variables de Entorno de Docker
+### ⚙️ Variables de Entorno de Docker (Infraestructura Esencial)
 
-Las variables en Docker se limitan a la infraestructura esencial:
+El contenedor Docker solo requiere variables para la infraestructura base:
 
 | Variable | Valor por Defecto | Descripción |
 |----------|-------------------|-------------|
-| `PANEL_PORT` | `8080` | Puerto HTTP del panel web de administración |
-| `PANEL_USER` | `admin` | Usuario administrador del panel web |
-| `PANEL_PASSWORD` | `adminpassword` | Contraseña de acceso al panel web (¡cámbiala en producción!) |
-| `AUTOSTART_SERVER` | `true` | Iniciar el servidor de ARK automáticamente al encender el contenedor |
-| `SESSION_NAME` | `ARK Server` | Nombre del servidor visible en el buscador |
-| `SERVER_PASSWORD` | *(vacío)* | Contraseña para unirse al servidor |
-| `ADMIN_PASSWORD` | `adminpass` | Contraseña de administración (`enablecheats`) y RCON |
-| `MAX_PLAYERS` | `10` | Slots máximos de jugadores |
-| `WORLD` | `TheIsland` | Nombre oficial del mapa (`TheIsland`, `Ragnarok`, etc.) |
-| `SERVER_PVE` | `false` | Activa modo PvE |
-| `BATTLEEYE` | `false` | Activa protección BattlEye |
-| `RCON_ENABLED` | `true` | Activa consola remota RCON (requerida para avisos in-game y saveworld automáticos) |
-| `UPDATE_ON_START` | `true` | Busca e instala actualizaciones de ARK y mods al iniciar |
-| `ADDITIONAL_ARGS` | *(vacío)* | Argumentos adicionales de inicio (`-crossplay`, `-NoBattlEye`, etc.) |
-| `TZ` | `UTC` | Zona horaria del contenedor para horarios y logs |
+| `TZ` | `America/Guayaquil` | Zona horaria del contenedor para sincronizar horarios y logs. |
+| `PANEL_PORT` | `8080` | Puerto HTTP para acceder al panel de administración web. |
+| `PANEL_USER` | `admin` | Usuario administrador del panel web. |
+| `PANEL_PASSWORD` | `adminpassword` | Contraseña de acceso al panel web (recomendado cambiar). |
+| `PUID` / `PGID` | `1000` | ID de usuario y grupo en Linux para permisos de archivos (opcional). |
 
 #### ⚡ Funciones Centralizadas 100% en el Panel Web (Sin Duplicación en Docker)
 A partir de la versión 2.0+, las siguientes funciones se gestionan y guardan dinámicamente desde la interfaz web, sin necesidad de definir variables en Docker:

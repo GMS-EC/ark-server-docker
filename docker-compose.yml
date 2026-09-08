@@ -8,8 +8,8 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
-    # Límite de memoria RAM asignada al contenedor (ej: 8g, 12g, 16g).
-    # El panel detecta automáticamente este límite vía Cgroups v1/v2.
+    # Límite de memoria RAM del contenedor (ej: 8g, 12g, 16g).
+    # Detectado automáticamente por el panel vía Cgroups v1/v2.
     mem_limit: 8g
     ports:
       - "8080:8080"                    # Panel Web ARK Server Manager (HTTP)
@@ -17,35 +17,16 @@ services:
       - "27015-27035:27015-27035/udp"  # Puertos Query Steam UDP (Buscador de Servidores)
       - "27020-27035:27020-27035/tcp"  # Puertos RCON TCP (Consola Remota y Administración)
     environment:
-      # --- Credenciales Panel Web ARK Server Manager ---
-      - PANEL_PORT=8080
+      # --- Zona Horaria del Contenedor ---
+      - TZ=America/Guayaquil
+
+      # --- Acceso al Panel Web (Opcional - por defecto: admin / adminpassword) ---
       - PANEL_USER=admin
       - PANEL_PASSWORD=adminpassword
-      - AUTOSTART_SERVER=true
 
-      # --- Configuración Base del Servidor de ARK ---
-      - SESSION_NAME=ARK Server
-      - SERVER_PASSWORD=
-      - ADMIN_PASSWORD=adminpass
-      - MAX_PLAYERS=10
-      - WORLD=TheIsland
-      - SERVER_PORT=7777
-      - QUERY_PORT=27015
-      - RCON_PORT=27020
-      - SERVER_PVE=false
-      - BATTLEEYE=false
-      - RCON_ENABLED=true
-      - ADDITIONAL_ARGS=
-
-      # --- Zona Horaria ---
-      - TZ=UTC
-
-      # NOTA IMPORTANTE (Versión 2.0+):
-      # Todas las configuraciones avanzadas (Webhooks de Discord, Horarios de
-      # actividad, Respaldos periódicos, Dino Wipes, Reinicios automáticos,
-      # Mods de Workshop, Multiplicadores de tasas y Mapas de clúster)
-      # se configuran, guardan y administran directamente desde la Interfaz Web
-      # sin necesidad de duplicar variables en Docker.
+      # NOTA: En la versión 2.0+, toda la configuración del juego (Nombre del servidor,
+      # contraseñas, mapa, mods de Steam Workshop, webhooks de Discord, horarios,
+      # copias de seguridad y multiplicadores de rates) se gestiona 100% desde la Interfaz Web.
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups

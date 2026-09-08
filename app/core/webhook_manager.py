@@ -11,7 +11,7 @@ logger = logging.getLogger("arkserver.webhooks")
 class WebhookManager:
     """
     Envía notificaciones enriquecidas con embeds a Discord para todos los eventos de ARK,
-    con soporte bilingüe (español e inglés) y campos idénticos a ark-server-docker.
+    con soporte bilingüe (español e inglés) y filtro granular de eventos estilo Dockraft.
     """
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=6.0)
@@ -19,10 +19,40 @@ class WebhookManager:
     def _get_lang(self) -> str:
         return (settings.runtime_config.get("discord_language") or os.getenv("DISCORD_LANGUAGE", "es")).lower()
 
+    def is_event_enabled(self, event_type: str) -> bool:
+        """Comprueba si el usuario tiene habilitado este tipo de notificación en el panel."""
+        events = settings.runtime_config.get("discord_events")
+        if events is None:
+            # Valores por defecto
+            return True
+
+        mapping = {
+            "START": "start",
+            "STARTING": "starting",
+            "SHUTDOWN": "shutdown",
+            "SHUTDOWN_WARN": "shutdown_warn",
+            "BACKUP_OK": "backup",
+            "BACKUP_FAIL": "backup",
+            "RESTART": "restart",
+            "WILD_DINOS_WIPED": "dino_wipe",
+            "RESTORE_OK": "backup",
+            "PLAYER_JOIN": "players",
+            "PLAYER_LEAVE": "players",
+            "TEST": "test"
+        }
+        event_key = mapping.get(event_type, "other")
+        if event_key == "test":
+            return True
+        return bool(events.get(event_key, True))
+
     async def send_discord_embed(self, event_type: str, custom_description: Optional[str] = None) -> bool:
         webhook_url = settings.runtime_config.get("discord_webhook_url", "") or os.getenv("DISCORD_WEBHOOK_URL", "")
         if not webhook_url:
             return False
+
+        if not self.is_event_enabled(event_type):
+            logger.debug(f"Notificación de Discord para evento {event_type} deshabilitada por configuración del usuario.")
+            return True
 
         lang = self._get_lang()
         color = 3447003
@@ -74,6 +104,21 @@ class WebhookManager:
             status_text = "🔄 Restore OK"
             title = "🔄 Server Restored Successfully" if lang == "en" else "🔄 Servidor Restaurado con Éxito"
             desc = custom_description or ("Server save successfully restored from backup." if lang == "en" else "Servidor de ARK restaurado exitosamente desde la copia.")
+        elif event_type == "PLAYER_JOIN":
+            color = 3066993
+            status_text = "👤 Superviviente / Player Joined"
+            title = "👤 Player Connected" if lang == "en" else "👤 Superviviente Conectado"
+            desc = custom_description or "Un superviviente se ha unido a la partida."
+        elif event_type == "PLAYER_LEAVE":
+            color = 9807270
+            status_text = "👋 Superviviente / Player Left"
+            title = "👋 Player Disconnected" if lang == "en" else "👋 Superviviente Desconectado"
+            desc = custom_description or "Un superviviente ha salido de la partida."
+        elif event_type == "TEST":
+            color = 5814783  # Teal (#58B1FF)
+            status_text = "🧪 Test / Prueba"
+            title = "🧪 Discord Webhook Test" if lang == "en" else "🧪 Prueba de Webhook de Discord"
+            desc = custom_description or ("This is a test notification sent from the ARK Server Manager web panel." if lang == "en" else "Esta es una notificación de prueba enviada exitosamente desde el panel web de ARK Server Manager.")
         else:
             desc = custom_description or "Evento de servidor"
 
@@ -82,8 +127,8 @@ class WebhookManager:
         timestamp_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         payload = {
-            "username": session_name,
-            "avatar_url": "https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/logo.png",
+            "username": f"{session_name} - ARK Server",
+            "avatar_url": "https://raw.githubusercontent.com/GMS-EC/ark-server-docker/main/Documents/logo.png",
             "embeds": [{
                 "title": title,
                 "description": desc,
@@ -95,7 +140,7 @@ class WebhookManager:
                 ],
                 "footer": {
                     "text": "ARK: Survival Evolved • ARK Server Manager",
-                    "icon_url": "https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/logo.png"
+                    "icon_url": "https://raw.githubusercontent.com/GMS-EC/ark-server-docker/main/Documents/logo.png"
                 },
                 "timestamp": timestamp_iso
             }]
@@ -108,7 +153,6 @@ class WebhookManager:
             logger.debug(f"Error enviando webhook a Discord: {e}")
             return False
 
-    # Métodos semánticos para conveniencia
     async def notify_server_status(self, is_online: bool):
         await self.send_discord_embed("START" if is_online else "SHUTDOWN")
 
@@ -120,27 +164,22 @@ class WebhookManager:
         msg = f"Backup `{filename}` ({size_mb} MB) completed successfully." if lang == "en" else f"Copia de seguridad `{filename}` ({size_mb} MB) completada exitosamente."
         await self.send_discord_embed("BACKUP_OK", msg)
 
-    async def notify_backup_fail(self, error_msg: str):
+    async def notify_backup_failed(self, error: str):
         lang = self._get_lang()
-        msg = f"Backup creation failed: {error_msg}" if lang == "en" else f"Falló la creación de la copia de seguridad: {error_msg}"
+        msg = f"Backup failed: {error}" if lang == "en" else f"Error al generar respaldo: {error}"
         await self.send_discord_embed("BACKUP_FAIL", msg)
-
-    async def notify_dino_wipe(self):
-        await self.send_discord_embed("WILD_DINOS_WIPED")
 
     async def notify_shutdown_warn(self, minutes_left: int):
         lang = self._get_lang()
-        msg = f"Active playing hours ending. Server will shut down in {minutes_left} minute(s)." if lang == "en" else f"Horario de juego por finalizar. El servidor se apagará en {minutes_left} minuto(s)."
+        msg = f"Automatic scheduled shutdown in {minutes_left} minutes. Save your belongings!" if lang == "en" else f"Apagado automático programado en {minutes_left} minutos. ¡Guarda tus pertenencias!"
         await self.send_discord_embed("SHUTDOWN_WARN", msg)
 
-    async def notify_restart(self, interval_hours: int = 0):
+    async def notify_restart(self, interval_hours: int):
         lang = self._get_lang()
-        msg = f"Initiating restart sequence (Interval: {interval_hours}h) with in-game warnings." if lang == "en" else f"Iniciando secuencia de reinicio (Intervalo: {interval_hours}h) con avisos in-game."
+        msg = f"Scheduled restart (every {interval_hours}h) initiated. 5 minutes in-game warning countdown." if lang == "en" else f"Reinicio periódico (cada {interval_hours}h) iniciado. Cuenta atrás de 5 minutos con avisos in-game."
         await self.send_discord_embed("RESTART", msg)
 
-    async def notify_restore(self, filename: str):
-        lang = self._get_lang()
-        msg = f"Server save successfully restored from `{filename}`. ARK server restarted and online." if lang == "en" else f"Servidor de ARK restaurado exitosamente desde `{filename}`. Servidor reiniciado y online."
-        await self.send_discord_embed("RESTORE_OK", msg)
+    async def notify_dino_wipe(self):
+        await self.send_discord_embed("WILD_DINOS_WIPED")
 
 webhook_manager = WebhookManager()

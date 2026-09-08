@@ -1,33 +1,131 @@
 <!-- TAB: WEBHOOKS DISCORD (Dockraft Style) -->
-<div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+<div class="card" style="margin-bottom: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
     <div>
       <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span>Integración con Discord Webhooks</span>
       </h2>
       <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.85rem;">
-        Notificaciones enriquecidas con embeds para inicio, paradas programadas, dino wipes y copias de seguridad.
+        Notificaciones automáticas en tiempo real con embeds enriquecidos hacia tu canal de Discord.
       </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-primary" onclick="saveWebhookSettings()" style="padding: 7px 18px; font-size: 0.84rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span>Guardar Webhook</span>
+      </button>
+      <button class="btn btn-secondary" onclick="testWebhookNotification()" style="padding: 7px 16px; font-size: 0.84rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <span>Probar Notificación</span>
+      </button>
     </div>
   </div>
 
-  <div class="form-group" style="max-width: 680px; margin-bottom: 18px;">
-    <label class="form-label" for="webhook-url">Discord Webhook URL</label>
-    <input type="text" id="webhook-url" class="form-input" placeholder="https://discord.com/api/webhooks/..." style="font-family: var(--font-mono); font-size: 0.85rem;">
-    <small style="color: var(--text-dim); font-size: 0.75rem; margin-top: 4px; display: block;">
-      Copia la URL del Webhook desde Discord (Ajustes del Canal &rarr; Integraciones &rarr; Webhooks).
-    </small>
+  <!-- Parámetros Principales de Conexión -->
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px;">
+    <div class="form-group" style="margin-bottom: 0;">
+      <label class="form-label" for="webhook-url">Discord Webhook URL</label>
+      <input type="text" id="webhook-url" class="form-input" placeholder="https://discord.com/api/webhooks/..." style="font-family: var(--font-mono); font-size: 0.85rem; width: 100%;">
+      <small style="color: var(--text-dim); font-size: 0.75rem; margin-top: 4px; display: block;">
+        Obtén la URL en Discord: <em>Ajustes del Canal &rarr; Integraciones &rarr; Webhooks &rarr; Copiar URL</em>.
+      </small>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 0;">
+      <label class="form-label" for="webhook-lang">Idioma de Notificaciones</label>
+      <select id="webhook-lang" class="form-select" style="font-size: 0.85rem; width: 100%;">
+        <option value="es">Español (es)</option>
+        <option value="en">English (en)</option>
+      </select>
+      <small style="color: var(--text-dim); font-size: 0.75rem; margin-top: 4px; display: block;">
+        Idioma en el que se redactarán los títulos y descripciones del embed.
+      </small>
+    </div>
   </div>
 
-  <div style="display: flex; gap: 10px;">
-    <button class="btn btn-primary" onclick="saveWebhookSettings()" style="padding: 7px 18px; font-size: 0.84rem;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      <span>Guardar Webhook</span>
-    </button>
-    <button class="btn btn-outline" onclick="testWebhookNotification()" style="padding: 7px 16px; font-size: 0.84rem;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      <span>Probar Notificación</span>
-    </button>
+  <!-- Selección de Tipos de Eventos (Dockraft Event Grid) -->
+  <div>
+    <h3 style="font-size: 0.95rem; font-weight: 600; color: #58a6ff; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Eventos Activos a Notificar</span>
+    </h3>
+    <p style="font-size: 0.80rem; color: var(--text-muted); margin: 0 0 14px 0;">
+      Elige qué sucesos enviarán un mensaje a tu canal de Discord para mantener informada a tu comunidad.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+      <!-- Evento 1: Servidor Online -->
+      <label class="card" style="padding: 12px 14px; background: var(--bg-subtle); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin: 0;">
+        <input type="checkbox" id="wh-evt-start" checked style="margin-top: 3px; cursor: pointer;">
+        <div>
+          <strong style="font-size: 0.84rem; color: #3fb950; display: block;">🚀 Servidor 100% Online</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.3; display: block;">Avisa cuando el servidor termina de cargar y está listo para recibir jugadores.</span>
+        </div>
+      </label>
+
+      <!-- Evento 2: Inicio de Carga -->
+      <label class="card" style="padding: 12px 14px; background: var(--bg-subtle); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin: 0;">
+        <input type="checkbox" id="wh-evt-starting" checked style="margin-top: 3px; cursor: pointer;">
+        <div>
+          <strong style="font-size: 0.84rem; color: #f0883e; display: block;">⏳ Inicio de Arranque</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.3; display: block;">Avisa en cuanto se enciende el proceso y comienza a cargar mods y mundo en RAM.</span>
+        </div>
+      </label>
+
+      <!-- Evento 3: Servidor Apagado -->
+      <label class="card" style="padding: 12px 14px; background: var(--bg-subtle); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin: 0;">
+        <input type="checkbox" id="wh-evt-shutdown" checked style="margin-top: 3px; cursor: pointer;">
+        <div>
+          <strong style="font-size: 0.84rem; color: #f85149; display: block;">🛑 Servidor Apagado</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.3; display: block;">Notifica cuando el servidor se detiene de forma limpia y segura.</span>
+        </div>
+      </label>
+
+      <!-- Evento 4: Aviso de Apagado Programado -->
+      <label class="card" style="padding: 12px 14px; background: var(--bg-subtle); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin: 0;">
+        <input type="checkbox" id="wh-evt-shutdown-warn" checked style="margin-top: 3px; cursor: pointer;">
+        <div>
+          <strong style="font-size: 0.84rem; color: #e3b341; display: block;">⚠️ Aviso de Apagado por Horario</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.3; display: block;">Envía una alerta previa minutos antes del corte fijado en el Power Schedule.</span>
+        </div>
+      </label>
+
+      <!-- Evento 5: Copias de Seguridad -->
+      <label class="card" style="padding: 12px 14px; background: var(--bg-subtle); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin: 0;">
+        <input type="checkbox" id="wh-evt-backup" checked style="margin-top: 3px; cursor: pointer;">
+        <div>
+          <strong style="font-size: 0.84rem; color: #58a6ff; display: block;">📦 Copias de Seguridad</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.3; display: block;">Informa cuando se completa un respaldo periódico con su peso en megabytes.</span>
+        </div>
+      </label>
+
+      <!-- Evento 6: Dino Wipe Automático -->
+      <label class="card" style="padding: 12px 14px; background: var(--bg-subtle); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin: 0;">
+        <input type="checkbox" id="wh-evt-dino-wipe" checked style="margin-top: 3px; cursor: pointer;">
+        <div>
+          <strong style="font-size: 0.84rem; color: #d29922; display: block;">🦕 Dino Wipe (Repoblación)</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.3; display: block;">Notifica cuando se limpian los dinos salvajes para renovar niveles en el mapa.</span>
+        </div>
+      </label>
+
+      <!-- Evento 7: Reinicios Programados -->
+      <label class="card" style="padding: 12px 14px; background: var(--bg-subtle); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin: 0;">
+        <input type="checkbox" id="wh-evt-restart" checked style="margin-top: 3px; cursor: pointer;">
+        <div>
+          <strong style="font-size: 0.84rem; color: #bc8cff; display: block;">🔄 Reinicios Programados</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.3; display: block;">Avisa cuando se inicia la cuenta regresiva de reinicio periódico de fluidez.</span>
+        </div>
+      </label>
+
+      <!-- Evento 8: Conexión de Supervivientes -->
+      <label class="card" style="padding: 12px 14px; background: var(--bg-subtle); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin: 0;">
+        <input type="checkbox" id="wh-evt-players" style="margin-top: 3px; cursor: pointer;">
+        <div>
+          <strong style="font-size: 0.84rem; color: #79c0ff; display: block;">👥 Supervivientes (Entradas / Salidas)</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); line-height: 1.3; display: block;">Notifica cuando jugadores entran o abandonan el servidor.</span>
+        </div>
+      </label>
+    </div>
   </div>
 </div>

@@ -531,25 +531,39 @@ async def api_save_settings(payload: Dict[str, Any]):
 # --- Endpoints de Webhooks Discord ---
 @app.get("/api/webhooks", dependencies=[Depends(require_auth)])
 async def api_get_webhooks():
+    cfg = settings.runtime_config
+    events = cfg.get("discord_events", {
+        "start": True,
+        "starting": True,
+        "shutdown": True,
+        "shutdown_warn": True,
+        "backup": True,
+        "dino_wipe": True,
+        "restart": True,
+        "players": False
+    })
     return {
-        "url": settings.runtime_config.get("discord_webhook_url", "") or os.getenv("DISCORD_WEBHOOK_URL", ""),
-        "language": settings.runtime_config.get("discord_language", "es") or os.getenv("DISCORD_LANGUAGE", "es")
+        "url": cfg.get("discord_webhook_url", "") or os.getenv("DISCORD_WEBHOOK_URL", ""),
+        "language": cfg.get("discord_language", "es"),
+        "events": events
     }
 
 @app.post("/api/webhooks", dependencies=[Depends(require_auth)])
 async def api_save_webhooks(req: Dict[str, Any]):
     url = req.get("url", "").strip()
-    lang = req.get("language", "es").strip()
+    lang = req.get("language", "es").strip().lower()
+    events = req.get("events", {})
     settings.save_runtime_config({
         "discord_webhook_url": url,
-        "discord_language": lang
+        "discord_language": lang,
+        "discord_events": events
     })
-    activity_manager.log("Webhooks", "URL de Webhook de Discord actualizada")
+    activity_manager.log("Webhooks", f"Configuración de Webhook guardada (Idioma: {lang})")
     return {"success": True}
 
 @app.post("/api/webhooks/test", dependencies=[Depends(require_auth)])
 async def api_test_webhook():
-    ok = await webhook_manager.send_discord_embed("START", "Notificación de prueba enviada exitosamente desde el panel web de ARK Server Manager.")
+    ok = await webhook_manager.send_discord_embed("TEST", "¡Notificación de prueba entregada con éxito desde el panel web de ARK Server Manager!")
     if ok:
         activity_manager.log("Webhooks", "Notificación de prueba enviada a Discord con éxito")
         return {"success": True}
