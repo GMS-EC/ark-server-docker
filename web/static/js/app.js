@@ -457,6 +457,7 @@ async function loadSettings() {
             if (document.getElementById("cfg-mods")) document.getElementById("cfg-mods").value = (s.server && s.server.mod_ids) || "";
             if (document.getElementById("cfg-additional-args")) document.getElementById("cfg-additional-args").value = (s.server && s.server.additional_args) || "";
             if (document.getElementById("cfg-battleeye")) document.getElementById("cfg-battleeye").value = String(!!(s.server && s.server.battleeye));
+            if (document.getElementById("cfg-autostart-server")) document.getElementById("cfg-autostart-server").value = String(s.server && s.server.autostart_server !== false);
         }
 
         // Multiplicadores
@@ -490,7 +491,8 @@ async function saveSettings(e) {
             cluster_id: document.getElementById("cfg-cluster-id")?.value || "",
             mod_ids: document.getElementById("cfg-mods")?.value || "",
             additional_args: document.getElementById("cfg-additional-args")?.value || "",
-            battleeye: document.getElementById("cfg-battleeye")?.value === "true"
+            battleeye: document.getElementById("cfg-battleeye")?.value === "true",
+            autostart_server: document.getElementById("cfg-autostart-server")?.value === "true"
         },
         multipliers: {
             xp: document.getElementById("cfg-xp")?.value || "1.0",

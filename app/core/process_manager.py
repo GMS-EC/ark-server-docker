@@ -42,13 +42,27 @@ class ProcessManager:
         return bin_path.exists()
 
     def get_status(self) -> str:
-        if self.status == "INSTALLING":
-            return "INSTALLING"
-        if self._is_ark_process_running():
-            if self.status in ("OFFLINE", "STARTING"):
-                self.status = "RUNNING"
-        elif self.status == "RUNNING":
+        if self.status in ("INSTALLING", "STOPPING"):
+            return self.status
+
+        # Si se encuentra en fase de arranque (STARTING), se mantiene fielmente en STARTING
+        # hasta que _watch_server_readiness() termine de certificar que el servidor cargó el mapa
+        if self.status == "STARTING":
+            if self.process and self.process.returncode is not None:
+                self.status = "OFFLINE"
+                return "OFFLINE"
+            return "STARTING"
+
+        is_running = self._is_ark_process_running()
+
+        if not is_running:
             self.status = "OFFLINE"
+            return "OFFLINE"
+
+        if self.status == "OFFLINE":
+            self.status = "RUNNING"
+            return "RUNNING"
+
         return self.status
 
     def _is_ark_process_running(self) -> bool:
@@ -268,25 +282,19 @@ class ProcessManager:
 
     async def _watch_server_readiness(self):
         """Monitorea hasta que ShooterGameServer responda a RCON o complete la carga."""
-        for _ in range(150):  # hasta 5 minutos
-            await asyncio.sleep(2)
+        start_time = time.time()
+        last_heartbeat = start_time
+
+        while self.status == "STARTING" and self._is_ark_process_running():
+            await asyncio.sleep(2.5)
             if self.status != "STARTING":
                 return
-            
-            is_ready = False
-            # 1. Comprobación rápida vía socket TCP directo al puerto RCON
-            try:
-                import socket
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(0.8)
-                res_code = s.connect_ex((settings.rcon_host, settings.rcon_port))
-                s.close()
-                if res_code == 0:
-                    is_ready = True
-            except Exception:
-                pass
 
-            # 2. Comprobación RCON autenticado
+            now = time.time()
+            elapsed_sec = int(now - start_time)
+
+            # Comprobación de disponibilidad
+            is_ready = self.is_server_ready()
             if not is_ready:
                 try:
                     if self.rcon:
@@ -303,18 +311,23 @@ class ProcessManager:
                 await self.broadcast_log(f"[ARK Server Manager] Nombre de Sesión: {settings.session_name}")
                 await self.broadcast_log(f"[ARK Server Manager] Mapa: {settings.world} | Puerto de Juego: {settings.server_port} (UDP)")
                 await self.broadcast_log(f"[ARK Server Manager] RCON: {settings.rcon_port} (Activo) | Supervivientes: 0/{settings.max_players}")
+                await self.broadcast_log(f"[ARK Server Manager] Tiempo total de carga: {elapsed_sec // 60}m {elapsed_sec % 60}s.")
                 await self.broadcast_log("========================================================================")
                 from app.core.webhook_manager import webhook_manager
                 await webhook_manager.send_discord_embed("START")
                 return
 
-        # Si pasaron los intentos pero el proceso sigue activo, marcar como RUNNING
-        if self._is_ark_process_running():
+            # Mensaje periódico de progreso en la consola cada 45 segundos para dar tranquilidad
+            if now - last_heartbeat >= 45:
+                last_heartbeat = now
+                mins = elapsed_sec // 60
+                secs = elapsed_sec % 60
+                await self.broadcast_log(f"[ARK Server Manager] [EN PROCESO] Servidor iniciando... Cargando mundo y mods en RAM ({mins}m {secs}s transcurridos). Por favor espera...")
+
+        # Si el bucle terminó y el proceso sigue vivo
+        if self._is_ark_process_running() and self.status == "STARTING":
             self.status = "RUNNING"
-            await self.broadcast_log("========================================================================")
-            await self.broadcast_log("[ARK Server Manager] [OK] ¡SERVIDOR DE ARK ONLINE Y OPERATIVO!")
-            await self.broadcast_log(f"[ARK Server Manager] Proceso ShooterGameServer activo y consumiendo recursos.")
-            await self.broadcast_log("========================================================================")
+            await self.broadcast_log("[ARK Server Manager] [OK] Servidor de ARK operativo en segundo plano.")
 
     async def stop_server(self, grace_seconds: int = 10) -> bool:
         if self.status == "OFFLINE" and not self._is_ark_process_running():

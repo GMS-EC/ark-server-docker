@@ -52,7 +52,12 @@ if command -v arkmanager >/dev/null 2>&1; then
     fi
 
     # 4. Iniciar ShooterGameServer en primer plano para supervisión de procesos y streaming de consola
-    echo "[ARK Server Manager] Iniciando ShooterGameServer..."
+    echo "========================================================================"
+    echo "[ARK Server Manager] Todos los mods instalados exitosamente."
+    echo "[ARK Server Manager] Lanzando ejecutable ShooterGameServer..."
+    echo "[ARK Server Manager] [INFO] El servidor está cargando el mapa y los dinos en memoria RAM."
+    echo "[ARK Server Manager] [INFO] Este proceso toma entre 3 y 6 minutos. El estado permanecerá en STARTING hasta estar listo."
+    echo "========================================================================"
     exec arkmanager run @main
 else
     echo "[ARK Server Manager] Modo local / Simulación: arkmanager no encontrado en el PATH."

@@ -160,7 +160,8 @@ class ArkSettingsManager:
                 "additional_args": settings.runtime_config.get("additional_args", os.getenv("ADDITIONAL_ARGS", "")),
                 "beta": settings.runtime_config.get("beta", os.getenv("BETA", "public")),
                 "update_on_start": settings.runtime_config.get("update_on_start", os.getenv("UPDATE_ON_START", "true").lower() in ("true", "1", "yes")),
-                "battleeye": settings.runtime_config.get("battleeye", os.getenv("BATTLEEYE", "false").lower() in ("true", "1", "yes"))
+                "battleeye": settings.runtime_config.get("battleeye", os.getenv("BATTLEEYE", "false").lower() in ("true", "1", "yes")),
+                "autostart_server": settings.runtime_config.get("autostart_server", os.getenv("AUTOSTART_SERVER", "true").lower() in ("true", "1", "yes"))
             },
             "multipliers": {
                 "xp": gus_settings.get("XPMultiplier", os.getenv("XP_MULTIPLIER", "1.0")),
@@ -199,7 +200,7 @@ class ArkSettingsManager:
 
             # Persistir configuraciones de ejecución en runtime_config
             runtime_updates = {}
-            for k in ["mod_ids", "cluster_id", "cluster_dir_override", "additional_args", "beta", "update_on_start", "battleeye"]:
+            for k in ["mod_ids", "cluster_id", "cluster_dir_override", "additional_args", "beta", "update_on_start", "battleeye", "autostart_server"]:
                 if k in srv:
                     runtime_updates[k] = srv[k]
             if runtime_updates:
