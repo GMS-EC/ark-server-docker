@@ -109,6 +109,14 @@ function initWebSocket() {
     };
 }
 
+function sendQuickRcon(cmd) {
+    const input = document.getElementById("console-input");
+    if (input) {
+        input.value = cmd;
+        sendConsoleCommand();
+    }
+}
+
 function sendConsoleCommand() {
     const input = document.getElementById("console-input");
     if (!input || !input.value.trim()) return;
@@ -116,7 +124,10 @@ function sendConsoleCommand() {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(cmd);
     } else {
-        fetch("/api/server/command", {
+        const url = (currentInstanceId && currentInstanceId !== "main")
+            ? `/api/cluster/instances/${currentInstanceId}/command`
+            : "/api/server/command";
+        fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ command: cmd })
@@ -1267,16 +1278,16 @@ function onSwitchClusterServer(instanceId) {
     if (termRcon && targetInst) termRcon.textContent = `RCON: ${targetInst.rcon_port || 27020}`;
 
     // Reconectar la consola WebSocket al nodo seleccionado
-    if (consoleWs) {
-        try { consoleWs.close(); } catch(e) {}
-        consoleWs = null;
+    if (ws) {
+        try { ws.close(); } catch(e) {}
+        ws = null;
     }
     const consoleOut = document.getElementById("console-output");
     if (consoleOut) {
         const nodeTitle = targetInst ? targetInst.name : instanceId;
         consoleOut.innerHTML = `<div class="log-line info" style="color: #58a6ff; font-weight: 600;">[ARK Server Manager] Conectando consola a nodo: ${nodeTitle}...</div>`;
     }
-    connectConsoleWebSocket();
+    initWebSocket();
 
     showToast(`Cambiando contexto a nodo: ${instanceId}`, "info");
 

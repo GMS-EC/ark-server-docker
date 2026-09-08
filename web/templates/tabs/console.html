@@ -105,16 +105,17 @@
     </button>
   </div>
 
-  <!-- Barra de Comandos RCON Rápidos -->
+  <!-- Barra de Comandos RCON Rápidos (Comandos de Administración de Servidor) -->
   <div class="rcon-quick-bar" style="padding: 8px 14px; background: rgba(22, 27, 34, 0.7); border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
     <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: 600;">Comandos Rápidos RCON:</span>
-    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('SetTimeOfDay 08:00')">Hacer de Día</button>
-    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('SaveWorld')">Guardar Mundo</button>
-    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('DestroyWildDinos')">Dino Wipe</button>
-    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('ListPlayers')">Listar Jugadores</button>
-    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('Fly')">Volar (Fly)</button>
-    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('Walk')">Caminar (Walk)</button>
-    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('God')">Modo Dios (God)</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 9px; font-size: 0.75rem;" onclick="sendQuickRcon('SetTimeOfDay 08:00')" title="Fija la hora del servidor a las 08:00 AM">☀️ Día (08:00)</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 9px; font-size: 0.75rem;" onclick="sendQuickRcon('SetTimeOfDay 22:00')" title="Fija la hora del servidor a las 10:00 PM">🌙 Noche (22:00)</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 9px; font-size: 0.75rem;" onclick="sendQuickRcon('listplayers')" title="Muestra supervivientes conectados con SteamID y ping">👥 Listar Conectados</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 9px; font-size: 0.75rem;" onclick="sendQuickRcon('getchat')" title="Muestra los últimos mensajes del chat del servidor">💬 Ver Chat In-Game</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 9px; font-size: 0.75rem;" onclick="sendQuickRcon('DestroyAll DroppedItemGeneric_C')" title="Elimina bolsas e ítems tirados en el suelo para reducir lag">🧹 Limpiar Suelo (Anti-Lag)</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 9px; font-size: 0.75rem;" onclick="sendQuickRcon('slomo 0')" title="Pausa la simulación del mundo en caso de emergencia">⏸️ Pausar Juego</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 9px; font-size: 0.75rem;" onclick="sendQuickRcon('slomo 1')" title="Restaura la velocidad normal de simulación (1.0)">▶️ Reanudar (Slomo 1)</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 9px; font-size: 0.75rem;" onclick="sendQuickRcon('DoExit')" title="Guarda el mapa y apaga el proceso de ShooterGame de forma segura">🛑 Cierre Seguro (DoExit)</button>
   </div>
 </div>
 
