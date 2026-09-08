@@ -158,29 +158,30 @@
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="add-inst-rcon" style="font-size: 0.82rem;">Puerto RCON (TCP):</label>
-          <input type="number" id="add-inst-rcon" class="form-input" value="27021" style="font-size: 0.88rem;">
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="add-inst-players" style="font-size: 0.82rem;">Máximo Jugadores:</label>
-          <input type="number" id="add-inst-players" class="form-input" value="20" style="font-size: 0.88rem;">
-        </div>
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" for="add-inst-players" style="font-size: 0.82rem;">Límite Máximo de Supervivientes:</label>
+        <input type="number" id="add-inst-players" class="form-input" value="20" style="font-size: 0.88rem;">
       </div>
 
-      <div class="form-group" style="margin-bottom: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <label class="form-label" for="add-inst-altsave" style="font-size: 0.82rem; margin-bottom: 0;">Carpeta de Guardado (AltSaveDir):</label>
-          <span style="font-size: 0.72rem; color: #3fb950; font-weight: 600; background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.3); border-radius: 4px; padding: 1px 6px;">
-            Protegida / Automática
-          </span>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label" for="add-inst-rcon" style="font-size: 0.82rem; margin-bottom: 0;">Puerto RCON (Interno):</label>
+            <span style="font-size: 0.70rem; color: #58a6ff; font-weight: 600; background: rgba(56, 139, 253, 0.1); border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 4px; padding: 1px 6px;">Automático</span>
+          </div>
+          <input type="number" id="add-inst-rcon" class="form-input" value="27021" style="font-size: 0.88rem; background: rgba(22, 27, 34, 0.9); color: #79c0ff; font-family: var(--font-mono); cursor: not-allowed; border-color: #30363d;" readonly tabindex="-1">
         </div>
-        <input type="text" id="add-inst-altsave" class="form-input" placeholder="ej: ScorchedEarth" style="font-size: 0.88rem; background: rgba(22, 27, 34, 0.9); color: #79c0ff; font-family: var(--font-mono); cursor: not-allowed; border-color: #30363d;" readonly tabindex="-1">
-        <small style="color: var(--text-dim); font-size: 0.75rem; margin-top: 4px; display: block;">
-          Asignada automáticamente según el mapa para garantizar la integridad de las partidas y evitar sobrescritura.
-        </small>
+        <div class="form-group" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label" for="add-inst-altsave" style="font-size: 0.82rem; margin-bottom: 0;">Carpeta (AltSaveDir):</label>
+            <span style="font-size: 0.70rem; color: #3fb950; font-weight: 600; background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.3); border-radius: 4px; padding: 1px 6px;">Automática</span>
+          </div>
+          <input type="text" id="add-inst-altsave" class="form-input" placeholder="ej: ScorchedEarth" style="font-size: 0.88rem; background: rgba(22, 27, 34, 0.9); color: #79c0ff; font-family: var(--font-mono); cursor: not-allowed; border-color: #30363d;" readonly tabindex="-1">
+        </div>
       </div>
+      <small style="color: var(--text-dim); font-size: 0.74rem; display: block; margin-top: 2px;">
+        💡 El puerto RCON interno (127.0.0.1) y la contraseña de administrador son gestionados automáticamente por el panel para la consola y comandos de este mapa.
+      </small>
     </div>
 
     <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #30363d; display: flex; justify-content: flex-end; gap: 10px;">
