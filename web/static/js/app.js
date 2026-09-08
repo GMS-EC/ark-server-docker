@@ -137,7 +137,13 @@ async function startServer() {
 }
 
 async function stopServer() {
-    if (!confirm("¿Deseas detener el servidor de ARK? Se guardará el mundo antes.")) return;
+    const ok = await App.confirm({
+        title: "Detener Servidor",
+        message: "¿Deseas detener el servidor de ARK? Se guardará el estado del mundo (SaveWorld) antes de apagar.",
+        confirmText: "Detener Servidor",
+        danger: true
+    });
+    if (!ok) return;
     showToast("Deteniendo servidor...", "info");
     const res = await fetch("/api/server/stop", { method: "POST" });
     const data = await res.json();
@@ -147,14 +153,26 @@ async function stopServer() {
 }
 
 async function restartServer() {
-    if (!confirm("¿Deseas reiniciar el servidor de ARK inmediatamente?")) return;
+    const ok = await App.confirm({
+        title: "Reiniciar Servidor",
+        message: "¿Deseas reiniciar el servidor de ARK inmediatamente? Se guardará el progreso antes del reinicio.",
+        confirmText: "Reiniciar Ahora",
+        warning: true
+    });
+    if (!ok) return;
     showToast("Reiniciando servidor...", "info");
     await fetch("/api/server/restart", { method: "POST" });
 }
 
 // --- Acciones Rápidas de ARK ---
 async function triggerDinoWipe() {
-    if (!confirm("¿Ejecutar DestroyWildDinos? Todos los dinosaurios salvajes desaparecerán para regenerar fauna.")) return;
+    const ok = await App.confirm({
+        title: "Limpieza de Dinos (Dino Wipe)",
+        message: "¿Ejecutar DestroyWildDinos? Todos los dinosaurios salvajes desaparecerán para regenerar nueva fauna.",
+        confirmText: "Ejecutar Dino Wipe",
+        warning: true
+    });
+    if (!ok) return;
     showToast("Ejecutando Dino Wipe...", "info");
     const res = await fetch("/api/server/dinowipe", { method: "POST" });
     const data = await res.json();
@@ -173,8 +191,13 @@ async function triggerSaveWorld() {
 }
 
 async function triggerBroadcast() {
-    const msg = prompt("Mensaje flotante para enviar a todos los jugadores:");
-    if (!msg) return;
+    const msg = await App.prompt({
+        title: "Anuncio Broadcast In-Game",
+        message: "Escribe el mensaje flotante para enviar en vivo a todos los jugadores:",
+        placeholder: "ej: Reinicio en 10 minutos por mantenimiento...",
+        confirmText: "Enviar Anuncio"
+    });
+    if (!msg || !msg.trim()) return;
     const res = await fetch("/api/server/broadcast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -343,7 +366,13 @@ async function loadPlayers() {
 }
 
 async function kickPlayer(steamId) {
-    if (!confirm(`¿Expulsar al superviviente con SteamID ${steamId}?`)) return;
+    const ok = await App.confirm({
+        title: "Expulsar Superviviente",
+        message: `¿Expulsar del servidor al superviviente con SteamID ${steamId}?`,
+        confirmText: "Expulsar",
+        danger: true
+    });
+    if (!ok) return;
     await fetch("/api/players/kick", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -354,7 +383,13 @@ async function kickPlayer(steamId) {
 }
 
 async function banPlayer(steamId) {
-    if (!confirm(`¿Banear al superviviente con SteamID ${steamId}?`)) return;
+    const ok = await App.confirm({
+        title: "Banear Superviviente",
+        message: `¿Banear permanentemente al superviviente con SteamID ${steamId}?`,
+        confirmText: "Banear",
+        danger: true
+    });
+    if (!ok) return;
     await fetch("/api/players/ban", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -396,7 +431,13 @@ async function loadBackups() {
 }
 
 async function createBackupNow() {
-    const name = prompt("Nombre personalizado para la copia de seguridad (opcional):");
+    const name = await App.prompt({
+        title: "Crear Copia de Seguridad",
+        message: "Nombre descriptivo para identificar este respaldo (opcional):",
+        placeholder: "ej: antes_del_boss",
+        confirmText: "Crear Copia"
+    });
+    if (name === null) return;
     showToast("Comprimiendo mundo guardado...", "info");
     const res = await fetch("/api/backups/create", {
         method: "POST",
@@ -413,7 +454,13 @@ async function createBackupNow() {
 }
 
 async function restoreBackup(filename) {
-    if (!confirm(`¿Restaurar ${filename}? Los datos actuales del mundo serán reemplazados y el servidor se reiniciará.`)) return;
+    const ok = await App.confirm({
+        title: "Restaurar Copia de Seguridad",
+        message: `¿Restaurar '${filename}'?\n\nLos datos actuales del mundo serán reemplazados (se creará una salvaguarda automática antes) y el servidor se reiniciará.`,
+        confirmText: "Restaurar Respaldo",
+        danger: true
+    });
+    if (!ok) return;
     showToast("Restaurando copia...", "info");
     const res = await fetch("/api/backups/restore", {
         method: "POST",
@@ -429,7 +476,13 @@ async function restoreBackup(filename) {
 }
 
 async function deleteBackup(filename) {
-    if (!confirm(`¿Eliminar la copia ${filename}?`)) return;
+    const ok = await App.confirm({
+        title: "Eliminar Copia de Seguridad",
+        message: `¿Estás seguro de eliminar permanentemente la copia '${filename}'?`,
+        confirmText: "Eliminar",
+        danger: true
+    });
+    if (!ok) return;
     await fetch("/api/backups/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -899,7 +952,12 @@ function selectMap(mapName, element) {
 
 async function startServerInstallation(e) {
     if (e) e.preventDefault();
-    if (!confirm("¿Deseas guardar estas configuraciones e iniciar la descarga del servidor de ARK?")) return;
+    const ok = await App.confirm({
+        title: "Instalación del Servidor ARK",
+        message: "¿Deseas guardar estas configuraciones e iniciar la descarga del servidor de ARK con SteamCMD?",
+        confirmText: "Instalar Servidor"
+    });
+    if (!ok) return;
 
     const payload = {
         world: document.getElementById("wizard-map") ? document.getElementById("wizard-map").value : "TheIsland",
@@ -1461,7 +1519,13 @@ async function addPresetMod(modId, modName) {
 }
 
 async function removeMod(modId) {
-    if (!confirm(`¿Deseas quitar el Mod ID ${modId} de la configuración del servidor?`)) return;
+    const ok = await App.confirm({
+        title: "Quitar Mod",
+        message: `¿Deseas quitar el Mod ID ${modId} de la lista activa del servidor?`,
+        confirmText: "Quitar Mod",
+        warning: true
+    });
+    if (!ok) return;
     activeModsList = activeModsList.filter(id => id !== modId);
     await saveModsList();
     showToast(`Mod ${modId} eliminado.`, "info");
