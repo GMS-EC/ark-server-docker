@@ -2,7 +2,22 @@
 export PATH="/usr/local/bin:/usr/bin:/bin:/home/steam/bin:$PATH"
 set -e
 
-# 0. If schedule is enabled and server is outside window, process is expected to be stopped
+# 1. Verificar si el panel web ARK Server Manager responde correctamente
+if curl -sf "http://127.0.0.1:${PANEL_PORT:-8080}/health" > /dev/null 2>&1; then
+    exit 0
+fi
+
+# Fallback al endpoint /login
+if curl -sf "http://127.0.0.1:${PANEL_PORT:-8080}/login" > /dev/null 2>&1; then
+    exit 0
+fi
+
+# 2. Si el panel aún está inicializando, verificar si ShooterGameServer ya corre
+if pgrep -f "ShooterGameServer" > /dev/null 2>&1; then
+    exit 0
+fi
+
+# 3. Si el horario programado está activo y estamos fuera de la ventana, el proceso puede estar legítimamente detenido
 if [ "${SCHEDULE_ENABLED:-false}" = "true" ] && [ -n "$SCHEDULE_START" ] && [ -n "$SCHEDULE_STOP" ]; then
     _NOW_H=$(date +%H)
     _NOW_M=$(date +%M)
@@ -20,24 +35,9 @@ if [ "${SCHEDULE_ENABLED:-false}" = "true" ] && [ -n "$SCHEDULE_START" ] && [ -n
         _IN_WINDOW=$([ "$_NOW_MINUTES" -ge "$_START_MINUTES" ] || [ "$_NOW_MINUTES" -lt "$_STOP_MINUTES" ] && echo true || echo false)
     fi
 
-    if [ "$_IN_WINDOW" = "false" ] && ! pgrep -f "ShooterGameServer" > /dev/null 2>&1; then
+    if [ "$_IN_WINDOW" = "false" ]; then
         exit 0
     fi
 fi
 
-# 1. Verify that ShooterGameServer process exists
-if ! pgrep -f "ShooterGameServer" > /dev/null 2>&1; then
-    exit 1
-fi
-
-# 2. Query arkmanager for server online status
-STATUS_OUTPUT=$(su - steam -c "arkmanager status @main" 2>/dev/null || arkmanager status @main 2>/dev/null || true)
-
-if echo "$STATUS_OUTPUT" | grep -qi "Server online:[[:space:]]*Yes"; then
-    exit 0
-fi
-
-# 3. If process exists but server is not yet online (or arkmanager didn't respond),
-# return exit 1. Docker treats exit 1 during --start-period as 'starting',
-# avoiding aggressive restarts while allowing unhealthy detection if stuck past start-period.
 exit 1

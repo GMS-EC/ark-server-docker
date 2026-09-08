@@ -21,7 +21,7 @@ Esta guía detalla cómo personalizar completamente tu servidor de ARK, desde la
 
 El archivo `.env` permite configurar el servidor sin necesidad de modificar archivos internamente:
 
-##### 👤 Permisos y Proceso
+##### 👤 Permisos y Recursos de Hardware
 | Variable | Valor por Defecto | Descripción Técnica |
 |----------|-------------------|---------------------|
 | `PUID` | `1000` | ID del usuario `steam` en el sistema. Asegura que los archivos guardados pertenezcan a tu usuario en Linux. |
@@ -41,14 +41,14 @@ El archivo `.env` permite configurar el servidor sin necesidad de modificar arch
 |----------|-------------------|-----------|-------------|
 | `SERVER_PORT` | `7777` | UDP | Puerto principal donde los clientes de ARK transmiten el movimiento y acciones. |
 | `QUERY_PORT` | `27015` | UDP | Puerto que responde a las búsquedas de servidores de Steam y en el buscador in-game. |
-| `RCON_PORT` | `27020` | TCP | Puerto para administración remota por RCON (ej. ARKon o scripts de comandos). |
+| `RCON_PORT` | `27020` | TCP | Puerto para administración remota externa por RCON. Opcional (los avisos broadcast y saveworld funcionan internamente sin publicar este puerto). |
 
 ##### 🛡️ Reglas y Modos de Juego
 | Variable | Valor por Defecto | Descripción |
 |----------|-------------------|-------------|
 | `SERVER_PVE` | `false` | Si se establece en `true`, activa el modo PvE (los jugadores no pueden atacarse ni dañar estructuras ajenas). |
 | `BATTLEEYE` | `false` | Si se establece en `true`, habilita la protección anti-trampas de BattlEye. |
-| `RCON_ENABLED` | `true` | Habilita o desactiva la consola de administración remota RCON. |
+| `RCON_ENABLED` | `true` | Habilita o desactiva la consola de administración remota RCON (requerido para avisos in-game y saveworld automáticos). |
 | `MOD_IDS` | *(vacío)* | Lista de IDs de mods de Steam Workshop separados por coma (ej. `731604991,893735676`). |
 
 ##### 🏰 Clústeres de Servidores
@@ -121,9 +121,14 @@ ADDITIONAL_ARGS=-ServerHardcore -ForceAllowCaveFlyers -DisableStructureDecayPvE 
 
 ---
 
-#### 📝 3. Edición Directa de Archivos `.ini` (`GameUserSettings.ini` y `Game.ini`)
+#### 📝 3. Edición de Archivos `.ini` (`GameUserSettings.ini` y `Game.ini`)
 
-Ubicación en tu PC: `./steamcmd/ark/ShooterGame/Saved/Config/LinuxServer/`
+> 💡 **¡Recomendado desde el Panel Web!**  
+> Ya no necesitas abrir terminal, SSH ni FileZilla para editar estos archivos. En el panel web (**http://localhost:8080**), puedes:
+> - **Pestaña Configuración:** Ajustar multiplicadores (XP, Tameo, Crianza), contraseñas y puertos desde formularios visuales.
+> - **Pestaña Archivos:** Abrir y editar `GameUserSettings.ini` y `Game.ini` con el editor de código integrado estilo VSCode, guardando cambios al instante.
+
+Ubicación en el sistema de archivos del host: `./steamcmd/ark/ShooterGame/Saved/Config/LinuxServer/`
 
 ##### 🔹 Edición de `GameUserSettings.ini`
 
@@ -192,7 +197,7 @@ This guide details how to fully customize your ARK server, from environment vari
 
 #### 📄 1. Environment Variables (`.env`)
 
-##### 👤 Permissions & System
+##### 👤 Permissions & Hardware Resources
 | Variable | Default | Technical Description |
 |----------|---------|-----------------------|
 | `PUID` | `1000` | System user ID for `steam`. Ensures saved files match Linux permissions. |
@@ -212,7 +217,7 @@ This guide details how to fully customize your ARK server, from environment vari
 |----------|---------|----------|-------------|
 | `SERVER_PORT` | `7777` | UDP | Main game communication port. |
 | `QUERY_PORT` | `27015` | UDP | Steam server browser and query port. |
-| `RCON_PORT` | `27020` | TCP | Remote administration RCON port. |
+| `RCON_PORT` | `27020` | TCP | Remote administration RCON port for external connections. Optional (in-game broadcasts and saveworld work internally without publishing this port). |
 
 ##### 🏰 Server Clusters
 | Variable | Default | Description |

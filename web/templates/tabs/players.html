@@ -1,0 +1,36 @@
+<!-- TAB: SUPERVIVIENTES (Dockraft Style) -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+    <div>
+      <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Supervivientes Conectados</span>
+      </h2>
+      <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.85rem;">
+        Consultado vía RCON y protocolo Steam A2S Query en tiempo real.
+      </p>
+    </div>
+    <button class="btn btn-outline" onclick="loadPlayers()" style="padding: 6px 12px; font-size: 0.82rem;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <span>Actualizar</span>
+    </button>
+  </div>
+
+  <div class="table-container" style="overflow-x: auto;">
+    <table class="custom-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead>
+        <tr>
+          <th>Superviviente</th>
+          <th>Steam ID</th>
+          <th>Estado</th>
+          <th>Acciones de Moderación</th>
+        </tr>
+      </thead>
+      <tbody id="players-table-body">
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 24px;">No hay supervivientes conectados actualmente.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -40,12 +40,15 @@ Para guías detalladas paso a paso sobre conexión, configuración y administrac
 
 - 🌐 [**Guía de Conexión (Steam, LAN y ZeroTier sin abrir puertos)**](Documents/connect-guide.md#-español) — Cómo conectarte tu y tus amigos paso a paso.
 - ⚙️ [**Guía de Configuración Avanzada y Edición `.ini`**](Documents/configuration-guide.md#-español) — Personalización de `.env`, rates, `GameUserSettings.ini` y `Game.ini`.
-- 🛠️ [**Guía de Administración y Restauración**](Documents/management-guide.md#-español) — Uso de `arkmanager`, notificaciones de Discord, reinicios y restauración con `restore.sh`.
+- 🛠️ [**Guía de Administración del Servidor**](Documents/management-guide.md#-español) — Uso de `arkmanager`, notificaciones de Discord, reinicios y horarios.
+- 📦 [**Guía de Copias de Seguridad y Restauración**](Documents/backup-restore-guide.md#-español) — Backups organizados (`Saved/`), restauración en 1 clic desde el panel web y manual por SFTP (FileZilla).
 
 ### 🌟 Principales Capacidades
 
-- **Copias de Seguridad Automáticas**: Backups periódicos integrados con rotación inteligente por cantidad (`BACKUP_MAX_COUNT`).
-- **Restauración en 1 Comando**: Script ejecutable `restore.sh` para restaurar el último backup o uno específico con salvaguarda preventiva.
+- **Panel de Control Web Integrado (ARK Server Manager)**: Interfaz gráfica web moderna en el puerto `8080` (FastAPI + WebSockets) con consola en vivo, monitoreo de CPU/RAM/Disco en tiempo real, gestión de supervivientes, explorador de archivos completo y creación/restauración de backups con un solo clic.
+- **Seguridad Reforzada**: Rate limiting inteligente contra fuerza bruta (bloqueo de 10 minutos tras 5 intentos fallidos), sesiones protegidas de 60 minutos con clave criptográfica persistente y compresión Gzip nativa.
+- **Copias de Seguridad Automáticas y Estructuradas**: Backups periódicos organizados (`Saved/SavedArks`, `Saved/Config`) con rotación inteligente por cantidad (`BACKUP_MAX_COUNT`).
+- **Restauración en 1 Clic y Soporte Manual**: Restauración visual con un solo clic desde el panel web (con salvaguarda preventiva automática) y soporte manual arrastrando carpetas por SFTP.
 - **Notificaciones a Discord Multi-idioma**: Alertas en tiempo real (`DISCORD_LANGUAGE=es/en`) para estado, backups, actualizaciones y reinicios.
 - **Reinicios Programados**: Reinicios automáticos periódicos (`AUTO_RESTART_HOURS`) con advertencias in-game (15m, 10m, 5m, 1m) y auto-guardado.
 - **Horario Automático de Encendido/Apagado**: Encendido y apagado programado del proceso del juego (`SCHEDULE_ENABLED`, `SCHEDULE_START`, `SCHEDULE_STOP`, `TZ`) para ahorro de CPU/RAM con protección de jugadores activos y avisos in-game.
@@ -61,13 +64,11 @@ Para guías detalladas paso a paso sobre conexión, configuración y administrac
 | RAM     | 6GB    | 8GB+        |
 | Almacenamiento | 30GB | 50GB+    |
 
-#### 📊 Referencia Orientativa de Consumo de RAM (1 Mapa)
+#### 📊 Referencia Orientativa de Consumo de RAM
 
 > [!NOTE]
-> *Los siguientes valores son orientativos y dependen del mapa seleccionado, la cantidad y tipo de mods instalados, y la escala de construcciones/estructuras de los jugadores.*
-
-- **Escenario Base Referencial**: Un servidor en `TheIsland` con 3 jugadores simultáneos y ~6 mods livianos (utilidad + 1 mod de criatura) opera cómodamente con **8GB de RAM**.
-- **Servidores con Mods Pesados o Mapas Extensos**: Mapas grandes (como Ragnarok, Genesis o Fjordur) o packs de mods pesados pueden requerir entre **10GB y 12GB+ de RAM** por mapa.
+> *Un servidor en `TheIsland` con 3 jugadores y mods de utilidad opera cómodamente con **8GB de RAM**. Mapas extensos (como Ragnarok, Genesis o Fjordur) o packs de mods pesados pueden requerir entre **10GB y 14GB+ de RAM** por mapa.*
+> 📌 *Consulta la [Guía de Administración y Dimensionamiento por Mapa](Documents/management-guide.md#-español) para ver la tabla completa de consumo de memoria RAM por cada mapa oficial.*
 
 #### 🌐 Dimensionamiento para Clústeres Multi-mapa (`CLUSTER_ID`)
 
@@ -77,6 +78,25 @@ Si planeas configurar un **clúster multi-mapa** para permitir viajes entre serv
 2. **Escalamiento Lineal de RAM**: El consumo de memoria RAM escala de forma **prácticamente lineal por cada mapa adicional**, casi de forma independiente a la cantidad de jugadores conectados en cada uno (el costo base de cargar el mapa en memoria existe incluso con 0 jugadores).
 3. **Presupuesto de Memoria**: Si tu mapa base requiere 8GB de RAM, agregar un segundo mapa al clúster (ej. *ScorchedEarth* además de *TheIsland*) requerirá presupuestar aproximadamente el doble de memoria (un segundo bloque completo de memoria para la segunda instancia), y así sucesivamente por cada mapa adicional.
 4. **Monitoreo Recomendado**: Se recomienda verificar el uso real de memoria de tus contenedores mediante `docker stats` al agregar cada mapa nuevo al clúster.
+
+### 🖥️ Panel Web ARK Server Manager (`http://localhost:8080`)
+
+Una vez iniciado el contenedor, abre tu navegador en **`http://localhost:8080`** (o la IP de tu servidor):
+* **Usuario por defecto:** `admin`
+* **Contraseña por defecto:** `adminpassword` *(configurable en `.env`)*
+
+#### ✨ Módulos Integrados en el Panel Web:
+1. **📊 Métricas y Rendimiento en Tiempo Real:** Monitor de CPU, memoria RAM del contenedor y del proceso ARK (`ShooterGameServer`), espacio en disco y tiempo de actividad (uptime) con gráfico histórico dinámico y optimización *Page Visibility API*.
+2. **💻 Consola en Vivo con WebSockets:** Transmisión de logs en streaming directo, envío de comandos RCON interactivos y poda de memoria automática (límite de 1.000 líneas para máxima fluidez).
+3. **📁 Explorador y Editor de Archivos:** Navegación por carpetas del servidor con menú contextual (clic derecho), editor de texto integrado con resaltado de sintaxis para `GameUserSettings.ini` y `Game.ini`, renombrado, duplicación, compresión ZIP, descarga y subida de archivos segura contra *path traversal*.
+4. **📦 Copias de Seguridad:** Creación de respaldos con nombre personalizado en 1 clic, rotación automática (`BACKUP_MAX_COUNT`), descarga directa de archivos `.tar.gz` al PC y restauración visual inmediata con salvaguarda preventiva automática.
+5. **👥 Gestión de Supervivientes:** Monitoreo de jugadores conectados en tiempo real con SteamID, ping y tiempo en sesión, con acciones de *Kick*, *Ban* y gestión de Lista Blanca.
+6. **⚙️ Configuración del Servidor:** Ajuste visual de multiplicadores de jugabilidad (XP, Tameo, Cosecha, Incubación, Crianza), contraseñas, modos PvE/PvP y protección BattlEye.
+7. **⏰ Tareas y Horarios Automatizados:** Programación de encendido/apagado (`SCHEDULE_START`/`SCHEDULE_STOP`) con avisos in-game, reinicios automáticos periódicos (`AUTO_RESTART_HOURS`) y repoblación de fauna salvaje (*Dino Wipe*).
+8. **🔔 Webhooks de Discord:** Alertas enriquecidas con embeds para inicio, carga, avisos de mantenimiento, respaldos y dino wipes.
+9. **🛡️ Seguridad Reforzada:** Protección inteligente contra fuerza bruta (máximo 5 intentos fallidos, bloqueo de 10 minutos con código 429), sesiones protegidas de 60 minutos con clave criptográfica persistente y compresión Gzip nativa.
+
+---
 
 ### 🚀 Modo de Uso Rápido
 
@@ -98,11 +118,20 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
+    # Límite de RAM del contenedor. Cambia el valor según cuánta
+    # memoria quieras asignarle a tu servidor (ej. 8g, 12g, 16g).
+    mem_limit: 12g
     ports:
-      - "7777:7777/udp"
-      - "27015:27015/udp"
-      - "27020:27020/tcp"
+      - "8080:8080"        # Panel Web ARK Server Manager (HTTP)
+      - "7777:7777/udp"    # Puerto Juego (UDP) - Conexión de Jugadores
+      - "27015:27015/udp"  # Puerto Query Steam (UDP) - Buscador de Servidores
+      - "27020:27020/tcp"  # Puerto RCON (TCP) - Consola Remota y Broadcast In-Game
     environment:
+      # --- ARK Server Manager Web Panel ---
+      - PANEL_PORT=8080
+      - PANEL_USER=admin
+      - PANEL_PASSWORD=adminpassword
+      - AUTOSTART_SERVER=true
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
       - SERVER_PASSWORD=
@@ -133,6 +162,10 @@ services:
 
 | Variable | Valor por Defecto | Descripción |
 |----------|-------------------|-------------|
+| `PANEL_PORT` | `8080` | Puerto HTTP del panel web de administración |
+| `PANEL_USER` | `admin` | Usuario administrador del panel web |
+| `PANEL_PASSWORD` | `adminpassword` | Contraseña de acceso al panel web (¡cámbiala en producción!) |
+| `AUTOSTART_SERVER` | `true` | Iniciar el servidor de ARK automáticamente al encender el contenedor |
 | `SESSION_NAME` | `ARK Server` | Nombre del servidor visible en el buscador |
 | `SERVER_PASSWORD` | (vacío) | Contraseña para unirse al servidor |
 | `ADMIN_PASSWORD` | `adminpass` | Contraseña de administración (`enablecheats`) y RCON |
@@ -140,7 +173,7 @@ services:
 | `WORLD` | `TheIsland` | Nombre oficial del mapa (`TheIsland`, `Ragnarok`, etc.) |
 | `SERVER_PVE` | `false` | Activa modo PvE |
 | `BATTLEEYE` | `false` | Activa protección BattlEye |
-| `RCON_ENABLED` | `true` | Activa consola remota RCON |
+| `RCON_ENABLED` | `true` | Activa consola remota RCON (requerida para avisos in-game y saveworld automáticos) |
 | `MOD_IDS` | (vacío) | IDs de mods de Steam Workshop separados por coma |
 | `UPDATE_ON_START` | `true` | Busca e instala actualizaciones de ARK y mods al iniciar |
 | `AUTO_RESTART_HOURS` | `0` | Intervalo de reinicios programados en horas (0 = desactivado) |
@@ -155,7 +188,18 @@ services:
 | `DISCORD_LANGUAGE` | `es` | Idioma de las alertas de Discord (`es` / `en`) |
 | `TZ` | `UTC` | Zona horaria del contenedor para horarios y logs |
 
-> 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (puertos, PUID/PGID, clústeres, rates y arkmanager).*
+#### 🔌 Puertos de Red Requeridos
+
+| Puerto | Protocolo | Variable | Descripción |
+|--------|-----------|----------|-------------|
+| `8080` | TCP | `PANEL_PORT` | Panel de Control Web **ARK Server Manager** (interfaz gráfica completa para gestión y monitoreo). |
+| `7777` | UDP | `SERVER_PORT` | Puerto principal de juego donde se transmiten las acciones de los jugadores. |
+| `27015` | UDP | `QUERY_PORT` | Puerto de consulta de Steam que permite buscar y listar el servidor in-game. |
+| `27020` | TCP | `RCON_PORT` | Puerto RCON para consola remota, administración externa y avisos broadcast in-game. |
+
+> ℹ️ **Nota sobre RCON y Seguridad:** `RCON_ENABLED=true` es **obligatorio** para que los avisos in-game (`broadcast`) y autoguardados (`saveworld`) funcionen en reinicios y apagos automáticos (ya que `arkmanager` se conecta por `localhost` internamente). El puerto `27020/tcp` está publicado en `ports:` por defecto para permitir conexiones de clientes RCON externos o bots de Discord. Si **no** utilizas herramientas RCON externas, puedes comentar la línea `27020:27020/tcp` en `docker-compose.yml` para cerrar el acceso externo sin afectar los avisos internos del servidor.
+
+> 📌 *Consulta la [Guía de Configuración Avanzada](Documents/configuration-guide.md#-español) para ver la lista completa de variables avanzadas (PUID/PGID, clústeres, rates y arkmanager).*
 
 ### ⚠️ Limitaciones Conocidas
 
@@ -181,7 +225,7 @@ services:
     ├── init.sh
     ├── start.sh
     ├── healthcheck.sh
-    └── restore.sh
+    └── generate-config.sh
 ```
 
 ### 👨‍💻 Autor y Mantenedor
@@ -209,12 +253,13 @@ For detailed step-by-step guides on connecting, configuring, and managing your s
 
 - 🌐 [**Connection Guide (Steam, LAN & ZeroTier without Port Forwarding)**](Documents/connect-guide.md#-english) — Step-by-step connection guide for you and friends.
 - ⚙️ [**Advanced Configuration Guide & `.ini` Customization**](Documents/configuration-guide.md#-english) — Environment variables, server rates, `GameUserSettings.ini` & `Game.ini`.
-- 🛠️ [**Server Management & Restoration Guide**](Documents/management-guide.md#-english) — `arkmanager` CLI, Discord alerts, scheduled restarts, and `restore.sh`.
+- 🛠️ [**Server Management Guide**](Documents/management-guide.md#-english) — `arkmanager` CLI, Discord alerts, scheduled restarts, and power schedule.
+- 📦 [**Backup & Restoration Guide**](Documents/backup-restore-guide.md#-english) — Clean organized backups (`Saved/`), 1-click restore from web panel, and step-by-step SFTP manual restore.
 
 ### 🌟 Core Capabilities
 
-- **Automated Scheduled Backups**: Built-in periodic backups with configurable interval and count-based rotation (`BACKUP_MAX_COUNT`).
-- **One-Command Restoration**: Simple `restore.sh` script to restore the latest or a specific backup instantly with pre-safety backups.
+- **Automated Structured Backups**: Built-in periodic backups maintaining ARK's native folder hierarchy (`Saved/SavedArks`, `Saved/Config`) with count-based rotation (`BACKUP_MAX_COUNT`).
+- **1-Click Web Restoration & SFTP Support**: Instant 1-click restore from the web panel with automated safety backups, plus plug-and-play FileZilla folder drag & drop.
 - **Multi-language Discord Webhooks**: Real-time alerts (`DISCORD_LANGUAGE=es/en`) for server status, backups, updates, and restarts.
 - **Scheduled Restarts**: Periodic automated restarts (`AUTO_RESTART_HOURS`) with in-game warnings (15m, 10m, 5m, 1m) and auto-save.
 - **Automatic Power Schedule**: Start and stop server process on a schedule (`SCHEDULE_ENABLED`, `SCHEDULE_START`, `SCHEDULE_STOP`, `TZ`) to conserve CPU/RAM with active player protection and in-game warnings.
@@ -230,13 +275,11 @@ For detailed step-by-step guides on connecting, configuring, and managing your s
 | RAM      | 6GB     | 8GB+                |
 | Storage  | 30GB    | 50GB+               |
 
-#### 📊 Orientative RAM Consumption Reference (1 Map)
+#### 📊 Orientative RAM Consumption Reference
 
 > [!NOTE]
-> *The following values are estimated guidelines and vary depending on the chosen map, installed mods, and player building structures.*
-
-- **Real Reference Scenario**: A server running `TheIsland` with 3 active players and ~6 lightweight mods (utility + 1 creature mod) operates comfortably with **8GB of RAM**.
-- **Heavy Mods or Large Maps**: Large expansion maps (such as Ragnarok, Genesis, or Fjordur) or heavy modpacks may require **10GB to 12GB+ of RAM** per map.
+> *A server running `TheIsland` with 3 active players and utility mods operates comfortably with **8GB of RAM**. Large expansion maps (such as Ragnarok, Genesis, or Fjordur) or heavy modpacks can require **10GB to 14GB+ of RAM** per map.*
+> 📌 *Check the [Server Management & Map RAM Sizing Guide](Documents/management-guide.md#-english) for the complete RAM consumption breakdown by official map.*
 
 #### 🌐 Sizing Guidelines for Multi-map Clusters (`CLUSTER_ID`)
 
@@ -246,6 +289,25 @@ If you plan to deploy a **multi-map cluster** allowing players to travel between
 2. **Linear RAM Scaling**: Memory consumption scales **almost linearly for each additional map**, nearly independent of the number of active players connected to each map (the base memory cost of loading the map exists even with 0 active players).
 3. **Memory Budgeting**: If your base map requires 8GB of RAM, adding a second map to the cluster (e.g. *ScorchedEarth* alongside *TheIsland*) requires budgeting approximately double the memory (an additional full memory block for the second instance), scaling further with each added map.
 4. **Recommended Monitoring**: We strongly advise monitoring real-time container memory usage with `docker stats` as you add each new map to your cluster.
+
+### 🖥️ ARK Server Manager Web Dashboard (`http://localhost:8080`)
+
+Once the container is running, access the web panel in your browser at **`http://localhost:8080`** (or your server's IP):
+* **Default Username:** `admin`
+* **Default Password:** `adminpassword` *(configurable in `.env`)*
+
+#### ✨ Integrated Web Panel Features:
+1. **📊 Real-Time Metrics & Performance:** Monitors container CPU, ARK process RAM (`ShooterGameServer`), disk usage, and server uptime with dynamic historical graphs and *Page Visibility API* background throttling.
+2. **💻 Live WebSocket Console:** Real-time log streaming, interactive RCON command execution, and automatic memory pruning (capped at 1,000 lines for maximum browser performance).
+3. **📁 File Manager & Editor:** Full folder navigation with right-click context menus, built-in text editor for `GameUserSettings.ini` and `Game.ini`, rename, duplicate, ZIP compression, download, and secure upload protected against path traversal.
+4. **📦 Backup Management:** 1-click custom-named backup creation, automated retention rotation (`BACKUP_MAX_COUNT`), direct `.tar.gz` browser downloads, and 1-click restoration with automatic pre-safety backups.
+5. **👥 Player Management:** Live connected survivor tracker with SteamID, ping, and online duration, plus instant *Kick*, *Ban*, and Whitelist actions.
+6. **⚙️ Server Settings:** Visual multiplier controls (XP, Taming, Harvesting, Breeding, Maturation), passwords, PvE/PvP modes, and BattlEye protection.
+7. **⏰ Automated Tasks & Power Schedule:** Scheduled start/stop windows (`SCHEDULE_START`/`SCHEDULE_STOP`) with in-game warnings, periodic auto-restarts (`AUTO_RESTART_HOURS`), and wild dino repopulation (*Dino Wipe*).
+8. **🔔 Discord Webhooks:** Rich visual embeds for server startup, online status, shutdown warnings, backups, and dino wipes.
+9. **🛡️ Hardened Security:** Intelligent brute-force protection (maximum 5 failed attempts, 10-minute lockout with HTTP 429), 60-minute session expiry with persistent crypto key, and native Gzip compression.
+
+---
 
 ### 🚀 Quick Start
 
@@ -267,11 +329,20 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
+    # Container RAM limit. Change the value depending on how much
+    # memory you want to allocate to your server (e.g. 8g, 12g, 16g).
+    mem_limit: 12g
     ports:
-      - "7777:7777/udp"
-      - "27015:27015/udp"
-      - "27020:27020/tcp"
+      - "8080:8080"        # ARK Server Manager Web Panel (HTTP)
+      - "7777:7777/udp"    # Game Port (UDP) - Player Connection
+      - "27015:27015/udp"  # Steam Query Port (UDP) - Server Browser
+      - "27020:27020/tcp"  # RCON Port (TCP) - Remote Console & In-Game Broadcast
     environment:
+      # --- ARK Server Manager Web Panel ---
+      - PANEL_PORT=8080
+      - PANEL_USER=admin
+      - PANEL_PASSWORD=adminpassword
+      - AUTOSTART_SERVER=true
       # --- Essential Server Settings ---
       - SESSION_NAME=ARK Server
       - SERVER_PASSWORD=
@@ -309,7 +380,7 @@ services:
 | `WORLD` | `TheIsland` | Official map name (`TheIsland`, `Ragnarok`, etc.) |
 | `SERVER_PVE` | `false` | Enable PvE mode |
 | `BATTLEEYE` | `false` | Enable BattlEye anti-cheat |
-| `RCON_ENABLED` | `true` | Enable RCON remote administration |
+| `RCON_ENABLED` | `true` | Enable RCON remote administration (required for automated in-game broadcasts and saveworld) |
 | `MOD_IDS` | (empty) | Comma-separated Steam Workshop mod IDs |
 | `UPDATE_ON_START` | `true` | Check and install ARK server & mod updates on container startup |
 | `AUTO_RESTART_HOURS` | `0` | Scheduled restart interval in hours (0 = disabled) |
@@ -324,7 +395,17 @@ services:
 | `DISCORD_LANGUAGE` | `es` | Language for Discord notification messages (`es` / `en`) |
 | `TZ` | `UTC` | Container timezone used for schedule calculation and log timestamps |
 
-> 📌 *Check out the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the full list of advanced variables (ports, PUID/PGID, clusters, rates & arkmanager).*
+#### 🔌 Required Network Ports
+
+| Port | Protocol | Variable | Description |
+|------|----------|----------|-------------|
+| `7777` | UDP | `SERVER_PORT` | Main game port for player gameplay and action traffic. |
+| `27015` | UDP | `QUERY_PORT` | Steam query port for server browsing and in-game discovery. |
+| `27020` | TCP | `RCON_PORT` | RCON port for remote console, external administration, and in-game broadcasts. |
+
+> ℹ️ **Note on RCON & Security:** `RCON_ENABLED=true` is **mandatory** for automated in-game warning broadcasts (`broadcast`) and world saves (`saveworld`) during scheduled restarts/shutdowns (since `arkmanager` connects internally via `localhost`). Port `27020/tcp` is published under `ports:` by default to allow external RCON tools or Discord bots to connect. If you do **not** use external RCON tools, you can comment out `- "27020:27020/tcp"` in `docker-compose.yml` to block external access without impacting internal automated broadcasts.
+
+> 📌 *Check the [Advanced Configuration Guide](Documents/configuration-guide.md#-english) for the complete list of advanced variables (PUID/PGID, clusters, rates, and arkmanager).*
 
 ### ⚠️ Known Limitations
 
@@ -350,7 +431,7 @@ services:
     ├── init.sh
     ├── start.sh
     ├── healthcheck.sh
-    └── restore.sh
+    └── generate-config.sh
 ```
 
 ### 👨‍💻 Author & Maintainer

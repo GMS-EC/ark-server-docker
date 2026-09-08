@@ -1,0 +1,84 @@
+# ==========================================================
+# ARK Server Manager - Despliegue Multi-Contenedor de Clúster de ARK
+# ==========================================================
+# Este archivo orquesta múltiples mapas de ARK (The Island + Scorched Earth)
+# en contenedores Docker independientes, vinculados por una red interna y
+# compartiendo el volumen 'cluster_data' para viajes entre mundos por obeliscos.
+
+version: "3.8"
+
+services:
+  # Servidor 1: The Island (Nodo Principal)
+  ark-island:
+    image: marcusm99/ark-server-docker:latest
+    build: .
+    container_name: ark-cluster-theisland
+    restart: unless-stopped
+    stop_grace_period: 45s
+    mem_limit: 12g
+    ports:
+      - "8080:8080"        # Panel Web Principal
+      - "7777:7777/udp"    # Juego
+      - "7778:7778/udp"    # Raw UDP
+      - "27015:27015/udp"  # Query Steam
+      - "27020:27020/tcp"  # RCON
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Guayaquil
+      - SESSION_NAME=ARK Cluster - The Island
+      - WORLD=TheIsland
+      - CLUSTER_ID=MiGranCluster
+      - CLUSTER_DIR_OVERRIDE=/home/steam/clusters
+      - SERVER_PORT=7777
+      - QUERY_PORT=27015
+      - RCON_PORT=27020
+      - MAX_PLAYERS=30
+    volumes:
+      - ./steamcmd/theisland:/home/steam/steamcmd/ark
+      - ./ark-backups/theisland:/home/steam/ark-backups
+      - cluster_data:/home/steam/clusters
+    networks:
+      - ark_cluster_net
+
+  # Servidor 2: Scorched Earth (Nodo Desierto)
+  ark-scorched:
+    image: marcusm99/ark-server-docker:latest
+    build: .
+    container_name: ark-cluster-scorchedearth
+    restart: unless-stopped
+    stop_grace_period: 45s
+    mem_limit: 12g
+    ports:
+      - "8081:8080"        # Panel Web Secundario
+      - "7779:7777/udp"    # Juego (Externo 7779)
+      - "7780:7778/udp"    # Raw UDP (Externo 7780)
+      - "27016:27015/udp"  # Query Steam (Externo 27016)
+      - "27021:27020/tcp"  # RCON (Externo 27021)
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Guayaquil
+      - SESSION_NAME=ARK Cluster - Scorched Earth
+      - WORLD=ScorchedEarth_P
+      - CLUSTER_ID=MiGranCluster
+      - CLUSTER_DIR_OVERRIDE=/home/steam/clusters
+      - SERVER_PORT=7777
+      - QUERY_PORT=27015
+      - RCON_PORT=27020
+      - MAX_PLAYERS=30
+    volumes:
+      - ./steamcmd/scorched:/home/steam/steamcmd/ark
+      - ./ark-backups/scorched:/home/steam/ark-backups
+      - cluster_data:/home/steam/clusters
+    networks:
+      - ark_cluster_net
+
+volumes:
+  # Volumen persistente compartido entre todos los mapas del clúster
+  cluster_data:
+    driver: local
+
+networks:
+  ark_cluster_net:
+    driver: bridge

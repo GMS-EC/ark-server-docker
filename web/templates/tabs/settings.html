@@ -1,0 +1,122 @@
+<!-- TAB: CONFIGURACIÓN & MULTIPLICADORES (Dockraft Style) -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Configuraciones del Servidor de ARK</span>
+      </h2>
+      <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.85rem;">
+        Control visual de directivas de GameUserSettings.ini, Game.ini y parámetros de ejecución.
+      </p>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()" style="padding: 6px 16px; font-size: 0.84rem;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span>Guardar Cambios</span>
+    </button>
+  </div>
+
+  <form id="ark-settings-form" onsubmit="saveSettings(event)">
+    <h3 style="font-size: 0.95rem; font-weight: 600; color: #58a6ff; margin-bottom: 14px;">Identidad & Acceso</h3>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div class="form-group">
+        <label class="form-label" for="cfg-session-name">Nombre de la Sesión</label>
+        <input type="text" id="cfg-session-name" class="form-input" placeholder="Mi Servidor ARK">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-server-pass">Contraseña de Acceso (Opcional)</label>
+        <input type="text" id="cfg-server-pass" class="form-input" placeholder="Dejar vacío para público">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-admin-pass">Contraseña Admin / RCON</label>
+        <input type="text" id="cfg-admin-pass" class="form-input" placeholder="adminpass">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-max-players">Límite Máximo de Supervivientes</label>
+        <input type="number" id="cfg-max-players" class="form-input" min="1" max="100" value="20">
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; font-weight: 600; color: #3fb950; margin-bottom: 14px;">Multiplicadores de Jugabilidad (Rates)</h3>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div class="form-group">
+        <label class="form-label" for="cfg-xp">Multiplicador XP</label>
+        <input type="number" step="0.5" id="cfg-xp" class="form-input" value="1.0">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-taming">Velocidad de Tameo</label>
+        <input type="number" step="0.5" id="cfg-taming" class="form-input" value="1.0">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-harvest">Cantidad de Cosecha</label>
+        <input type="number" step="0.5" id="cfg-harvest" class="form-input" value="1.0">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-hatch">Incubación de Huevos</label>
+        <input type="number" step="0.5" id="cfg-hatch" class="form-input" value="1.0">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-mature">Maduración de Crías</label>
+        <input type="number" step="0.5" id="cfg-mature" class="form-input" value="1.0">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-mating">Intervalo Apareamiento</label>
+        <input type="number" step="0.1" id="cfg-mating" class="form-input" value="1.0">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-crafting">Velocidad de Crafteo</label>
+        <input type="number" step="0.5" id="cfg-crafting" class="form-input" value="1.0">
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; font-weight: 600; color: #d29922; margin-bottom: 14px;">Reglas del Servidor, Mods & Clúster</h3>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div class="form-group">
+        <label class="form-label" for="cfg-mode">Modo de Juego</label>
+        <select id="cfg-mode" class="form-select">
+          <option value="pvp">PvP (Jugador contra Jugador)</option>
+          <option value="pve">PvE (Jugador contra Entorno)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-battleeye">Anticheat BattlEye</label>
+        <select id="cfg-battleeye" class="form-select">
+          <option value="false">Desactivado (Recomendado para servidores privados)</option>
+          <option value="true">Activado</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-cluster-id">ID de Clúster (Opcional)</label>
+        <input type="text" id="cfg-cluster-id" class="form-input" placeholder="ej: MiClusterArk">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-mods">Workshop Mod IDs (Comas)</label>
+        <input type="text" id="cfg-mods" class="form-input" placeholder="ej: 731604991, 893735676">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 24px;">
+      <label class="form-label" for="cfg-additional-args">Argumentos Adicionales de ShooterGameServer</label>
+      <input type="text" id="cfg-additional-args" class="form-input" placeholder="ej: -automanagedmods -ServerHardcore -ForceAllowCaveFlyers">
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="padding: 8px 24px;">
+      Guardar Configuraciones
+    </button>
+  </form>
+</div>

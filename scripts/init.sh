@@ -1,71 +1,42 @@
 #!/bin/bash
 set -e
 
-# Show branding
-cat /branding
+# Mostrar branding si existe
+[ -f /branding ] && cat /branding 2>/dev/null || true
 
-# Set PUID/PGID
+echo "================================================="
+echo "       Iniciando ARK Server Manager - Panel & Servidor      "
+echo "================================================="
+
+# Configurar PUID y PGID si se especifican
 if [ -n "${PUID}" ] && [ -n "${PGID}" ]; then
-    echo "Setting steam user to UID:${PUID} GID:${PGID}"
-    usermod -o -u "${PUID}" steam
-    groupmod -o -g "${PGID}" steam
+    echo "[ARK Server Manager] Configurando usuario steam con UID:${PUID} y GID:${PGID}"
+    usermod -o -u "${PUID}" steam 2>/dev/null || true
+    groupmod -o -g "${PGID}" steam 2>/dev/null || true
 fi
 
-# Fix permissions
-mkdir -p /etc/arkmanager /var/log/arktools
-chown -R steam:steam /home/steam /var/log/arktools /etc/arkmanager
+# Crear directorios necesarios y ajustar permisos
+mkdir -p /etc/arkmanager /var/log/arktools /home/steam/steamcmd/ark /home/steam/ark-backups /home/steam/clusters /app/data
+chown -R steam:steam /home/steam /var/log/arktools /etc/arkmanager /app 2>/dev/null || true
 
-# Configure system timezone from TZ variable
+# Configurar Timezone del sistema desde la variable TZ
 if [ -n "${TZ}" ] && [ -f "/usr/share/zoneinfo/${TZ}" ]; then
-    echo "Setting container timezone to ${TZ}"
+    echo "[ARK Server Manager] Configurando zona horaria del contenedor: ${TZ}"
     ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime
     echo "${TZ}" > /etc/timezone
 fi
 
-# Trap signals for graceful shutdown
-trap 'su - steam -c "arkmanager stop --saveworld @main" && exit 0' SIGTERM SIGINT
+# Generar configuración de arkmanager desde variables de entorno
+if [ -f "/home/steam/scripts/generate-config.sh" ]; then
+    bash /home/steam/scripts/generate-config.sh
+fi
 
-# Export and pass environment variables to steam user
-su - steam -c "
-    export PATH=\"/usr/local/bin:/usr/bin:/bin:/home/steam/bin:\$PATH\"
-    export PUID='${PUID}'
-    export PGID='${PGID}'
-    export SESSION_NAME='${SESSION_NAME}'
-    export SERVER_PASSWORD='${SERVER_PASSWORD}'
-    export ADMIN_PASSWORD='${ADMIN_PASSWORD}'
-    export MAX_PLAYERS='${MAX_PLAYERS}'
-    export WORLD='${WORLD}'
-    export SERVER_PORT='${SERVER_PORT}'
-    export QUERY_PORT='${QUERY_PORT}'
-    export RCON_PORT='${RCON_PORT}'
-    export RCON_ENABLED='${RCON_ENABLED}'
-    export SERVER_PVE='${SERVER_PVE}'
-    export BATTLEEYE='${BATTLEEYE}'
-    export CLUSTER_ID='${CLUSTER_ID}'
-    export CLUSTER_DIR_OVERRIDE='${CLUSTER_DIR_OVERRIDE}'
-    export MOD_IDS='${MOD_IDS}'
-    export ADDITIONAL_ARGS='${ADDITIONAL_ARGS}'
-    export ARKMANAGER_OPTS='${ARKMANAGER_OPTS}'
-    export BETA='${BETA}'
-    export UPDATE_ON_START='${UPDATE_ON_START}'
-    export BACKUP_ENABLED='${BACKUP_ENABLED}'
-    export BACKUP_INTERVAL_HOURS='${BACKUP_INTERVAL_HOURS}'
-    export BACKUP_DIR='${BACKUP_DIR}'
-    export BACKUP_MAX_COUNT='${BACKUP_MAX_COUNT}'
-    export DISCORD_WEBHOOK_URL='${DISCORD_WEBHOOK_URL}'
-    export DISCORD_LANGUAGE='${DISCORD_LANGUAGE}'
-    export AUTO_RESTART_HOURS='${AUTO_RESTART_HOURS}'
-    export SCHEDULE_ENABLED='${SCHEDULE_ENABLED}'
-    export SCHEDULE_START='${SCHEDULE_START}'
-    export SCHEDULE_STOP='${SCHEDULE_STOP}'
-    export TZ='${TZ}'
-    export SCHEDULE_WARN_MINUTES='${SCHEDULE_WARN_MINUTES}'
-    export XP_MULTIPLIER='${XP_MULTIPLIER}'
-    export TAME_SPEED_MULTIPLIER='${TAME_SPEED_MULTIPLIER}'
-    export HARVEST_AMOUNT_MULTIPLIER='${HARVEST_AMOUNT_MULTIPLIER}'
-    export HATCH_SPEED_MULTIPLIER='${HATCH_SPEED_MULTIPLIER}'
-    export MATURATION_SPEED_MULTIPLIER='${MATURATION_SPEED_MULTIPLIER}'
-    export MATING_INTERVAL_MULTIPLIER='${MATING_INTERVAL_MULTIPLIER}'
-    export CRAFT_SPEED_MULTIPLIER='${CRAFT_SPEED_MULTIPLIER}'
-    bash /home/steam/scripts/start.sh
-"
+# Capturar señales SIGTERM y SIGINT para apagado seguro de servidores
+trap 'su - steam -c "arkmanager stop --saveworld @all" 2>/dev/null || true; exit 0' SIGTERM SIGINT
+
+export PATH="/usr/local/bin:/usr/bin:/bin:/home/steam/bin:$PATH"
+
+# Arrancar el panel web de ARK Server Manager (FastAPI + Uvicorn) como usuario steam
+echo "[ARK Server Manager] Lanzando panel web en puerto ${PANEL_PORT:-8080}..."
+cd /app
+exec su -s /bin/bash steam -c "export PATH=\"/usr/local/bin:/usr/bin:/bin:/home/steam/bin:\$PATH\"; exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port \"${PANEL_PORT:-8080}\""

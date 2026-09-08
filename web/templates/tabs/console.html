@@ -1,0 +1,147 @@
+<!-- TAB: CONSOLA & RCON (Dockraft Structure) -->
+<div class="grid-4" style="margin-bottom: 18px;">
+  <div class="stat-box">
+    <div class="stat-label">
+      <span>CPU</span>
+      <span id="stat-cpu-val">{{ metrics.cpu_percent }}%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="stat-cpu-bar" style="width: {{ metrics.cpu_percent }}%;"></div>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">Uso de núcleos de CPU</div>
+  </div>
+
+  <div class="stat-box">
+    <div class="stat-label">
+      <span>RAM Servidor</span>
+      <span id="stat-mem-val">{{ metrics.ark_ram_gb }} GB</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="stat-mem-bar" style="width: {{ metrics.ram_percent }}%;"></div>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">Total usado: {{ metrics.ram_used_gb }} / {{ metrics.ram_total_gb }} GB</div>
+  </div>
+
+  <div class="stat-box">
+    <div class="stat-label">
+      <span>Almacenamiento en Disco</span>
+      <span id="stat-disk-val">{{ metrics.disk_used_gb }} / {{ metrics.disk_total_gb }} GB</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="stat-disk-bar" style="width: {{ metrics.disk_percent }}%;"></div>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">Directorio de juego (/steamcmd/ark)</div>
+  </div>
+
+  <div class="stat-box" style="justify-content: center; gap: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Control del Servidor</span>
+      <span class="badge" style="background-color: var(--bg-subtle); border: 1px solid var(--border-color); font-size: 0.75rem; font-family: var(--font-mono); color: #79c0ff;">ARK RCON</span>
+    </div>
+    <div class="btn-group" style="width: 100%; display: flex; align-items: center; gap: 6px;">
+      <button class="btn btn-success" onclick="startServer()" title="Iniciar Servidor" style="flex: 1; height: 36px; padding: 0 10px; font-size: 0.82rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span>Iniciar</span>
+      </button>
+      <button class="btn btn-warning" onclick="stopServer()" title="Detener Servidor" style="flex: 1; height: 36px; padding: 0 10px; font-size: 0.82rem;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+        <span>Detener</span>
+      </button>
+      <button class="btn btn-outline" onclick="restartServer()" title="Reiniciar Servidor" style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Live Terminal Box (Dockraft Style) -->
+<div class="terminal-wrapper">
+  <div class="terminal-header" style="padding: 10px 16px; background-color: var(--bg-subtle); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="terminal-title" style="font-weight: 700; font-size: 0.82rem; letter-spacing: 0.5px; color: #8b949e; display: flex; align-items: center; gap: 8px;">
+      <span>TERMINAL & RCON</span>
+      <span class="badge" style="background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid rgba(35, 134, 54, 0.4); font-size: 0.7rem;">PUERTO 27020</span>
+    </div>
+
+    <!-- Live Filter & Download Tools -->
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; position: relative;">
+        <input type="text" id="console-filter-input" placeholder="Filtrar logs..." style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-color); font-size: 0.78rem; padding: 4px 8px 4px 26px; border-radius: 4px; width: 140px;" oninput="filterConsoleLogs(this.value)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 8px; color: var(--text-dim);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <a href="/api/server/logs/download" class="btn btn-outline" title="Descargar log completo (ShooterGame.log)" download style="padding: 4px 10px; font-size: 0.78rem; text-decoration: none;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Descargar Log</span>
+      </a>
+      <button class="btn btn-outline" onclick="triggerDinoWipe()" title="DestroyWildDinos (Dino Wipe)" style="padding: 4px 10px; font-size: 0.78rem; border-color: #d29922; color: #e3b341;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+        <span>Dino Wipe</span>
+      </button>
+      <button class="btn btn-outline" onclick="triggerSaveWorld()" title="Guardar Mundo (SaveWorld)" style="padding: 4px 10px; font-size: 0.78rem; border-color: #58a6ff; color: #79c0ff;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span>Guardar Mundo</span>
+      </button>
+      <button class="btn btn-outline" onclick="triggerBroadcast()" title="Broadcast mensaje" style="padding: 4px 10px; font-size: 0.78rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <span>Broadcast</span>
+      </button>
+      <button class="btn btn-outline" onclick="document.getElementById('console-output').innerHTML=''" title="Limpiar Consola" style="padding: 4px 10px; font-size: 0.78rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <span>Limpiar</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="terminal-body" id="console-output" style="height: 520px; overflow-y: auto; padding: 14px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; color: #e6edf3; background: #0d1117;">
+    <!-- Live log lines stream here -->
+  </div>
+
+  <!-- Terminal Input Bar -->
+  <div class="terminal-input-bar" style="padding: 10px 14px; background-color: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px;">
+    <span class="terminal-prompt" style="font-family: var(--font-mono); font-weight: 700; color: #58a6ff;">></span>
+    <input type="text" class="form-input" id="console-input" placeholder="Escribe un comando de ARK o RCON (ej. listplayers, cheat god, SaveWorld)..." autocomplete="off" spellcheck="false" style="flex: 1;" onkeydown="if(event.key==='Enter') sendConsoleCommand()">
+    <button class="btn btn-primary" onclick="sendConsoleCommand()" style="padding: 6px 16px;">
+      <span>Enviar</span>
+    </button>
+  </div>
+
+  <!-- Barra de Comandos RCON Rápidos -->
+  <div class="rcon-quick-bar" style="padding: 8px 14px; background: rgba(22, 27, 34, 0.7); border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+    <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: 600;">Comandos Rápidos RCON:</span>
+    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('SetTimeOfDay 08:00')">Hacer de Día</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('SaveWorld')">Guardar Mundo</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('DestroyWildDinos')">Dino Wipe</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('ListPlayers')">Listar Jugadores</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('Fly')">Volar (Fly)</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('Walk')">Caminar (Walk)</button>
+    <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="sendQuickRcon('God')">Modo Dios (God)</button>
+  </div>
+</div>
+
+<!-- Tarjeta de Historial de Auditoría (Audit Log) -->
+<div class="card" style="margin-top: 18px;">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+      <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600;">Historial de Auditoría y Actividad Reciente</h3>
+    </div>
+    <button type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 0.75rem;" onclick="loadActivityLogs()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <span>Refrescar</span>
+    </button>
+  </div>
+  <div class="card-body" style="padding: 0; max-height: 240px; overflow-y: auto;">
+    <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+      <thead>
+        <tr style="background: var(--bg-subtle); border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-dim);">
+          <th style="padding: 8px 14px; width: 140px;">Fecha y Hora</th>
+          <th style="padding: 8px 14px; width: 110px;">Categoría</th>
+          <th style="padding: 8px 14px; width: 120px;">Usuario</th>
+          <th style="padding: 8px 14px;">Acción / Detalle</th>
+        </tr>
+      </thead>
+      <tbody id="activity-log-body">
+        <tr><td colspan="4" style="text-align: center; padding: 14px; color: var(--text-dim);">Cargando historial de actividad...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

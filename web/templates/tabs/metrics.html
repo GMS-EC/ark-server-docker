@@ -1,0 +1,55 @@
+<!-- TAB: METRICS & TELEMETRY (Dockraft Style) -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <h2 style="margin: 0; font-size: 1.4rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      <span>Telemetría y Rendimiento de ARK</span>
+    </h2>
+    <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.88rem;">
+      Monitoreo en tiempo real de CPU, memoria de ShooterGameServer y almacenamiento.
+    </p>
+  </div>
+</div>
+
+<div class="grid-4" style="margin-bottom: 20px;">
+  <div class="card" style="padding: 16px; border-left: 3px solid #f59e0b;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim);">Uso de CPU</span>
+      <span id="val-cpu" style="font-size: 1.4rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono);">0.0%</span>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-dim);">Carga del procesador host</div>
+  </div>
+
+  <div class="card" style="padding: 16px; border-left: 3px solid #38bdf8;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim);">RAM ShooterGame</span>
+      <span id="val-ark-ram" style="font-size: 1.4rem; font-weight: 700; color: #58a6ff; font-family: var(--font-mono);">0.0 GB</span>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-dim);">Memoria del servidor de juego</div>
+  </div>
+
+  <div class="card" style="padding: 16px; border-left: 3px solid #3fb950;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim);">RAM Total Contenedor</span>
+      <span id="val-ram" style="font-size: 1.4rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono);">0 / 0 GB</span>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-dim);">Uso de memoria del sistema</div>
+  </div>
+
+  <div class="card" style="padding: 16px; border-left: 3px solid #8957e5;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim);">Almacenamiento</span>
+      <span id="val-disk" style="font-size: 1.4rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono);">0 / 0 GB</span>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-dim);">Volumen /steamcmd/ark</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="margin-bottom: 16px;">
+    <h3 style="font-size: 1.05rem; font-weight: 600; color: #f0f6fc;">Histórico en Tiempo Real</h3>
+  </div>
+  <div style="height: 380px; width: 100%;">
+    <canvas id="metrics-chart"></canvas>
+  </div>
+</div>

@@ -1,0 +1,87 @@
+<!-- Top Navigation Header (Spacious Dockraft Layout) -->
+<header class="header">
+  <div class="logo-container">
+    <div class="logo-icon">
+      <img src="/static/img/logo.png" alt="ARK Server Manager Logo" width="32" height="32">
+    </div>
+    <div class="logo-text">
+      <h1>ARK Server Manager</h1>
+    </div>
+  </div>
+
+  <nav class="nav-tabs">
+    <button class="nav-btn {% if is_installed %}active{% endif %}" data-tab="console" id="tab-btn-console">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      <span>Consola</span>
+    </button>
+    <button class="nav-btn" data-tab="cluster" id="tab-btn-cluster">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+      <span>Clúster</span>
+    </button>
+    <button class="nav-btn" data-tab="metrics" id="tab-btn-metrics">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      <span>Métricas</span>
+    </button>
+    <button class="nav-btn" data-tab="players" id="tab-btn-players">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Supervivientes</span>
+    </button>
+    <button class="nav-btn" data-tab="tasks" id="tab-btn-tasks">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Tareas</span>
+    </button>
+    <button class="nav-btn" data-tab="backups" id="tab-btn-backups">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+      <span>Respaldos</span>
+    </button>
+    <button class="nav-btn" data-tab="webhooks" id="tab-btn-webhooks">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span>Webhooks</span>
+    </button>
+    <button class="nav-btn" data-tab="files" id="tab-btn-files">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <span>Archivos</span>
+    </button>
+    <button class="nav-btn" data-tab="mods" id="tab-btn-mods">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+      <span>Mods</span>
+    </button>
+    <button class="nav-btn" data-tab="settings" id="tab-btn-settings">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Ajustes</span>
+    </button>
+    {% if not is_installed %}
+    <button class="nav-btn active" data-tab="installer" id="tab-btn-installer">
+      <svg class="tab-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Setup</span>
+    </button>
+    {% endif %}
+  </nav>
+
+  <div class="header-status">
+    <!-- Selector de Servidor / Mapa Activo en Clúster -->
+    <div class="cluster-selector-wrapper" style="display: inline-flex; align-items: center;">
+      <select id="cluster-server-select" class="form-select" onchange="onSwitchClusterServer(this.value)" title="Cambiar mapa / servidor activo" style="padding: 5px 12px; font-size: 0.8rem; height: 32px; background: #161b22; border: 1px solid #30363d; color: #58a6ff; font-weight: 600; cursor: pointer; border-radius: 6px;">
+        <option value="main">Principal (The Island)</option>
+      </select>
+    </div>
+
+    <div class="status-pill {% if not is_installed %}offline{% else %}{{ status.lower() }}{% endif %}" id="status-pill">
+      <span class="status-dot"></span>
+      <span id="status-text">{% if not is_installed %}NO INSTALADO{% else %}{{ status }}{% endif %}</span>
+    </div>
+
+    <!-- Botón de Cerrar Sesión -->
+    <a href="/logout"
+       id="btn-logout"
+       title="Cerrar Sesión de Administrador"
+       style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:6px;background:transparent;border:1px solid #30363d;color:#8b949e;font-size:0.82rem;font-weight:500;text-decoration:none;cursor:pointer;transition:all 0.15s ease;white-space:nowrap;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      <span>Salir</span>
+    </a>
+  </div>
+</header>

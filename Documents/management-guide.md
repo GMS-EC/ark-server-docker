@@ -48,6 +48,12 @@ El contenedor incluye [ARK Server Tools (`arkmanager`)](https://github.com/arkma
   docker exec -u steam ark-server arkmanager update --update-mods @main
   ```
 
+* **Reiniciar y Repoblar Dinos Salvajes (`DestroyWildDinos`):**
+  *Elimina todos los dinosaurios salvajes no domesticados para refrescar la fauna del mapa con niveles y colores nuevos. **Tus dinosaurios domesticados y construcciones no se ven afectados en absoluto**.*
+  ```bash
+  # En el panel web: Ir a la pestaña 'Tareas' y pulsar 'Repoblación de Dinos (Dino Wipe)'.
+  ```
+
 * **Reiniciar el servidor de forma segura con aviso de 15 minutos:**
   ```bash
   docker exec -u steam ark-server arkmanager restart --warn @main
@@ -67,35 +73,34 @@ BACKUP_MAX_COUNT=10
 
 ##### Características del Sistema de Backup:
 1. **Guardado Preventivo (`saveworld`)**: El contenedor fuerza la grabación del mapa a disco antes de crear cada comprimido `.tar.bz2`.
-2. **Rotación Inteligente por Cantidad (`BACKUP_MAX_COUNT`)**: Conserva únicamente los `N` respaldos más recientes y borra los más antiguos automáticamente.
-3. **Persistencia en el Host**: Las copias se guardan en `./ark-backups/` en tu PC.
+2. **Estructura Organizada (`Saved/`)**: Los respaldos respetan la jerarquía nativa de carpetas de ARK (`Saved/SavedArks` y `Saved/Config/LinuxServer`), incluyendo un archivo explicativo `LEEME_RESTAURACION.txt`.
+3. **Rotación Inteligente por Cantidad (`BACKUP_MAX_COUNT`)**: Conserva únicamente los `N` respaldos más recientes y borra los más antiguos automáticamente.
+4. **Persistencia en el Host**: Las copias se guardan en `./ark-backups/` en tu PC.
 
 > [!TIP]
 > **Recomendación sobre `BACKUP_MAX_COUNT`:** Dejar `BACKUP_MAX_COUNT` vacío o en `0` conserva todos los respaldos indefinidamente, lo cual en un servidor de larga duración puede llenar el disco con el tiempo. Con `BACKUP_INTERVAL_HOURS=6` (4 backups/día), un valor de `BACKUP_MAX_COUNT=20` conserva aproximadamente 5 días de historial de respaldos sin acumular espacio indefinidamente.
+>
+> 📖 Para una explicación completa de los archivos, restauración manual por FileZilla y comandos a demanda, consulta la [**Guía de Copias de Seguridad y Restauración**](backup-restore-guide.md#-español).
 
 ---
 
-#### 🔄 3. Guía de Restauración con `restore.sh`
+#### 🔄 3. Guía de Restauración desde el Panel Web
 
-Para restaurar un mapa desde un backup:
+Para restaurar un mapa desde un backup de forma automática:
 
-##### Paso 1: Abrir la terminal dentro del contenedor
-```bash
-docker exec -it ark-server bash
-```
-
-##### Paso 2: Ejecutar el script de restauración
-- **Para restaurar el respaldo más reciente:**
+* **Para restaurar el respaldo más reciente:**
   ```bash
-  /home/steam/scripts/restore.sh latest
+  # En el panel web (http://localhost:8080): Pestaña 'Copias de Seguridad' -> pulsar 'Restaurar'.
   ```
-- **Para restaurar un respaldo específico:**
+* **Para restaurar un respaldo específico:**
   ```bash
-  /home/steam/scripts/restore.sh main.2026-07-22_15.30.00.tar.bz2
+  # O por terminal de forma alternativa:
   ```
 
 > [!TIP]
-> **Salvaguarda Automática:** `restore.sh` genera automáticamente una copia preventivo llamada `pre_restore_safety_...` antes de descompprimir, por lo que nunca perderás el progreso actual.
+> **Salvaguarda Automática:** El sistema de restauración genera automáticamente una copia preventiva llamada `pre_restore_safety_...` antes de descomprimir, por lo que nunca perderás el progreso actual. Es compatible tanto con backups nuevos organizados como con copias legadas de archivos sueltos.
+> 
+> 📖 Si prefieres realizar la restauración **manualmente por SFTP (FileZilla / WinSCP)**, consulta la [**Guía de Restauración Manual**](backup-restore-guide.md#🖐️-4-método-2-restauración-manual-por-sftp-filezilla--winscp).
 
 ---
 
@@ -108,9 +113,11 @@ DISCORD_LANGUAGE=es # Opciones: "es" (Español, por defecto) o "en" (Inglés)
 ```
 
 Recibirás notificaciones automáticas para:
-- Inicio y apagado del servidor.
-- Éxito o falla en los backups.
-- Procesos de reinicio programados.
+- Inicio (`START`), carga (`STARTING`) y apagado (`SHUTDOWN`) del servidor.
+- Copias de seguridad automáticas (`BACKUP_OK`) y manuales (`BACKUP_MANUAL`).
+- Restauraciones de partidas completadas (`RESTORE_OK`).
+- Reinicios y repoblación de fauna salvaje (`WILD_DINOS_WIPED`).
+- Procesos de reinicio programados (`RESTART`) y avisos previos de horario (`SHUTDOWN_WARN`).
 
 ---
 
@@ -146,9 +153,11 @@ SCHEDULE_WARN_MINUTES=10    # Valor por defecto: 10
 ##### Características del Horario Automático:
 1. **Ahorro de Recursos**: Ejecuta `arkmanager stop @main` fuera del horario y `arkmanager start @main` dentro del horario.
 2. **Soporte para Ventanas Nocturnas**: Soporta horarios que cruzan la medianoche (ej. de 20:00 a 00:00 o 02:00).
-3. **Protección de Jugadores Activos**: Si llega la hora de apagado pero hay 1 o más jugadores conectados, el servidor **no se apaga** y pospone la verificación hasta que todos se desconecten.
-4. **Advertencias Previas**: Envía una alerta in-game y notificación a Discord `SCHEDULE_WARN_MINUTES` minutos antes de apagar.
-5. **Zona Horaria (`TZ`)**: Respeta la zona horaria del usuario configurada en `TZ` (ej. `America/Guayaquil`, `Europe/Madrid`).
+3. **Protección de Jugadores Activos**: Si llega la hora de apagado (ej. 12:00) pero hay 1 o más jugadores conectados, el servidor **nunca desconectará a nadie en medio de una partida**. Pospondrá el apagado y esperará pacientemente a que todos los jugadores se desconecten (0 jugadores) para apagarlo de forma segura con autoguardado.
+4. **Encendido Fuera de Horario**: Si enciendes el servidor manualmente fuera de horario (ej. a las 12:30), podrás jugar sin interrupciones mientras permanezcas dentro. Si todos los jugadores se desconectan durante las horas de descanso, el sistema volverá a apagarlo automáticamente para mantener el ahorro de energía.
+5. **Transición Fluida al Iniciar (`SCHEDULE_START`)**: Si el servidor ya estaba encendido porque estabas jugando antes de la hora de inicio (ej. 20:00), el sistema **omitirá el comando de encendido** y tu partida continuará de forma 100% ininterrumpida sin sufrir reinicios ni lag.
+6. **Advertencias Únicas Previas**: Envía una sola advertencia in-game y notificación a Discord `SCHEDULE_WARN_MINUTES` minutos antes de apagar para no saturar el chat con mensajes repetitivos.
+7. **Zona Horaria (`TZ`)**: Respeta la zona horaria del usuario configurada en `TZ` (ej. `America/Guayaquil`, `Europe/Madrid`).
 
 ---
 
@@ -169,6 +178,51 @@ Si tu servidor se ejecuta desde un disco HDD mecánico o tiene varios mods de St
       retries: 5
       start_period: 25m
 ```
+
+---
+
+#### 📊 8. Guía de Dimensionamiento de Memoria RAM por Mapa (`WORLD`)
+
+> [!IMPORTANT]
+> **Criterio de Dimensionamiento Real:** En un servidor activo donde los jugadores construyen bases masivas y acumulan dinosaurios (con o sin mods), la memoria RAM debe presupuestarse pensando en la progresión a largo plazo para evitar cierres por falta de memoria (OOM). Ten en cuenta que **cada jugador adicional conectado consume aproximadamente entre 100 MB y 200 MB de RAM extra** (por renderizado de inventarios, estructuras cercanas y carga de dinos salvajes en su radio de visión).
+>
+> *Nota: Los valores de la siguiente tabla son estimaciones orientativas basadas en reportes de la comunidad, no mediciones de laboratorio verificadas. El consumo real varía según la acumulación de estructuras/dinos a largo plazo, el hardware del host, y la versión específica del juego.*
+
+##### 🧩 Impacto Estimado de Mods (`MOD_IDS`) en la Memoria RAM:
+* 🛠️ **Mods Livianos (QoL y Utilidad):** *S+, SS, Awesome Spyglass, Stacking Mods, Auto Unlock.* ➔ **+50 MB a 150 MB** por mod.
+* 🦖 **Mods Medianos (Decoración y Criaturas):** *Eco's Decor, Kraken's Better Dinos, Shiny! Dinos, Additions.* ➔ **+200 MB a 500 MB** por mod.
+* ⚡ **Mods Pesados / Overhaul (Conversión Total):** *Primal Fear, Annunaki Genesis, Extinction Core, Pugnacia.* ➔ **+1.5 GB a 3 GB+** adicionales por modpack.
+
+| Mapa (`WORLD`) | 1-3 Jugadores (Vanilla) | Con Mods | 5+ Jugadores (Vanilla) | Con Mods |
+|----------------|---------------------------|----------|------------------------|----------|
+| `TheIsland` | **6 GB** | **6 - 8 GB** | **7 - 8 GB** | **8 - 10 GB** |
+| `ScorchedEarth_P` | **6 GB** | **6 - 8 GB** | **7 - 8 GB** | **8 - 10 GB** |
+| `TheCenter` | **6 - 7 GB** | **7 - 9 GB** | **8 - 9 GB** | **10 - 12 GB** |
+| `Aberration_P` | **6 - 7 GB** | **7 - 9 GB** | **8 - 10 GB** | **10 - 12 GB** |
+| `Extinction` | **7 - 8 GB** | **8 - 10 GB** | **9 - 10 GB** | **10 - 12 GB** |
+| `Valguero_P` | **7 - 8 GB** | **8 - 10 GB** | **9 - 10 GB** | **10 - 12 GB** |
+| `Ragnarok` | **7 - 8 GB** | **8 - 10 GB** | **10 - 11 GB** | **12 - 14 GB** |
+| `Genesis` (Gen 1) | **7 - 8 GB** | **8 - 10 GB** | **10 - 11 GB** | **12 - 14 GB** |
+| `CrystalIsles` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `LostIsland` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `Fjordur` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `Genesis2` (Gen 2) | **9 - 10 GB** | **10 - 12 GB** | **12 - 13 GB** | **14 - 16 GB** |
+
+> [!TIP]
+> **Confirmar el límite de RAM real aplicado en Docker:**
+> Para verificar que Docker está aplicando correctamente el límite de memoria `mem_limit` configurado en `docker-compose.yml`, ejecuta:
+> ```bash
+> docker inspect ark-server --format '{{.HostConfig.Memory}}'
+> ```
+> *(Devuelve el límite configurado en bytes; si devuelve `0`, no hay límite real aplicado).*
+> 
+> Para observar el consumo real en tiempo real frente al límite aplicado:
+> ```bash
+> docker stats ark-server --no-stream
+> ```
+
+> [!TIP]
+> **Optimización de Memoria SWAP en el Host:** Si tu servidor se encuentra cerca del límite de RAM recomendado, asegúrate de contar con un archivo o partición **SWAP bien configurado (4GB - 8GB) sobre discos SSD o NVMe en el sistema anfitrión (Host)**. Esto amortigua los picos temporales de consumo de memoria durante el autoguardado automático del mapa (`saveworld`), evitando caídas imprevistas por falta de memoria (OOM Kills).
 
 </details>
 
@@ -212,6 +266,12 @@ The container includes [ARK Server Tools (`arkmanager`)](https://github.com/arkm
   docker exec -u steam ark-server arkmanager update --update-mods @main
   ```
 
+* **Wipe & Repopulate Wild Dinosaurs (`DestroyWildDinos`):**
+  *Eliminates all untamed wild dinos across the map to trigger fresh spawns with randomized levels. **Tamed creatures and player structures are 100% safe and untouched**.*
+  ```bash
+  # En el panel web: Ir a la pestaña 'Tareas' y pulsar 'Repoblación de Dinos (Dino Wipe)'.
+  ```
+
 * **Restart server gracefully with a 15-minute warning:**
   ```bash
   docker exec -u steam ark-server arkmanager restart --warn @main
@@ -231,33 +291,34 @@ BACKUP_MAX_COUNT=10
 
 ##### Key Backup Features:
 1. **Pre-Backup Saveworld**: Forces in-memory world save prior to creating `.tar.bz2` archives.
-2. **Count-Based Rotation (`BACKUP_MAX_COUNT`)**: Retains only the `N` most recent backups.
-3. **Host Persistence**: Stored in `./ark-backups/` on your host PC.
+2. **Organized Structure (`Saved/`)**: Backups maintain ARK's native directory tree (`Saved/SavedArks` and `Saved/Config/LinuxServer`) with a built-in `README_RESTORATION.txt`.
+3. **Count-Based Rotation (`BACKUP_MAX_COUNT`)**: Retains only the `N` most recent backups and purges older ones.
+4. **Host Persistence**: Stored in `./ark-backups/` on your host PC.
 
 > [!TIP]
 > **Recommendation for `BACKUP_MAX_COUNT`:** Leaving `BACKUP_MAX_COUNT` empty or set to `0` retains all backups indefinitely, which on long-running servers can fill up disk space over time. With `BACKUP_INTERVAL_HOURS=6` (4 backups/day), setting `BACKUP_MAX_COUNT=20` retains approximately 5 days of backup history without accumulating unlimited disk usage.
+>
+> 📖 For an in-depth explanation of save files, manual SFTP restoration, and on-demand commands, see the [**Backup & Restoration Guide**](backup-restore-guide.md#-english).
 
 ---
 
-#### 🔄 3. Restoration Guide using `restore.sh`
+#### 🔄 3. Restoration Guide via Web Panel
 
-##### Step 1: Open a terminal inside the container
-```bash
-docker exec -it ark-server bash
-```
+To restore a game from a backup automatically:
 
-##### Step 2: Run the restoration script
-- **To restore the latest backup:**
+* **To restore the latest backup:**
   ```bash
-  /home/steam/scripts/restore.sh latest
+  # En el panel web (http://localhost:8080): Pestaña 'Copias de Seguridad' -> pulsar 'Restaurar'.
   ```
-- **To restore a specific backup:**
+* **To restore a specific backup:**
   ```bash
-  /home/steam/scripts/restore.sh main.2026-07-22_15.30.00.tar.bz2
+  # O por terminal de forma alternativa:
   ```
 
 > [!TIP]
-> **Safety Safeguard:** `restore.sh` automatically creates a safety backup named `pre_restore_safety_...` prior to restoring.
+> **Safety Safeguard:** The restoration system automatically creates a safety backup named `pre_restore_safety_...` prior to restoring. It supports both new organized archives and legacy flat archives.
+>
+> 📖 To perform a **manual SFTP restoration (FileZilla / WinSCP)**, see the [**Manual Restoration Guide**](backup-restore-guide.md#🖐️-4-method-2-manual-sftp-restoration-filezilla--winscp).
 
 ---
 
@@ -268,6 +329,13 @@ Set `DISCORD_WEBHOOK_URL` and `DISCORD_LANGUAGE` in `.env`:
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
 DISCORD_LANGUAGE=es # Options: "es" (Spanish, default) or "en" (English)
 ```
+
+You will receive real-time rich embed notifications for:
+- Server status events: Started (`START`), loading (`STARTING`), and stopped (`SHUTDOWN`).
+- Scheduled backups (`BACKUP_OK`) and on-demand manual backups (`BACKUP_MANUAL`).
+- Completed server save restorations (`RESTORE_OK`).
+- Wild dinosaur resets (`WILD_DINOS_WIPED`).
+- Scheduled server restarts (`RESTART`) and schedule warning broadcasts (`SHUTDOWN_WARN`).
 
 ---
 
@@ -303,9 +371,11 @@ SCHEDULE_WARN_MINUTES=10    # Default: 10
 ##### Key Power Schedule Features:
 1. **Resource Saving**: Runs `arkmanager stop @main` during off-hours and `arkmanager start @main` during active hours.
 2. **Midnight-Crossing Windows**: Fully supports schedules spanning across midnight (e.g., 20:00 to 00:00 or 02:00).
-3. **Active Player Protection**: If shutdown time arrives while 1 or more players are online, the server **postpones shutdown** until all players disconnect.
-4. **Advance Warning**: Sends in-game chat broadcasts and Discord alerts `SCHEDULE_WARN_MINUTES` minutes before shutting down.
-5. **Timezone Aware (`TZ`)**: Evaluates schedule times based on the container's configured `TZ` variable (e.g., `America/Guayaquil`, `Europe/Madrid`).
+3. **Active Player Protection**: If shutdown time arrives (e.g., 12:00) while 1 or more players are online, the server **never kicks active players**. It postpones shutdown and waits until all players disconnect (0 players) to perform a safe auto-save shutdown.
+4. **Manual Start During Off-Hours**: If you manually start the server during off-hours (e.g., at 12:30), you can play uninterrupted as long as players remain connected. Once all players leave, the server automatically shuts down to preserve power savings.
+5. **Seamless Active Window Transition (`SCHEDULE_START`)**: If the server is already running when the active start time arrives (e.g., 20:00), the system **skips the start command**, allowing your gaming session to continue 100% uninterrupted without lag or restarts.
+6. **Single Advance Warning**: Sends a single in-game chat broadcast and Discord alert `SCHEDULE_WARN_MINUTES` minutes before scheduled shutdown without chat spam.
+7. **Timezone Aware (`TZ`)**: Evaluates schedule times based on the container's configured `TZ` variable (e.g., `America/Guayaquil`, `Europe/Madrid`).
 
 ---
 
@@ -326,5 +396,50 @@ If your server runs on a mechanical HDD or loads multiple Steam Workshop mods, i
       retries: 5
       start_period: 25m
 ```
+
+---
+
+#### 📊 8. RAM Sizing Guide by Official Map (`WORLD`)
+
+> [!IMPORTANT]
+> **Real-World Sizing Guideline:** On an active server where players build massive bases and hoard tamed dinos (with or without mods), RAM allocation must be budgeted for long-term progression to prevent Out-Of-Memory (OOM) crashes. Keep in mind that **each additional connected player consumes approximately 100 MB to 200 MB of extra RAM** (due to inventory streaming, nearby structure loading, and wild dino grid activation around their vision radius).
+>
+> *Note: The values in this table are orientative estimates based on community reports, not laboratory-verified measurements. Actual memory consumption varies based on long-term structure/dino accumulation, host hardware, and specific game version.*
+
+##### 🧩 Estimated RAM Impact of Steam Workshop Mods (`MOD_IDS`):
+* 🛠️ **Lightweight Mods (QoL & Utility)**: *S+, SS, Awesome Spyglass, Stacking Mods, Auto Unlock.* ➔ **~50 MB - 150 MB** per mod.
+* 🦖 **Medium Mods (Decor & Custom Creatures)**: *Eco's Decor, Kraken's Better Dinos, Shiny! Dinos, Additions.* ➔ **~200 MB - 500 MB** per mod.
+* ⚡ **Heavy / Overhaul Mods (Total Conversion)**: *Primal Fear, Annunaki Genesis, Extinction Core, Pugnacia.* ➔ **1.5 GB - 3 GB+** additional per full modpack.
+
+| Map (`WORLD`) | 1-3 Players (Vanilla) | With Mods | 5+ Players (Vanilla) | With Mods |
+|---------------|-----------------------|-----------|----------------------|-----------|
+| `TheIsland` | **6 GB** | **6 - 8 GB** | **7 - 8 GB** | **8 - 10 GB** |
+| `ScorchedEarth_P` | **6 GB** | **6 - 8 GB** | **7 - 8 GB** | **8 - 10 GB** |
+| `TheCenter` | **6 - 7 GB** | **7 - 9 GB** | **8 - 9 GB** | **10 - 12 GB** |
+| `Aberration_P` | **6 - 7 GB** | **7 - 9 GB** | **8 - 10 GB** | **10 - 12 GB** |
+| `Extinction` | **7 - 8 GB** | **8 - 10 GB** | **9 - 10 GB** | **10 - 12 GB** |
+| `Valguero_P` | **7 - 8 GB** | **8 - 10 GB** | **9 - 10 GB** | **10 - 12 GB** |
+| `Ragnarok` | **7 - 8 GB** | **8 - 10 GB** | **10 - 11 GB** | **12 - 14 GB** |
+| `Genesis` (Gen 1) | **7 - 8 GB** | **8 - 10 GB** | **10 - 11 GB** | **12 - 14 GB** |
+| `CrystalIsles` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `LostIsland` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `Fjordur` | **8 - 9 GB** | **9 - 11 GB** | **11 - 12 GB** | **12 - 14 GB** |
+| `Genesis2` (Gen 2) | **9 - 10 GB** | **10 - 12 GB** | **12 - 13 GB** | **14 - 16 GB** |
+
+> [!TIP]
+> **Confirming the real RAM limit applied in Docker:**
+> To verify that Docker is properly enforcing the `mem_limit` configured in `docker-compose.yml`, run:
+> ```bash
+> docker inspect ark-server --format '{{.HostConfig.Memory}}'
+> ```
+> *(Returns the configured limit in bytes; if it returns `0`, no real memory limit is applied).*
+> 
+> To observe real-time memory usage against the enforced limit:
+> ```bash
+> docker stats ark-server --no-stream
+> ```
+
+> [!TIP]
+> **Host SWAP Memory Optimization:** If your server is running close to the recommended RAM limits, ensure your **host system has a properly configured SWAP space (4GB - 8GB) on SSD or NVMe storage**. SWAP cushions temporary memory spikes during automatic world saves (`saveworld`), preventing sudden Out-Of-Memory crashes (OOM Kills).
 
 </details>

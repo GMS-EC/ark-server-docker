@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión — ARK Server Manager{% endblock %}
+{% block body_class %}login-page-body{% endblock %}
+
+{% block content %}
+<div class="login-page-wrapper">
+  <div class="dockraft-login-card" id="login-card">
+    <div class="login-brand-header">
+      <img src="/static/img/logo.png" alt="ARK Server Manager Logo" class="dockraft-login-logo-img">
+      <h1 class="dockraft-brand-title">ARK Server Manager</h1>
+      <p class="dockraft-brand-subtitle">Panel de Control para ARK: Survival Evolved</p>
+    </div>
+
+    <!-- Error Alert Badge -->
+    {% if error %}
+    <div class="login-error-alert" id="login-error-msg" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <form id="login-form" method="POST" action="/login">
+      <!-- Username Field -->
+      <div class="form-group" style="text-align: left; margin-bottom: 14px;">
+        <label class="form-label" for="username" style="font-size: 0.84rem; color: #cbd5e1;">Usuario</label>
+        <div class="login-input-wrapper">
+          <span class="login-input-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <input 
+            type="text" 
+            class="form-input login-field" 
+            id="username" 
+            name="username"
+            placeholder="admin" 
+            autocomplete="username" 
+            required
+            autofocus
+          >
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group" style="text-align: left; margin-bottom: 18px;">
+        <label class="form-label" for="password" style="font-size: 0.84rem; color: #cbd5e1;">Contraseña</label>
+        <div class="login-input-wrapper">
+          <span class="login-input-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <input 
+            type="password" 
+            class="form-input login-field" 
+            id="password" 
+            name="password"
+            placeholder="******" 
+            autocomplete="current-password"
+            required
+          >
+          <button 
+            type="button" 
+            class="password-toggle-btn" 
+            onclick="const p=document.getElementById('password'); p.type = p.type === 'password' ? 'text' : 'password';" 
+            title="Mostrar/Ocultar contraseña"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-login-solid" id="btn-login-submit">
+        <span id="btn-login-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </span>
+        <span id="btn-login-text">Iniciar Sesión</span>
+      </button>
+    </form>
+
+    <div class="login-footer-text">
+      Acceso exclusivo para la administración de ARK Server Manager.<br>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}ARK Server Manager — Panel de Control para ARK: Survival Evolved{% endblock %}
+
+{% block content %}
+  <!-- Top Navigation Header (Dockraft Layout) -->
+  {% include "components/header.html" %}
+
+  <!-- Server Overview & Metrics Banner (Dockraft Layout) -->
+  {% include "components/banner.html" %}
+
+  <!-- Main Tabs View Container -->
+  <main class="main-container">
+    <!-- Tab 0: Asistente Inicial & Instalador -->
+    <section id="tab-installer" class="tab-pane {% if not is_installed %}active{% endif %}">
+      {% include "tabs/installer.html" %}
+    </section>
+
+    <!-- Tab 1: Consola & RCON -->
+    <section id="tab-console" class="tab-pane {% if is_installed %}active{% endif %}">
+      {% include "tabs/console.html" %}
+    </section>
+
+    <!-- Tab Clúster: Red Multi-Mapa & Nodos -->
+    <section id="tab-cluster" class="tab-pane">
+      {% include "tabs/cluster.html" %}
+    </section>
+
+
+    <!-- Tab 2: Métricas de Recursos -->
+    <section id="tab-metrics" class="tab-pane">
+      {% include "tabs/metrics.html" %}
+    </section>
+
+    <!-- Tab 3: Supervivientes -->
+    <section id="tab-players" class="tab-pane">
+      {% include "tabs/players.html" %}
+    </section>
+
+    <!-- Tab 4: Programar Tareas -->
+    <section id="tab-tasks" class="tab-pane">
+      {% include "tabs/tasks.html" %}
+    </section>
+
+    <!-- Tab 5: Respaldos -->
+    <section id="tab-backups" class="tab-pane">
+      {% include "tabs/backups.html" %}
+    </section>
+
+    <!-- Tab 6: Webhooks -->
+    <section id="tab-webhooks" class="tab-pane">
+      {% include "tabs/webhooks.html" %}
+    </section>
+
+    <!-- Tab 7: Archivos -->
+    <section id="tab-files" class="tab-pane">
+      {% include "tabs/files.html" %}
+    </section>
+
+    <!-- Tab 8: Configuración -->
+    <section id="tab-settings" class="tab-pane">
+      {% include "tabs/settings.html" %}
+    </section>
+
+    <!-- Tab 9: Mods de Steam Workshop -->
+    <section id="tab-mods" class="tab-pane">
+      {% include "tabs/mods.html" %}
+    </section>
+  </main>
+
+  <!-- Panel Footer (Dockraft Layout) -->
+  {% include "footer.html" %}
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/js/files.js?v=1.0.0"></script>
+  <script src="/static/js/app.js?v=1.0.0"></script>
+{% endblock %}

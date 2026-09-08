@@ -1,0 +1,146 @@
+<!-- TAB: GESTOR DE MODS DE STEAM WORKSHOP (Dockraft Layout) -->
+<div class="overview-banner" style="margin-bottom: 20px;">
+  <div class="overview-item">
+    <div class="overview-label">Mods Configurados</div>
+    <div class="overview-val" id="mods-count-val">0</div>
+  </div>
+  <div class="overview-item">
+    <div class="overview-label">Origen de Descarga</div>
+    <div class="overview-val" style="color: #79c0ff; font-size: 1rem;">Steam Workshop</div>
+  </div>
+  <div class="overview-item">
+    <div class="overview-label">Actualización Automática</div>
+    <div class="overview-val" style="color: #3fb950; font-size: 1rem;">Al Iniciar</div>
+  </div>
+  <div class="overview-item" style="display: flex; align-items: center; gap: 8px;">
+    <button type="button" class="btn btn-primary" onclick="updateModsNow()" title="Comprobar y descargar actualizaciones de mods">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Actualizar Mods Ahora</span>
+    </button>
+  </div>
+</div>
+
+<div class="grid-2" style="gap: 20px; align-items: start;">
+  <!-- Columna Izquierda: Mods Activos y Añadir Manual -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <!-- Tarjeta: Añadir Mod Manualmente -->
+    <div class="card">
+      <div class="card-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600;">Añadir Mod por Steam Workshop ID</h3>
+        </div>
+      </div>
+      <div class="card-body">
+        <p style="font-size: 0.82rem; color: var(--text-dim); margin-top: 0; margin-bottom: 12px;">
+          Ingresa el ID numérico del mod que aparece en la URL de Steam Workshop (ej. <code>https://steamcommunity.com/sharedfiles/filedetails/?id=<b>731604991</b></code>).
+        </p>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" id="new-mod-id" class="form-input" placeholder="Ej. 731604991" style="flex: 1;" onkeydown="if(event.key==='Enter') addModManual()">
+          <button type="button" class="btn btn-primary" onclick="addModManual()" style="padding: 0 16px;">
+            <span>Añadir Mod</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta: Lista de Mods Activos -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600;">Mods Activos en el Servidor</h3>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="loadMods()" style="padding: 2px 8px; font-size: 0.75rem;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Refrescar</span>
+        </button>
+      </div>
+      <div class="card-body" style="padding: 12px;">
+        <div id="active-mods-list" style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 0.85rem;">
+            Cargando lista de mods...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Columna Derecha: Catálogo de Mods Populares Recomendados -->
+  <div class="card">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600;">Catálogo de Mods Populares de la Comunidad</h3>
+      </div>
+    </div>
+    <div class="card-body" style="padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+      <p style="font-size: 0.82rem; color: var(--text-dim); margin: 0 0 6px 0;">
+        Haz clic en <b>Instalar</b> para añadir directamente cualquier mod esencial a tu lista de configuración:
+      </p>
+
+      <!-- Structures Plus (S+) -->
+      <div class="mod-preset-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: #e6edf3;">Structures Plus (S+)</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ID: 731604991 &middot; Construcción optimizada y utilidades</div>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="addPresetMod('731604991', 'Structures Plus (S+)')" style="padding: 4px 10px; font-size: 0.78rem;">Instalar</button>
+      </div>
+
+      <!-- Awesome Spyglass -->
+      <div class="mod-preset-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: #e6edf3;">Awesome Spyglass</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ID: 1404697612 &middot; Catalejo HUD con estadísticas de dinos</div>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="addPresetMod('1404697612', 'Awesome Spyglass')" style="padding: 4px 10px; font-size: 0.78rem;">Instalar</button>
+      </div>
+
+      <!-- Dino Storage v2 -->
+      <div class="mod-preset-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: #e6edf3;">Dino Storage v2</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ID: 1999447172 &middot; Almacenamiento ultraligero de dinos (Soul Traps)</div>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="addPresetMod('1999447172', 'Dino Storage v2')" style="padding: 4px 10px; font-size: 0.78rem;">Instalar</button>
+      </div>
+
+      <!-- Castles, Keeps, and Forts Remastered -->
+      <div class="mod-preset-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: #e6edf3;">Castles, Keeps, and Forts (CKF)</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ID: 764755314 &middot; Arquitectura medieval avanzada</div>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="addPresetMod('764755314', 'Castles, Keeps, and Forts')" style="padding: 4px 10px; font-size: 0.78rem;">Instalar</button>
+      </div>
+
+      <!-- Ultra Stacks -->
+      <div class="mod-preset-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: #e6edf3;">Ultra Stacks</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ID: 761535755 &middot; Apilamiento aumentado y reducción de peso</div>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="addPresetMod('761535755', 'Ultra Stacks')" style="padding: 4px 10px; font-size: 0.78rem;">Instalar</button>
+      </div>
+
+      <!-- Classic Flyers -->
+      <div class="mod-preset-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: #e6edf3;">Classic Flyers</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ID: 895711211 &middot; Vuelo clásico con velocidad subible</div>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="addPresetMod('895711211', 'Classic Flyers')" style="padding: 4px 10px; font-size: 0.78rem;">Instalar</button>
+      </div>
+
+      <!-- Awesome Teleporters -->
+      <div class="mod-preset-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: #e6edf3;">Awesome Teleporters</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ID: 889745138 &middot; Teletransportadores y balizas de viaje</div>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="addPresetMod('889745138', 'Awesome Teleporters')" style="padding: 4px 10px; font-size: 0.78rem;">Instalar</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,281 @@
+<!-- TAB: ASISTENTE INICIAL & SETUP (Dockraft Style) -->
+<div class="card" style="margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+    <div>
+      <h2 style="font-size: 1.3rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Asistente de Configuración Inicial & Descarga de ARK</span>
+      </h2>
+      <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 0.88rem;">
+        Personaliza los parámetros fundamentales antes de descargar los archivos con SteamCMD (20-35 GB).
+      </p>
+    </div>
+  </div>
+
+  <form id="ark-installer-form" onsubmit="startServerInstallation(event)">
+    
+    <!-- Paso 1: Selección de Mapa -->
+    <div style="margin-bottom: 24px;">
+      <label class="form-label" style="font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin-bottom: 10px;">
+        1. Selecciona el Mapa del Servidor (World)
+      </label>
+      <input type="hidden" id="wizard-map" value="TheIsland">
+
+      <div class="map-grid">
+        <div class="map-card selected" onclick="selectMap('TheIsland', this)">
+          <span class="map-card-type">Oficial</span>
+          <span class="map-card-name">The Island</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Mapa clásico original</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('Ragnarok', this)">
+          <span class="map-card-type" style="color: #58a6ff;">Comunidad</span>
+          <span class="map-card-name">Ragnarok</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Fantasía y castillos</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('Fjordur', this)">
+          <span class="map-card-type" style="color: #58a6ff;">Comunidad</span>
+          <span class="map-card-name">Fjordur</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Reinos nórdicos y nieve</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('ScorchedEarth_P', this)">
+          <span class="map-card-type">DLC Oficial</span>
+          <span class="map-card-name">Scorched Earth</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Desierto extremo</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('Aberration_P', this)">
+          <span class="map-card-type">DLC Oficial</span>
+          <span class="map-card-name">Aberration</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Subterráneo radiactivo</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('Extinction', this)">
+          <span class="map-card-type">DLC Oficial</span>
+          <span class="map-card-name">Extinction</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Tierra destruida</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('Genesis', this)">
+          <span class="map-card-type">DLC Oficial</span>
+          <span class="map-card-name">Genesis: Parte 1</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Simulación de biomas</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('Gen2', this)">
+          <span class="map-card-type">DLC Oficial</span>
+          <span class="map-card-name">Genesis: Parte 2</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Nave colonial masiva</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('LostIsland', this)">
+          <span class="map-card-type" style="color: #58a6ff;">Comunidad</span>
+          <span class="map-card-name">Lost Island</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Selvas y ruinas mayas</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('Valguero_P', this)">
+          <span class="map-card-type" style="color: #58a6ff;">Comunidad</span>
+          <span class="map-card-name">Valguero</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Valles y abismo blanco</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('CrystalIsles', this)">
+          <span class="map-card-type" style="color: #58a6ff;">Comunidad</span>
+          <span class="map-card-name">Crystal Isles</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Islas de cristal</span>
+        </div>
+
+        <div class="map-card" onclick="selectMap('TheCenter', this)">
+          <span class="map-card-type">Oficial</span>
+          <span class="map-card-name">The Center</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Océanos y cueva flotante</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paso 2: Parámetros del Servidor -->
+    <div style="margin-bottom: 24px;">
+      <label class="form-label" style="font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin-bottom: 10px;">
+        2. Configuración de Identidad y Acceso
+      </label>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+        <div class="form-group">
+          <label class="form-label" for="wizard-session-name">Nombre de Sesión (SessionName)</label>
+          <input type="text" id="wizard-session-name" class="form-input" value="ARK Server" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wizard-server-pass">Contraseña de Acceso (Opcional)</label>
+          <input type="text" id="wizard-server-pass" class="form-input" placeholder="Vacío si es público">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wizard-admin-pass">Contraseña Admin / RCON</label>
+          <input type="text" id="wizard-admin-pass" class="form-input" value="adminpass" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wizard-max-players">Jugadores Máximos</label>
+          <input type="number" id="wizard-max-players" class="form-input" min="1" max="100" value="20" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wizard-mode">Modo de Servidor</label>
+          <select id="wizard-mode" class="form-select">
+            <option value="pvp">PvP (Jugador contra Jugador)</option>
+            <option value="pve">PvE (Jugador contra Entorno)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paso 3: Multiplicadores Iniciales -->
+    <div style="margin-bottom: 24px;">
+      <label class="form-label" style="font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin-bottom: 10px;">
+        3. Multiplicadores Iniciales de Jugabilidad
+      </label>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+        <div class="form-group">
+          <label class="form-label" for="wizard-xp">Multiplicador XP</label>
+          <input type="number" step="0.5" id="wizard-xp" class="form-input" value="2.0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wizard-taming">Velocidad de Tameo</label>
+          <input type="number" step="0.5" id="wizard-taming" class="form-input" value="3.0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wizard-harvest">Cantidad de Cosecha</label>
+          <input type="number" step="0.5" id="wizard-harvest" class="form-input" value="2.0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wizard-hatch">Incubación de Huevos</label>
+          <input type="number" step="0.5" id="wizard-hatch" class="form-input" value="3.0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wizard-mature">Maduración de Crías</label>
+          <input type="number" step="0.5" id="wizard-mature" class="form-input" value="3.0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Paso 4: Mods de Steam Workshop & Catálogo Recomendado -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 6px;">
+        <label class="form-label" style="font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin-bottom: 0;">
+          4. Mods de Steam Workshop (Opcional)
+        </label>
+        <span style="font-size: 0.78rem; color: #58a6ff;">Selecciona mods populares con 1-clic o añade IDs manuales</span>
+      </div>
+      <input type="text" id="wizard-mods" class="form-input" placeholder="IDs separados por comas, ej: 731604991,893735676" style="margin-bottom: 8px;">
+      <span style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 12px;">
+        Los mods especificados se descargarán e instalarán automáticamente durante el despliegue del servidor.
+      </span>
+
+      <!-- Selector Rápido de Mods Populares con 1-Clic -->
+      <div style="background: rgba(13, 17, 23, 0.7); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 0.82rem; font-weight: 600; color: #8b949e; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Catálogo de Mods Populares para Añadir al Servidor</span>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
+          
+          <div class="mod-wizard-card" id="mod-card-731604991" onclick="toggleWizardMod('731604991', this)" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.15s ease;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.84rem; color: #f0f6fc;">Structures Plus (S+)</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">ID: 731604991 &middot; Construcción optimizada</div>
+            </div>
+            <span class="mod-status-tag" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(56, 139, 253, 0.1); color: #58a6ff; font-weight: 600;">+ Añadir</span>
+          </div>
+
+          <div class="mod-wizard-card" id="mod-card-1404697612" onclick="toggleWizardMod('1404697612', this)" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.15s ease;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.84rem; color: #f0f6fc;">Awesome Spyglass</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">ID: 1404697612 &middot; Catalejo HUD avanzado</div>
+            </div>
+            <span class="mod-status-tag" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(56, 139, 253, 0.1); color: #58a6ff; font-weight: 600;">+ Añadir</span>
+          </div>
+
+          <div class="mod-wizard-card" id="mod-card-1999447172" onclick="toggleWizardMod('1999447172', this)" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.15s ease;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.84rem; color: #f0f6fc;">Dino Storage v2</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">ID: 1999447172 &middot; Soul Traps ultraligeras</div>
+            </div>
+            <span class="mod-status-tag" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(56, 139, 253, 0.1); color: #58a6ff; font-weight: 600;">+ Añadir</span>
+          </div>
+
+          <div class="mod-wizard-card" id="mod-card-764755314" onclick="toggleWizardMod('764755314', this)" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.15s ease;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.84rem; color: #f0f6fc;">Castles & Forts (CKF)</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">ID: 764755314 &middot; Arquitectura medieval</div>
+            </div>
+            <span class="mod-status-tag" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(56, 139, 253, 0.1); color: #58a6ff; font-weight: 600;">+ Añadir</span>
+          </div>
+
+          <div class="mod-wizard-card" id="mod-card-761535755" onclick="toggleWizardMod('761535755', this)" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.15s ease;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.84rem; color: #f0f6fc;">Ultra Stacks</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">ID: 761535755 &middot; Apilamiento e items ligeros</div>
+            </div>
+            <span class="mod-status-tag" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(56, 139, 253, 0.1); color: #58a6ff; font-weight: 600;">+ Añadir</span>
+          </div>
+
+          <div class="mod-wizard-card" id="mod-card-889745138" onclick="toggleWizardMod('889745138', this)" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.15s ease;">
+            <div>
+              <div style="font-weight: 600; font-size: 0.84rem; color: #f0f6fc;">Awesome Teleporters</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">ID: 889745138 &middot; Teletransporte y balizas</div>
+            </div>
+            <span class="mod-status-tag" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(56, 139, 253, 0.1); color: #58a6ff; font-weight: 600;">+ Añadir</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div style="padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+      <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-size: 0.92rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Guardar Configuración y Comenzar Descarga</span>
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleWizardMod(modId, cardElem) {
+  const input = document.getElementById("wizard-mods");
+  if (!input) return;
+  let ids = input.value.split(",").map(s => s.trim()).filter(Boolean);
+  const tag = cardElem.querySelector(".mod-status-tag");
+  
+  if (ids.includes(modId)) {
+    ids = ids.filter(id => id !== modId);
+    cardElem.style.borderColor = "var(--border-color)";
+    cardElem.style.background = "var(--bg-subtle)";
+    if (tag) {
+      tag.textContent = "+ Añadir";
+      tag.style.background = "rgba(56, 139, 253, 0.1)";
+      tag.style.color = "#58a6ff";
+    }
+  } else {
+    ids.push(modId);
+    cardElem.style.borderColor = "#3fb950";
+    cardElem.style.background = "rgba(63, 185, 80, 0.08)";
+    if (tag) {
+      tag.textContent = "✓ Añadido";
+      tag.style.background = "#238636";
+      tag.style.color = "#ffffff";
+    }
+  }
+  input.value = ids.join(",");
+}
+</script>
