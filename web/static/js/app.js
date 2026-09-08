@@ -254,8 +254,6 @@ async function fetchMetricsOnce() {
         if (topCpu) topCpu.textContent = `${curr.cpu_percent} %`;
         const topArkMem = document.getElementById("top-server-ark-memory");
         if (topArkMem) topArkMem.textContent = `${curr.ark_ram_gb} GB`;
-        const topMem = document.getElementById("top-server-memory");
-        if (topMem) topMem.textContent = `${curr.ram_used_gb} / ${curr.ram_total_gb} GB`;
         const topDisk = document.getElementById("top-server-disk");
         if (topDisk) topDisk.textContent = `${curr.disk_used_gb} / ${curr.disk_total_gb} GB`;
 
