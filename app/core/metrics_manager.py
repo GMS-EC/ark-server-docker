@@ -120,8 +120,9 @@ class MetricsManager:
         ram_used_gb = round(used_ram_bytes / (1024**3), 2)
         ram_pct = round((used_ram_bytes / total_ram_bytes) * 100, 1) if total_ram_bytes > 0 else 0.0
 
-        # 2. Medir memoria del proceso real ShooterGameServer directamente
+        # 2. Medir memoria y CPU del proceso real ShooterGameServer directamente
         ark_ram_bytes = 0
+        ark_cpu_pct = 0.0
         for p in psutil.process_iter(['pid', 'name', 'cmdline', 'memory_info']):
             try:
                 pname = p.info.get('name') or ''
@@ -130,6 +131,12 @@ class MetricsManager:
                     minfo = p.info.get('memory_info')
                     if minfo:
                         ark_ram_bytes += minfo.rss
+                    try:
+                        p_cpu = p.cpu_percent(interval=None)
+                        if p_cpu:
+                            ark_cpu_pct += p_cpu
+                    except Exception:
+                        pass
             except Exception:
                 pass
 
@@ -150,9 +157,11 @@ class MetricsManager:
         if process_manager.started_at and process_manager.get_status() == "RUNNING":
             uptime_seconds = int(time.time() - process_manager.started_at)
 
+        cpu_display = round(ark_cpu_pct, 1) if ark_cpu_pct > 0 else round(cpu_pct, 1)
         return {
             "status": process_manager.get_status(),
-            "cpu_percent": round(cpu_pct, 1),
+            "cpu_percent": cpu_display,
+            "host_cpu_percent": round(cpu_pct, 1),
             "ram_total_gb": ram_total_gb,
             "ram_used_gb": ram_used_gb,
             "ram_percent": ram_pct,

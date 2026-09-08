@@ -2,13 +2,13 @@
 <div class="grid-4" style="margin-bottom: 18px;">
   <div class="stat-box">
     <div class="stat-label">
-      <span>CPU</span>
+      <span>CPU Servidor</span>
       <span id="stat-cpu-val">{{ metrics.cpu_percent }}%</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" id="stat-cpu-bar" style="width: {{ metrics.cpu_percent }}%;"></div>
     </div>
-    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">Uso de núcleos de CPU</div>
+    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;" id="stat-cpu-subtext">Carga de procesamiento de ARK</div>
   </div>
 
   <div class="stat-box">
@@ -59,7 +59,8 @@
   <div class="terminal-header" style="padding: 10px 16px; background-color: var(--bg-subtle); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
     <div class="terminal-title" style="font-weight: 700; font-size: 0.82rem; letter-spacing: 0.5px; color: #8b949e; display: flex; align-items: center; gap: 8px;">
       <span>TERMINAL & RCON</span>
-      <span class="badge" style="background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid rgba(35, 134, 54, 0.4); font-size: 0.7rem;">PUERTO 27020</span>
+      <span class="badge" id="terminal-map-badge" style="background: rgba(56, 139, 253, 0.2); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.4); font-size: 0.7rem;">MAPA: {{ world }}</span>
+      <span class="badge" id="terminal-rcon-badge" style="background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid rgba(35, 134, 54, 0.4); font-size: 0.7rem;">RCON: {{ rcon_port }}</span>
     </div>
 
     <!-- Live Filter & Download Tools -->

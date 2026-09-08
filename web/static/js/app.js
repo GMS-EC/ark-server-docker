@@ -84,7 +84,8 @@ function switchTab(tabId) {
 // --- WebSocket de Consola ---
 function initWebSocket() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws/console`;
+    const instParam = encodeURIComponent(currentInstanceId || "main");
+    const wsUrl = `${protocol}//${window.location.host}/ws/console?instance=${instParam}`;
     const consoleOutput = document.getElementById("console-output");
 
     ws = new WebSocket(wsUrl);
@@ -126,6 +127,9 @@ function sendConsoleCommand() {
 
 // --- Controles de Servidor ---
 async function startServer() {
+    if (currentInstanceId && currentInstanceId !== "main") {
+        return startClusterInstance(currentInstanceId);
+    }
     showToast("Iniciando servidor de ARK...", "info");
     const res = await fetch("/api/server/start", { method: "POST" });
     const data = await res.json();
@@ -137,6 +141,9 @@ async function startServer() {
 }
 
 async function stopServer() {
+    if (currentInstanceId && currentInstanceId !== "main") {
+        return stopClusterInstance(currentInstanceId);
+    }
     const ok = await App.confirm({
         title: "Detener Servidor",
         message: "¿Deseas detener el servidor de ARK? Se guardará el estado del mundo (SaveWorld) antes de apagar.",
@@ -153,6 +160,9 @@ async function stopServer() {
 }
 
 async function restartServer() {
+    if (currentInstanceId && currentInstanceId !== "main") {
+        return restartClusterInstance(currentInstanceId);
+    }
     const ok = await App.confirm({
         title: "Reiniciar Servidor",
         message: "¿Deseas reiniciar el servidor de ARK inmediatamente? Se guardará el progreso antes del reinicio.",
@@ -174,7 +184,17 @@ async function triggerDinoWipe() {
     });
     if (!ok) return;
     showToast("Ejecutando Dino Wipe...", "info");
-    const res = await fetch("/api/server/dinowipe", { method: "POST" });
+    const url = (currentInstanceId && currentInstanceId !== "main")
+        ? `/api/cluster/instances/${currentInstanceId}/command`
+        : "/api/server/dinowipe";
+    const body = (currentInstanceId && currentInstanceId !== "main")
+        ? JSON.stringify({ command: "DestroyWildDinos" })
+        : undefined;
+    const res = await fetch(url, {
+        method: "POST",
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body
+    });
     const data = await res.json();
     if (data.success) {
         showToast("¡Dino Wipe completado con éxito!", "success");
@@ -183,7 +203,17 @@ async function triggerDinoWipe() {
 
 async function triggerSaveWorld() {
     showToast("Guardando estado del mundo...", "info");
-    const res = await fetch("/api/server/saveworld", { method: "POST" });
+    const url = (currentInstanceId && currentInstanceId !== "main")
+        ? `/api/cluster/instances/${currentInstanceId}/command`
+        : "/api/server/saveworld";
+    const body = (currentInstanceId && currentInstanceId !== "main")
+        ? JSON.stringify({ command: "SaveWorld" })
+        : undefined;
+    const res = await fetch(url, {
+        method: "POST",
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body
+    });
     const data = await res.json();
     if (data.success) {
         showToast("Mundo guardado en disco.", "success");
@@ -198,10 +228,16 @@ async function triggerBroadcast() {
         confirmText: "Enviar Anuncio"
     });
     if (!msg || !msg.trim()) return;
-    const res = await fetch("/api/server/broadcast", {
+    const url = (currentInstanceId && currentInstanceId !== "main")
+        ? `/api/cluster/instances/${currentInstanceId}/command`
+        : "/api/server/broadcast";
+    const body = (currentInstanceId && currentInstanceId !== "main")
+        ? JSON.stringify({ command: `ServerChat ${msg}` })
+        : JSON.stringify({ message: msg });
+    const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg })
+        body: body
     });
     const data = await res.json();
     if (data.success) {
@@ -305,6 +341,14 @@ async function fetchMetricsOnce() {
         if (statCpuVal) statCpuVal.textContent = `${curr.cpu_percent}%`;
         const statCpuBar = document.getElementById("stat-cpu-bar");
         if (statCpuBar) statCpuBar.style.width = `${curr.cpu_percent}%`;
+        const statCpuSub = document.getElementById("stat-cpu-subtext");
+        if (statCpuSub && curr.host_cpu_percent !== undefined) {
+            statCpuSub.textContent = `Carga de procesamiento de ARK (Host: ${curr.host_cpu_percent}%)`;
+        }
+        const valCpuSub = document.getElementById("val-cpu-subtext");
+        if (valCpuSub && curr.host_cpu_percent !== undefined) {
+            valCpuSub.textContent = `Carga de procesamiento de ARK (Host: ${curr.host_cpu_percent}%)`;
+        }
 
         const statMemVal = document.getElementById("stat-mem-val");
         if (statMemVal) statMemVal.textContent = `${curr.ark_ram_gb} GB`;
@@ -1215,6 +1259,24 @@ function onSwitchClusterServer(instanceId) {
             if (singleMap && targetInst.map) singleMap.textContent = targetInst.map;
         }
     }
+
+    // Actualizar badges en la cabecera de la terminal
+    const termMap = document.getElementById("terminal-map-badge");
+    const termRcon = document.getElementById("terminal-rcon-badge");
+    if (termMap && targetInst) termMap.textContent = `MAPA: ${targetInst.map || targetInst.name}`;
+    if (termRcon && targetInst) termRcon.textContent = `RCON: ${targetInst.rcon_port || 27020}`;
+
+    // Reconectar la consola WebSocket al nodo seleccionado
+    if (consoleWs) {
+        try { consoleWs.close(); } catch(e) {}
+        consoleWs = null;
+    }
+    const consoleOut = document.getElementById("console-output");
+    if (consoleOut) {
+        const nodeTitle = targetInst ? targetInst.name : instanceId;
+        consoleOut.innerHTML = `<div class="log-line info" style="color: #58a6ff; font-weight: 600;">[ARK Server Manager] Conectando consola a nodo: ${nodeTitle}...</div>`;
+    }
+    connectConsoleWebSocket();
 
     showToast(`Cambiando contexto a nodo: ${instanceId}`, "info");
 

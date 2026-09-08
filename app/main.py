@@ -276,28 +276,47 @@ async def logout():
     return res
 
 
-# --- WebSocket de Consola en Tiempo Real ---
+# --- WebSocket de Consola en Tiempo Real (Soporta Instancia de Clúster) ---
 @app.websocket("/ws/console")
-async def websocket_console(websocket: WebSocket):
+async def websocket_console(websocket: WebSocket, instance: str = "main"):
     await websocket.accept()
-    process_manager.connected_websockets.add(websocket)
-
-    # Enviar historial reciente del buffer de logs
-    for line in list(process_manager.log_buffer):
+    if instance == "main":
+        process_manager.connected_websockets.add(websocket)
+        for line in list(process_manager.log_buffer):
+            try:
+                await websocket.send_text(line)
+            except Exception:
+                break
         try:
-            await websocket.send_text(line)
-        except Exception:
-            break
+            while True:
+                cmd = await websocket.receive_text()
+                if cmd:
+                    await process_manager.send_command(cmd)
+        except WebSocketDisconnect:
+            pass
+        finally:
+            process_manager.connected_websockets.discard(websocket)
+    else:
+        if instance not in cluster_manager.connected_websockets:
+            cluster_manager.connected_websockets[instance] = set()
+        cluster_manager.connected_websockets[instance].add(websocket)
 
-    try:
-        while True:
-            cmd = await websocket.receive_text()
-            if cmd:
-                await process_manager.send_command(cmd)
-    except WebSocketDisconnect:
-        pass
-    finally:
-        process_manager.connected_websockets.discard(websocket)
+        logs = cluster_manager.get_log_buffer(instance)
+        for line in logs:
+            try:
+                await websocket.send_text(line)
+            except Exception:
+                break
+        try:
+            while True:
+                cmd = await websocket.receive_text()
+                if cmd:
+                    await cluster_manager.send_command(instance, cmd)
+        except WebSocketDisconnect:
+            pass
+        finally:
+            if instance in cluster_manager.connected_websockets:
+                cluster_manager.connected_websockets[instance].discard(websocket)
 
 
 # --- Endpoints de API (Control de Servidor) ---
@@ -793,6 +812,14 @@ async def api_cluster_instance_restart(instance_id: str):
     ok = await cluster_manager.restart_instance(instance_id)
     activity_manager.log("Clúster", f"Reiniciando nodo {instance_id}...")
     return {"success": ok, "status": cluster_manager.get_instance_status(instance_id)}
+
+@app.post("/api/cluster/instances/{instance_id}/command", dependencies=[Depends(require_auth)])
+async def api_cluster_instance_command(instance_id: str, payload: Dict[str, str]):
+    cmd = payload.get("command", "")
+    if not cmd:
+        return {"success": False, "error": "Comando vacío"}
+    resp = await cluster_manager.send_command(instance_id, cmd)
+    return {"success": True, "response": resp}
 
 @app.get("/api/cluster/tributes", dependencies=[Depends(require_auth)])
 async def api_cluster_tributes():

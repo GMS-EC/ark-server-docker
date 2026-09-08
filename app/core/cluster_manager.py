@@ -1,3 +1,4 @@
+from collections import deque
 import os
 import re
 import json
@@ -43,7 +44,8 @@ class ClusterManager:
         self._instances: Dict[str, Dict[str, Any]] = {}
         self._processes: Dict[str, asyncio.subprocess.Process] = {}
         self._rcon_clients: Dict[str, ArkRconClient] = {}
-        self._log_buffers: Dict[str, List[str]] = {}
+        self._log_buffers: Dict[str, Any] = {}
+        self.connected_websockets: Dict[str, set] = {}
         self._load_instances()
 
     def _load_instances(self):
@@ -163,6 +165,47 @@ class ClusterManager:
         if instance_id == "main" or instance_id not in self._rcon_clients:
             return process_manager.rcon
         return self._rcon_clients[instance_id]
+
+    def get_log_buffer(self, instance_id: str) -> List[str]:
+        if instance_id == "main":
+            return list(process_manager.log_buffer)
+        buf = self._log_buffers.get(instance_id)
+        if buf is None:
+            buf = deque(maxlen=500)
+            self._log_buffers[instance_id] = buf
+        return list(buf)
+
+    async def broadcast_log(self, instance_id: str, message: str):
+        if instance_id not in self._log_buffers or not isinstance(self._log_buffers[instance_id], deque):
+            self._log_buffers[instance_id] = deque(maxlen=500)
+        self._log_buffers[instance_id].append(message)
+        ws_set = self.connected_websockets.get(instance_id, set())
+        dead = []
+        for ws in list(ws_set):
+            try:
+                await ws.send_text(message)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            ws_set.discard(ws)
+
+    async def send_command(self, instance_id: str, command: str) -> str:
+        if instance_id == "main":
+            return await process_manager.send_command(command)
+        rcon = self.get_rcon_client(instance_id)
+        await self.broadcast_log(instance_id, f"> {command}")
+        resp = await rcon.send_command(command)
+        if resp:
+            await self.broadcast_log(instance_id, resp)
+        return resp
+
+    async def _stream_instance_logs(self, instance_id: str, proc):
+        while True:
+            line = await proc.stdout.readline()
+            if not line:
+                break
+            text = line.decode('utf-8', errors='replace').rstrip()
+            await self.broadcast_log(instance_id, text)
 
     def create_instance(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Crea un nuevo servidor / mapa dentro del clúster."""
@@ -325,6 +368,8 @@ class ClusterManager:
                 env=os.environ.copy()
             )
             self._processes[instance_id] = proc
+            asyncio.create_task(self._stream_instance_logs(instance_id, proc))
+            await self.broadcast_log(instance_id, f"[ARK Server Manager] Nodo {inst.get('name')} iniciado (PID: {proc.pid})...")
             return True
         except Exception as e:
             logger.error(f"Error arrancando instancia {instance_id}: {e}")
