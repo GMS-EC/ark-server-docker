@@ -1854,3 +1854,77 @@ async function testWebhookNotification() {
         showToast("Error al probar notificación de Discord.", "error");
     }
 }
+
+// --- Historial de Auditoría (7 Días) ---
+let activityLogsData = [];
+
+async function loadActivityLogs() {
+    const tbody = document.getElementById("activity-log-body");
+    if (!tbody) return;
+    try {
+        const res = await fetch("/api/activity");
+        const data = await res.json();
+        activityLogsData = data.activities || [];
+        const countBadge = document.getElementById("audit-count-badge");
+        if (countBadge) countBadge.textContent = `${activityLogsData.length} registros`;
+        renderActivityLogs(activityLogsData);
+    } catch (e) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-dim); padding: 14px;">Error cargando historial de auditoría.</td></tr>`;
+    }
+}
+
+function renderActivityLogs(logs) {
+    const tbody = document.getElementById("activity-log-body");
+    if (!tbody) return;
+    if (!logs || logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-dim); padding: 16px;">No hay actividades registradas en los últimos 7 días.</td></tr>`;
+        return;
+    }
+
+    const categoryColors = {
+        "Servidor": "#58a6ff",
+        "Seguridad": "#f85149",
+        "Consola": "#79c0ff",
+        "ARK": "#3fb950",
+        "Mods": "#d29922",
+        "Jugadores": "#a371f7",
+        "Configuración": "#38bdf8",
+        "Webhooks": "#58a6ff",
+        "Tareas": "#e3b341",
+        "Backups": "#3fb950",
+        "Archivos": "#8b949e",
+        "Clúster": "#58a6ff",
+        "Instalación": "#f0883e"
+    };
+
+    tbody.innerHTML = logs.map(item => {
+        const color = categoryColors[item.category] || "#8b949e";
+        return `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 8px 14px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">${item.timestamp}</td>
+                <td style="padding: 8px 14px; white-space: nowrap;">
+                    <span style="font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.06); color: ${color}; border: 1px solid ${color}44;">
+                        ${item.category}
+                    </span>
+                </td>
+                <td style="padding: 8px 14px; color: var(--text-color); font-weight: 500; font-size: 0.8rem; white-space: nowrap;">${item.user || "Sistema"}</td>
+                <td style="padding: 8px 14px; color: var(--text-muted); font-size: 0.82rem; word-break: break-word;">${item.message}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function filterActivityLogs(query) {
+    if (!query || !query.trim()) {
+        renderActivityLogs(activityLogsData);
+        return;
+    }
+    const q = query.toLowerCase().trim();
+    const filtered = activityLogsData.filter(item => {
+        return (item.message && item.message.toLowerCase().includes(q)) ||
+               (item.category && item.category.toLowerCase().includes(q)) ||
+               (item.user && item.user.toLowerCase().includes(q)) ||
+               (item.timestamp && item.timestamp.toLowerCase().includes(q));
+    });
+    renderActivityLogs(filtered);
+}

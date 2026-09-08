@@ -119,17 +119,29 @@
   </div>
 </div>
 
-<!-- Tarjeta de Historial de Auditoría (Audit Log) -->
+<!-- Tarjeta de Historial de Auditoría (Audit Log - 7 Días) -->
 <div class="card" style="margin-top: 18px;">
-  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
     <div style="display: flex; align-items: center; gap: 8px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
-      <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600;">Historial de Auditoría y Actividad Reciente</h3>
+      <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600;">Historial de Auditoría (Últimos 7 Días)</h3>
+      <span class="badge" id="audit-count-badge" style="background: var(--bg-subtle); border: 1px solid var(--border-color); font-size: 0.7rem; color: var(--text-dim);">0 registros</span>
     </div>
-    <button type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 0.75rem;" onclick="loadActivityLogs()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      <span>Refrescar</span>
-    </button>
+
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; position: relative;">
+        <input type="text" id="audit-filter-input" placeholder="Filtrar eventos..." style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-color); font-size: 0.78rem; padding: 4px 8px 4px 26px; border-radius: 4px; width: 140px;" oninput="filterActivityLogs(this.value)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 8px; color: var(--text-dim);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <a href="/api/activity/download" class="btn btn-outline" download title="Descargar auditoría de los últimos 7 días en JSON" style="padding: 3px 8px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Descargar</span>
+      </a>
+      <button type="button" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="loadActivityLogs()" title="Recargar auditoría">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span>Refrescar</span>
+      </button>
+    </div>
   </div>
   <div class="card-body" style="padding: 0; max-height: 240px; overflow-y: auto;">
     <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">

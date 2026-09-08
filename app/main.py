@@ -1,3 +1,5 @@
+import time
+import json
 import shutil
 import os
 import asyncio
@@ -424,8 +426,20 @@ async def api_server_broadcast(req: BroadcastRequest):
 # --- Endpoints de Auditoría, Logs y Mods ---
 @app.get("/api/activity", dependencies=[Depends(require_auth)])
 async def api_activity():
-    """Retorna el historial de eventos recientes de auditoría."""
+    """Retorna el historial de eventos recientes de auditoría de los últimos 7 días."""
     return {"activities": activity_manager.get_recent()}
+
+@app.get("/api/activity/download", dependencies=[Depends(require_auth)])
+async def api_activity_download():
+    """Descarga el registro completo de auditoría de los últimos 7 días en formato JSON."""
+    logs = activity_manager.get_recent()
+    content = json.dumps(logs, indent=2, ensure_ascii=False)
+    filename = f"auditoria_ark_{time.strftime('%Y%m%d_%H%M%S')}.json"
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 @app.get("/api/server/logs/download", dependencies=[Depends(require_auth)])
 async def api_download_logs():
