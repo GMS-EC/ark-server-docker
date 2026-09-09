@@ -130,7 +130,6 @@ services:
       - "27020-27035:27020-27035/tcp"  # Puertos RCON TCP (Consola Remota y Administración)
     environment:
       # --- ARK Server Manager Web Panel ---
-      - PANEL_PORT=8080
       - PANEL_USER=admin
       - PANEL_PASSWORD=adminpassword
       - AUTOSTART_SERVER=true
@@ -167,7 +166,6 @@ El contenedor Docker solo requiere variables para la infraestructura base:
 | Variable | Valor por Defecto | Descripción |
 |----------|-------------------|-------------|
 | `TZ` | `America/Guayaquil` | Zona horaria del contenedor para sincronizar horarios y logs. |
-| `PANEL_PORT` | `8080` | Puerto HTTP para acceder al panel de administración web. |
 | `PANEL_USER` | `admin` | Usuario administrador del panel web. |
 | `PANEL_PASSWORD` | `adminpassword` | Contraseña de acceso al panel web (recomendado cambiar). |
 | `PUID` / `PGID` | `1000` | ID de usuario y grupo en Linux para permisos de archivos (opcional). |
@@ -186,7 +184,7 @@ A partir de la versión 2.0+, las siguientes funciones se gestionan y guardan di
 
 | Puerto | Protocolo | Variable | Descripción |
 |--------|-----------|----------|-------------|
-| `8080` | TCP | `PANEL_PORT` | Panel de Control Web **ARK Server Manager** (interfaz gráfica completa para gestión y monitoreo). |
+| `8080` | TCP | Automático | Panel de Control Web **ARK Server Manager** (interfaz gráfica de gestión; personalizable en el anfitrión en `docker-compose.yml`, ej. `8586:8080`). |
 | `7777-7800` | UDP | `SERVER_PORT` | Puerto principal de juego (7777) y rango para hasta 12 mapas de clúster vinculados. |
 | `27015-27035` | UDP | `QUERY_PORT` | Puertos de consulta de Steam para buscador de servidores (principal y clúster). |
 | `27020-27035` | TCP | `RCON_PORT` | Puertos RCON para consola remota, administración y avisos broadcast in-game. |
@@ -338,7 +336,6 @@ services:
       - "27020-27035:27020-27035/tcp"  # RCON TCP Ports (Remote Console & Administration)
     environment:
       # --- ARK Server Manager Web Panel ---
-      - PANEL_PORT=8080
       - PANEL_USER=admin
       - PANEL_PASSWORD=adminpassword
       - AUTOSTART_SERVER=true
@@ -375,7 +372,6 @@ The Docker container only requires variables for core infrastructure:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `TZ` | `America/Guayaquil` | Container timezone for schedule synchronization and log timestamps. |
-| `PANEL_PORT` | `8080` | HTTP port to access the web administration control panel. |
 | `PANEL_USER` | `admin` | Admin username to log in to the web panel. |
 | `PANEL_PASSWORD` | `adminpassword` | Access password for the web panel (change recommended). |
 | `PUID` / `PGID` | `1000` | Linux user and group ID for mounted storage permissions (optional). |
@@ -394,7 +390,7 @@ From version 2.0 onwards, all server gameplay and management settings are dynami
 
 | Port | Protocol | Variable | Description |
 |------|----------|----------|-------------|
-| `8080` | TCP | `PANEL_PORT` | Web Control Panel **ARK Server Manager** (full graphical interface for administration). |
+| `8080` | TCP | Automatic | Web Control Panel **ARK Server Manager** (graphical management interface; customizable on host in `docker-compose.yml`, e.g. `8586:8080`). |
 | `7777-7800` | UDP | `SERVER_PORT` | Primary game port (7777) and active port range for up to 12 linked cluster maps. |
 | `27015-27035` | UDP | `QUERY_PORT` | Steam query port range for server browser listings (primary & cluster nodes). |
 | `27020-27035` | TCP | `RCON_PORT` | RCON port range for remote console, external management, and in-game broadcasts. |

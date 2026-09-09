@@ -24,12 +24,13 @@ En la arquitectura v2.0, el archivo `.env` y el `docker-compose.yml` se reservan
 | Variable | Valor por Defecto | Descripción Técnica |
 |----------|-------------------|---------------------|
 | `TZ` | `America/Guayaquil` | Zona horaria del contenedor para programaciones y registros de consola. |
-| `PANEL_PORT` | `8080` | Puerto HTTP donde escucha el panel de administración web. |
 | `PANEL_USER` | `admin` | Usuario administrador para iniciar sesión en la interfaz gráfica. |
 | `PANEL_PASSWORD` | `adminpassword` | Contraseña para iniciar sesión en el panel web. |
 | `PUID` / `PGID` | `1000` | ID de usuario y grupo de Linux para asegurar permisos en los volúmenes montados. |
 
 ---
+
+> 💡 **Nota sobre el puerto del panel:** El contenedor ejecuta internamente el panel web en el puerto `8080` de manera fija y automática. Si deseas acceder desde otro puerto en tu máquina (como `8586`), cámbialo directamente en la sección `ports:` de tu `docker-compose.yml` (`- "8586:8080"`), sin necesidad de crear variables redundantes en `.env`.
 
 #### 🎮 2. Configuración Centralizada en el Panel Web (100% In-App)
 
