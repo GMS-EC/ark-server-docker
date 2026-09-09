@@ -170,14 +170,21 @@ class ArkRconClient:
         0. CharacterName, SteamID
         """
         output = await self.send_command("listplayers")
-        players = []
-        if not output or "No Players Connected" in output:
-            return players
+        if not output:
+            return []
 
+        # Si send_command retornó un mensaje de error o fallo de conexión, no es un jugador
+        if output.startswith("Error") or "Error de conexión RCON" in output or "Error ejecutando comando" in output:
+            raise ConnectionError(output)
+
+        if "No Players Connected" in output:
+            return []
+
+        players = []
         lines = output.splitlines()
         for line in lines:
             line = line.strip()
-            if not line or line.lower().startswith("no players"):
+            if not line or line.lower().startswith("no players") or line.startswith("Error") or "Connection refused" in line:
                 continue
             # Parsear formatos comunes: "0. PlayerName, 76561198xxxxxxxx"
             parts = line.split(",", 1)

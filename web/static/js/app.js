@@ -21,6 +21,17 @@ let cmdDraft = "";
 
 // Inicialización
 document.addEventListener("DOMContentLoaded", () => {
+    // Scroll horizontal con la rueda del ratón en la barra de pestañas
+    const navTabsContainer = document.querySelector(".nav-tabs");
+    if (navTabsContainer) {
+        navTabsContainer.addEventListener("wheel", (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                navTabsContainer.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+    }
+
     initTabs();
     initWebSocket();
     initMetricsPolling();

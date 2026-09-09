@@ -50,9 +50,9 @@ if command -v arkmanager >/dev/null 2>&1; then
     if [ "${UPDATE_ON_START:-true}" = "true" ]; then
         echo "[ARK Server Manager] Verificando actualizaciones de servidor y mods..."
         if [ "${BETA}" = "public" ] || [ -z "${BETA}" ]; then
-            arkmanager update --update-mods @main 2>/dev/null || true
+            arkmanager update --no-autostart --update-mods @main 2>/dev/null || true
         else
-            arkmanager update --beta="${BETA}" --update-mods @main 2>/dev/null || true
+            arkmanager update --beta="${BETA}" --no-autostart --update-mods @main 2>/dev/null || true
         fi
     fi
 

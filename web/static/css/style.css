@@ -62,13 +62,14 @@ body {
 .header {
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
-  padding: 12px 24px;
+  padding: 10px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: sticky;
   top: 0;
   z-index: 100;
+  gap: 12px;
 }
 
 .logo-container {
@@ -116,15 +117,19 @@ body {
 
 .nav-tabs {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   background-color: var(--bg-main);
-  padding: 4px;
+  padding: 3px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   white-space: nowrap;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .nav-tabs::-webkit-scrollbar {
@@ -135,16 +140,17 @@ body {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 7px 13px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   font-family: var(--font-ui);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.15s ease;
 }
 
@@ -2285,8 +2291,8 @@ input:checked + .slider:before {
    Mobile & PWA Responsive Layout Overrides
    ========================================================================== */
 
-/* Tablet & Mobile Screens (<= 992px) */
-@media (max-width: 992px) {
+/* Tablets, Laptops & Responsive Viewports (<= 1200px) */
+@media (max-width: 1200px) {
   .header {
     padding: 10px 14px 6px 14px;
     flex-wrap: wrap;

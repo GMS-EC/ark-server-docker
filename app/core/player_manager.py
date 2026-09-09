@@ -48,7 +48,9 @@ class PlayerManager:
                     new_online = {p["steam_id"]: p["name"] for p in current_players}
 
                     # Detectar nuevos supervivientes conectados
-                    for steam_id, name in new_online.items():
+                    # Filtrar sólo jugadores legítimos
+                    legit_online = {k: v for k, v in new_online.items() if k and k != "Desconocido" and not v.startswith("Error")}
+                    for steam_id, name in legit_online.items():
                         if steam_id not in self._current_online:
                             msg = f"[ARK] 👤 Superviviente conectado: {name} (SteamID: {steam_id})"
                             await process_manager.broadcast_log(msg)
@@ -107,6 +109,9 @@ class PlayerManager:
                 name = p.get("name", "").strip()
                 steam_id = p.get("steam_id", "").strip()
                 if not name and not steam_id:
+                    continue
+                # Descartar cadenas de error RCON o valores inválidos
+                if name.startswith("Error") or "Connection refused" in name or steam_id == "Desconocido":
                     continue
 
                 # Actualizar historial persistente
