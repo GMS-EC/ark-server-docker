@@ -22,13 +22,13 @@ OFFICIAL_MAPS = [
     {"id": "Aberration_P", "name": "Aberration", "server_port": 7781, "query_port": 27017, "rcon_port": 27022, "alt_save_dir": "Aberration"},
     {"id": "Extinction", "name": "Extinction", "server_port": 7783, "query_port": 27018, "rcon_port": 27023, "alt_save_dir": "Extinction"},
     {"id": "Ragnarok", "name": "Ragnarok", "server_port": 7785, "query_port": 27019, "rcon_port": 27024, "alt_save_dir": "Ragnarok"},
-    {"id": "Valguero_P", "name": "Valguero", "server_port": 7787, "query_port": 27025, "rcon_port": 27025, "alt_save_dir": "Valguero"},
-    {"id": "Genesis", "name": "Genesis: Parte 1", "server_port": 7789, "query_port": 27026, "rcon_port": 27026, "alt_save_dir": "Genesis1"},
-    {"id": "Gen2", "name": "Genesis: Parte 2", "server_port": 7791, "query_port": 27027, "rcon_port": 27027, "alt_save_dir": "Genesis2"},
-    {"id": "CrystalIsles", "name": "Crystal Isles", "server_port": 7793, "query_port": 27028, "rcon_port": 27028, "alt_save_dir": "CrystalIsles"},
-    {"id": "LostIsland", "name": "Lost Island", "server_port": 7795, "query_port": 27029, "rcon_port": 27029, "alt_save_dir": "LostIsland"},
-    {"id": "Fjordur", "name": "Fjordur", "server_port": 7797, "query_port": 27030, "rcon_port": 27030, "alt_save_dir": "Fjordur"},
-    {"id": "TheCenter", "name": "The Center", "server_port": 7799, "query_port": 27031, "rcon_port": 27031, "alt_save_dir": "TheCenter"}
+    {"id": "Valguero_P", "name": "Valguero", "server_port": 7787, "query_port": 27020, "rcon_port": 27025, "alt_save_dir": "Valguero"},
+    {"id": "Genesis", "name": "Genesis: Parte 1", "server_port": 7789, "query_port": 27021, "rcon_port": 27026, "alt_save_dir": "Genesis1"},
+    {"id": "Gen2", "name": "Genesis: Parte 2", "server_port": 7791, "query_port": 27022, "rcon_port": 27027, "alt_save_dir": "Genesis2"},
+    {"id": "CrystalIsles", "name": "Crystal Isles", "server_port": 7793, "query_port": 27023, "rcon_port": 27028, "alt_save_dir": "CrystalIsles"},
+    {"id": "LostIsland", "name": "Lost Island", "server_port": 7795, "query_port": 27024, "rcon_port": 27029, "alt_save_dir": "LostIsland"},
+    {"id": "Fjordur", "name": "Fjordur", "server_port": 7797, "query_port": 27025, "rcon_port": 27030, "alt_save_dir": "Fjordur"},
+    {"id": "TheCenter", "name": "The Center", "server_port": 7799, "query_port": 27026, "rcon_port": 27031, "alt_save_dir": "TheCenter"}
 ]
 
 
@@ -207,6 +207,56 @@ class ClusterManager:
             text = line.decode('utf-8', errors='replace').rstrip()
             await self.broadcast_log(instance_id, text)
 
+    def _write_arkmanager_instance_cfg(self, instance_id: str) -> None:
+        """Genera el archivo de configuración de instancia para arkmanager (/etc/arkmanager/instances/<id>.cfg)."""
+        if instance_id == "main":
+            return
+
+        inst = self._instances.get(instance_id)
+        if not inst:
+            return
+
+        map_name = inst.get("map", "ScorchedEarth_P")
+        server_port = inst.get("server_port", 7779)
+        query_port = inst.get("query_port", 27016)
+        rcon_port = inst.get("rcon_port", 27021)
+        rcon_pass = inst.get("rcon_password", settings.admin_ark_password)
+        server_pass = inst.get("server_password", "")
+        alt_save = inst.get("alt_save_dir", map_name)
+        session_name = inst.get("session_name", f"{settings.session_name} - {inst.get('name')}")
+        max_players = inst.get("max_players", settings.max_players)
+        cluster_id = settings.cluster_id
+        cluster_dir = str(settings.cluster_dir)
+
+        cfg_content = (
+            f"# Configuración de Instancia Clúster: {inst.get('name', instance_id)}\n"
+            f"serverMap=\"{map_name}\"\n"
+            f"ark_SessionName=\"{session_name}\"\n"
+            f"ark_ServerPassword=\"{server_pass}\"\n"
+            f"ark_ServerAdminPassword=\"{rcon_pass}\"\n"
+            f"rconpassword=\"{rcon_pass}\"\n"
+            f"ark_RCONEnabled=\"True\"\n"
+            f"ark_RCONPort=\"{rcon_port}\"\n"
+            f"rconport=\"{rcon_port}\"\n"
+            f"ark_Port=\"{server_port}\"\n"
+            f"ark_QueryPort=\"{query_port}\"\n"
+            f"ark_MaxPlayers=\"{max_players}\"\n"
+            f"ark_AltSaveDirectoryName=\"{alt_save}\"\n"
+            f"arkopt_clusterid=\"{cluster_id}\"\n"
+            f"arkopt_ClusterDirOverride=\"{cluster_dir}\"\n"
+            f"arkNoPortDecrement=\"true\"\n"
+        )
+
+        instances_dir = Path("/etc/arkmanager/instances")
+        try:
+            if instances_dir.exists() or os.access("/etc/arkmanager", os.W_OK):
+                instances_dir.mkdir(parents=True, exist_ok=True)
+                cfg_path = instances_dir / f"{instance_id}.cfg"
+                with open(cfg_path, "w", encoding="utf-8", newline="\n") as f:
+                    f.write(cfg_content)
+        except Exception as e:
+            logger.debug(f"No se pudo escribir /etc/arkmanager/instances/{instance_id}.cfg: {e}")
+
     def create_instance(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Crea un nuevo servidor / mapa dentro del clúster."""
         raw_name = data.get("name", "").strip() or "Nuevo Mapa"
@@ -265,6 +315,7 @@ class ClusterManager:
         )
         self._log_buffers[inst_id] = [f"[ARK Server Manager] Instancia {raw_name} agregada al clúster."]
 
+        self._write_arkmanager_instance_cfg(inst_id)
         logger.info(f"Instancia de clúster creada: {inst_id} ({map_id})")
         return {"success": True, "instance": instance_info}
 
@@ -300,6 +351,7 @@ class ClusterManager:
                 inst["rcon_port"] = int(data["rcon_port"])
 
         self._save_instances()
+        self._write_arkmanager_instance_cfg(instance_id)
         return {"success": True, "instance": inst}
 
     def delete_instance(self, instance_id: str) -> Dict[str, Any]:
@@ -317,6 +369,13 @@ class ClusterManager:
         self._rcon_clients.pop(instance_id, None)
         self._log_buffers.pop(instance_id, None)
         self._save_instances()
+
+        cfg_path = Path(f"/etc/arkmanager/instances/{instance_id}.cfg")
+        if cfg_path.exists():
+            try:
+                cfg_path.unlink()
+            except Exception:
+                pass
 
         return {"success": True}
 
@@ -342,16 +401,40 @@ class ClusterManager:
         cluster_id = settings.cluster_id
         cluster_dir = str(settings.cluster_dir)
 
+        # Asegurar archivo de configuración de instancia para arkmanager
+        self._write_arkmanager_instance_cfg(instance_id)
+
+        # Asegurar que el directorio de clúster para obeliscos exista
+        cluster_target = settings.cluster_dir / settings.cluster_id
+        try:
+            cluster_target.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+
+        ark_server_bin = settings.ark_data_dir / "ShooterGame" / "Binaries" / "Linux" / "ShooterGameServer"
+        server_pass = inst.get("server_password", "")
+
         cmd = []
         if shutil.which("arkmanager"):
+            cmd = ["arkmanager", "run", f"@{instance_id}"]
+        elif ark_server_bin.exists():
+            server_args = (
+                f"{map_name}?listen?SessionName={session_name}?Port={server_port}"
+                f"?QueryPort={query_port}?RCONPort={rcon_port}?RCONEnabled=True"
+                f"?ServerAdminPassword={rcon_pass}?MaxPlayers={inst.get('max_players', settings.max_players)}"
+                f"?AltSaveDirectoryName={alt_save}"
+            )
+            if server_pass:
+                server_args += f"?ServerPassword={server_pass}"
             cmd = [
-                "arkmanager", "run",
-                f"?Port={server_port}?QueryPort={query_port}?RCONPort={rcon_port}?RCONEnabled=True?ServerAdminPassword={rcon_pass}",
-                f"?SessionName={session_name}",
-                f"?AltSaveDirectoryName={alt_save}",
+                str(ark_server_bin),
+                server_args,
                 f"-clusterid={cluster_id}",
                 f"-ClusterDirOverride={cluster_dir}",
-                f"?serverMap={map_name}"
+                "-server",
+                "-log",
+                "-USEALLAVAILABLECORES",
+                "-nostallstartup"
             ]
         else:
             sim_code = (

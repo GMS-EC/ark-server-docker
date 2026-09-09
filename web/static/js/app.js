@@ -1477,9 +1477,25 @@ function onMapSelectionChange(mapId) {
             nameInput.value = mapObj.name;
             nameInput.dataset.autofilled = "true";
         }
-        if (portInput && mapObj.server_port) portInput.value = mapObj.server_port;
-        if (queryInput && mapObj.query_port) queryInput.value = mapObj.query_port;
-        if (rconInput && mapObj.rcon_port) rconInput.value = mapObj.rcon_port;
+
+        let servPort = mapObj.server_port || 7779;
+        let qPort = mapObj.query_port || 27016;
+        let rcPort = mapObj.rcon_port || 27021;
+
+        if (clusterData && clusterData.instances) {
+            const usedServ = clusterData.instances.map(i => i.server_port);
+            const usedQ = clusterData.instances.map(i => i.query_port);
+            const usedRc = clusterData.instances.map(i => i.rcon_port);
+            if ((usedServ.includes(servPort) || usedQ.includes(qPort) || usedRc.includes(rcPort)) && clusterData.suggested_ports) {
+                servPort = clusterData.suggested_ports.server_port;
+                qPort = clusterData.suggested_ports.query_port;
+                rcPort = clusterData.suggested_ports.rcon_port;
+            }
+        }
+
+        if (portInput) portInput.value = servPort;
+        if (queryInput) queryInput.value = qPort;
+        if (rconInput) rconInput.value = rcPort;
         if (altSaveInput) altSaveInput.value = mapObj.alt_save_dir || mapId.replace("_P", "");
     }
 }

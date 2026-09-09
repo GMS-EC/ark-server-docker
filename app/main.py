@@ -362,13 +362,15 @@ async def api_server_install(req: InstallServerRequest):
     settings.admin_ark_password = req.admin_password
     settings.max_players = req.max_players
 
-    # Guardar en GameUserSettings.ini y Game.ini
+    # Guardar en GameUserSettings.ini, Game.ini y runtime_config
     ark_settings_manager.save_settings({
         "server": {
+            "world": req.world,
             "session_name": req.session_name,
             "server_password": req.server_password or "",
             "admin_password": req.admin_password,
-            "max_players": req.max_players
+            "max_players": req.max_players,
+            "mod_ids": req.mod_ids or ""
         },
         "multipliers": {
             "xp": req.xp_multiplier,
@@ -381,6 +383,15 @@ async def api_server_install(req: InstallServerRequest):
             "pve_mode": req.server_pve
         }
     })
+
+    # Actualizar nombre y mapa de la instancia principal en el clúster
+    if "main" in cluster_manager._instances:
+        map_title = "The Island" if req.world.lower() == "theisland" else req.world
+        cluster_manager._instances["main"]["map"] = req.world
+        cluster_manager._instances["main"]["name"] = f"Principal ({map_title})"
+        cluster_manager._instances["main"]["session_name"] = req.session_name
+        cluster_manager._instances["main"]["max_players"] = req.max_players
+        cluster_manager._save_instances()
 
     activity_manager.log("Instalación", f"Iniciando instalación del servidor en mapa '{req.world}'...")
     asyncio.create_task(process_manager.install_server())
