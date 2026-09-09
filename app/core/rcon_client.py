@@ -183,9 +183,9 @@ class ArkRconClient:
             if len(parts) == 2:
                 name_part = parts[0].strip()
                 steam_part = parts[1].strip()
-                # Quitar prefijo de numeración como "0. " si existe
-                if "." in name_part:
-                    name_part = name_part.split(".", 1)[1].strip()
+                # Quitar únicamente prefijo numérico como "0. " sin alterar nombres legítimos con punto (ej: "Dr. Strange")
+                import re
+                name_part = re.sub(r"^\d+\.\s*", "", name_part).strip()
                 players.append({
                     "name": name_part,
                     "steam_id": steam_part

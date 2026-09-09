@@ -1649,7 +1649,7 @@ async function syncClusterRatesModal() {
         // 1. Obtener las tasas reales actuales configuradas en el servidor principal
         let curRates = {};
         try {
-            const settingsRes = await fetch("/api/server/settings");
+            const settingsRes = await fetch("/api/settings");
             const settingsData = await settingsRes.json();
             curRates = settingsData.multipliers || {};
         } catch (_) {}

@@ -164,10 +164,17 @@ class WebhookManager:
         msg = f"Backup `{filename}` ({size_mb} MB) completed successfully." if lang == "en" else f"Copia de seguridad `{filename}` ({size_mb} MB) completada exitosamente."
         await self.send_discord_embed("BACKUP_OK", msg)
 
-    async def notify_backup_failed(self, error: str):
+    async def notify_backup_fail(self, error: str):
         lang = self._get_lang()
         msg = f"Backup failed: {error}" if lang == "en" else f"Error al generar respaldo: {error}"
         await self.send_discord_embed("BACKUP_FAIL", msg)
+
+    notify_backup_failed = notify_backup_fail
+
+    async def notify_restore(self, filename: str):
+        lang = self._get_lang()
+        msg = f"Server save successfully restored from `{filename}`." if lang == "en" else f"Servidor de ARK restaurado exitosamente desde `{filename}`."
+        await self.send_discord_embed("RESTORE_OK", msg)
 
     async def notify_shutdown_warn(self, minutes_left: int):
         lang = self._get_lang()

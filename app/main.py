@@ -597,6 +597,10 @@ async def api_metrics():
 async def api_get_settings():
     return ark_settings_manager.get_all_settings()
 
+@app.get("/api/server/settings", dependencies=[Depends(require_auth)])
+async def api_get_server_settings_alias():
+    return ark_settings_manager.get_all_settings()
+
 @app.post("/api/settings", dependencies=[Depends(require_auth)])
 async def api_save_settings(payload: Dict[str, Any]):
     ok = ark_settings_manager.save_settings(payload)
@@ -751,6 +755,24 @@ async def file_download(path: str = Query(...)):
         filename=safe_path.name,
         media_type="application/octet-stream"
     )
+
+@app.post("/api/files/create", dependencies=[Depends(require_auth)])
+async def file_create(req: FileCreateRequest):
+    res = file_manager.create_file(req.path)
+    activity_manager.log("Archivos", f"Archivo creado: {req.path}")
+    return res
+
+@app.post("/api/files/duplicate", dependencies=[Depends(require_auth)])
+async def file_duplicate(req: FileDuplicateRequest):
+    res = file_manager.duplicate_item(req.path)
+    activity_manager.log("Archivos", f"Elemento duplicado: {req.path}")
+    return res
+
+@app.post("/api/files/compress", dependencies=[Depends(require_auth)])
+async def file_compress(req: FileCompressRequest):
+    res = file_manager.compress_item(req.path)
+    activity_manager.log("Archivos", f"Elemento comprimido: {req.path}")
+    return res
 
 @app.post("/api/files/rename", dependencies=[Depends(require_auth)])
 async def file_rename(req: FileRenameRequest):

@@ -12,7 +12,7 @@ RETENTION_SECONDS = 7 * 24 * 3600  # 7 días de retención máxima
 class ActivityManager:
     """Registra, persiste y purga actividades de auditoría con retención automática de 7 días."""
     def __init__(self):
-        self._file: Path = settings.base_dir / "data" / "activity_logs.json"
+        self._file: Path = settings.ark_data_dir / "activity_logs.json" if settings.ark_data_dir.exists() else settings.base_dir / "data" / "activity_logs.json"
         self._logs: List[Dict[str, Any]] = []
         self._load()
 
