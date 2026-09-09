@@ -333,12 +333,7 @@ async def websocket_console(websocket: WebSocket, instance: str = "main"):
             except Exception:
                 break
         try:
-            while True:
-                cmd = await websocket.receive_text()
-                if cmd:
-                    await process_manager.send_command(cmd)
-        except WebSocketDisconnect:
-            pass
+            await _console_relay(websocket, process_manager.send_command)
         finally:
             process_manager.connected_websockets.discard(websocket)
     else:
@@ -353,15 +348,48 @@ async def websocket_console(websocket: WebSocket, instance: str = "main"):
             except Exception:
                 break
         try:
-            while True:
-                cmd = await websocket.receive_text()
-                if cmd:
-                    await cluster_manager.send_command(instance, cmd)
-        except WebSocketDisconnect:
-            pass
+            await _console_relay(
+                websocket,
+                lambda cmd: cluster_manager.send_command(instance, cmd)
+            )
         finally:
             if instance in cluster_manager.connected_websockets:
                 cluster_manager.connected_websockets[instance].discard(websocket)
+
+
+# Carácter invisible usado como heartbeat de aplicación (no se muestra en la consola)
+WS_HEARTBEAT_TOKEN = "\u200b"
+WS_HEARTBEAT_IDLE_SECONDS = 25
+
+async def _console_relay(websocket: WebSocket, on_command) -> None:
+    """Relevo de comandos de consola con heartbeat.
+
+    Si el cliente no envía nada en WS_HEARTBEAT_IDLE_SECONDS, se envía un
+    carácter invisible para verificar que la conexión sigue viva. Si el envío
+    falla (cliente muerto sin cerrar el TCP), se cierra la sesión y se limpia
+    el socket de la lista de conectados en el 'finally' del endpoint.
+    """
+    try:
+        while True:
+            try:
+                cmd = await asyncio.wait_for(websocket.receive_text(), timeout=WS_HEARTBEAT_IDLE_SECONDS)
+            except asyncio.TimeoutError:
+                try:
+                    await websocket.send_text(WS_HEARTBEAT_TOKEN)
+                except Exception:
+                    break
+                continue
+            except WebSocketDisconnect:
+                break
+            except Exception:
+                break
+            if cmd:
+                try:
+                    await on_command(cmd)
+                except Exception:
+                    break
+    except Exception:
+        pass
 
 
 # --- Endpoints de API (Control de Servidor) ---

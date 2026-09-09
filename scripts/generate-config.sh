@@ -1,14 +1,29 @@
 #!/bin/bash
 export PATH="/usr/local/bin:/usr/bin:/bin:/home/steam/bin:$PATH"
 
+# Sanitiza valores antes de escribirlos en arkmanager.cfg: elimina comillas dobles y
+# saltos de línea para evitar que un valor (p. ej. contraseña) rompa la línea o
+# inyecte directivas de configuración.
+clean_cfg() { printf '%s' "$1" | tr -d '"' | tr -d '\r' | tr -d '\n'; }
+
+ARK_ROOT_S=$(clean_cfg "${ARK_DATA_DIR:-/home/steam/steamcmd/ark}")
+BACKUP_DIR_S=$(clean_cfg "${BACKUP_DIR:-/home/steam/ark-backups}")
+WORLD_S=$(clean_cfg "${WORLD:-TheIsland}")
+SESSION_NAME_S=$(clean_cfg "${SESSION_NAME:-ARK Server}")
+ADMIN_PASSWORD_S=$(clean_cfg "${ADMIN_PASSWORD:-adminpass}")
+SERVER_PASSWORD_S=$(clean_cfg "${SERVER_PASSWORD:-}")
+CLUSTER_ID_S=$(clean_cfg "${CLUSTER_ID:-}")
+CLUSTER_DIR_OVERRIDE_S=$(clean_cfg "${CLUSTER_DIR_OVERRIDE:-/home/steam/clusters}")
+MOD_IDS_S=$(clean_cfg "${MOD_IDS:-}")
+
 echo "[ARK Server Manager] Generando configuración de arkmanager desde variables de entorno..."
 mkdir -p /etc/arkmanager /var/log/arktools /etc/arkmanager/instances
 
 tee /etc/arkmanager/arkmanager.cfg > /dev/null << EOF
 # ARK Server Manager Configuration
-arkserverroot="${ARK_DATA_DIR:-/home/steam/steamcmd/ark}"
+arkserverroot="${ARK_ROOT_S}"
 arkserverexec="ShooterGame/Binaries/Linux/ShooterGameServer"
-arkbackupdir="${BACKUP_DIR:-/home/steam/ark-backups}"
+arkbackupdir="${BACKUP_DIR_S}"
 arkwarnminutes="15"
 arkAutoUpdateOnStart="${UPDATE_ON_START:-true}"
 arkprecisewarn="false"
@@ -22,10 +37,10 @@ appid="376030"
 logdir="/var/log/arktools"
 
 # Server Identity & Ports
-serverMap="${WORLD:-TheIsland}"
-ark_SessionName="${SESSION_NAME:-ARK Server}"
-ark_ServerAdminPassword="${ADMIN_PASSWORD:-adminpass}"
-rconpassword="${ADMIN_PASSWORD:-adminpass}"
+serverMap="${WORLD_S}"
+ark_SessionName="${SESSION_NAME_S}"
+ark_ServerAdminPassword="${ADMIN_PASSWORD_S}"
+rconpassword="${ADMIN_PASSWORD_S}"
 ark_RCONEnabled="${RCON_ENABLED:-True}"
 ark_RCONPort="${RCON_PORT:-27020}"
 rconport="${RCON_PORT:-27020}"
@@ -36,8 +51,8 @@ arkNoPortDecrement="true"
 EOF
 
 # Contraseña de servidor (sólo agregar si está definida para no pasar ?ServerPassword? vacío a UE4)
-if [ -n "${SERVER_PASSWORD}" ]; then
-    echo "ark_ServerPassword=\"${SERVER_PASSWORD}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
+if [ -n "${SERVER_PASSWORD_S}" ]; then
+    echo "ark_ServerPassword=\"${SERVER_PASSWORD_S}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
 fi
 
 # Multiplicadores de Jugabilidad
@@ -76,17 +91,16 @@ else
 fi
 
 # Clúster
-if [ -n "${CLUSTER_ID}" ]; then
-    echo "arkopt_clusterid=\"${CLUSTER_ID}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
-    cluster_dir="${CLUSTER_DIR_OVERRIDE:-/home/steam/clusters}"
-    echo "arkopt_ClusterDirOverride=\"${cluster_dir}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
-elif [ -n "${CLUSTER_DIR_OVERRIDE}" ]; then
-    echo "arkopt_ClusterDirOverride=\"${CLUSTER_DIR_OVERRIDE}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
+if [ -n "${CLUSTER_ID_S}" ]; then
+    echo "arkopt_clusterid=\"${CLUSTER_ID_S}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
+    echo "arkopt_ClusterDirOverride=\"${CLUSTER_DIR_OVERRIDE_S}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
+elif [ -n "${CLUSTER_DIR_OVERRIDE_S}" ]; then
+    echo "arkopt_ClusterDirOverride=\"${CLUSTER_DIR_OVERRIDE_S}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
 fi
 
 # Mods
-if [ -n "${MOD_IDS}" ]; then
-    echo "ark_GameModIds=\"${MOD_IDS}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
+if [ -n "${MOD_IDS_S}" ]; then
+    echo "ark_GameModIds=\"${MOD_IDS_S}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
 fi
 
 # Argumentos Adicionales
@@ -120,9 +134,9 @@ echo "arkflag_log=true" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
 # Configuración de instancia principal
 tee /etc/arkmanager/instances/main.cfg > /dev/null << EOF
 # Configuración de instancia principal @main
-arkserverroot="${ARK_DATA_DIR:-/home/steam/steamcmd/ark}"
+arkserverroot="${ARK_ROOT_S}"
 arkserverexec="ShooterGame/Binaries/Linux/ShooterGameServer"
-serverMap="${WORLD:-TheIsland}"
+serverMap="${WORLD_S}"
 EOF
 
 chown -R steam:steam /etc/arkmanager /var/log/arktools 2>/dev/null || true

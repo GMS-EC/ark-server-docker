@@ -248,8 +248,8 @@ const Files = {
     if (!menu) return;
 
     menu.innerHTML = '';
-    const safePath = this.escapeHtml(itemRelativePath);
-    const safeName = item ? this.escapeHtml(item.name) : '';
+    const safePath = this.attrJsStr(itemRelativePath);
+    const safeName = item ? this.attrJsStr(item.name) : '';
 
     if (!item) {
       // Background context menu
@@ -786,6 +786,23 @@ const Files = {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  },
+
+  // Escapa una cadena para insertarla DENTRO de un literal JS con comillas simples
+  // dentro de un atributo HTML onclick="...". Previene romper el atributo o inyectar código.
+  attrJsStr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/\r/g, '\\r')
+      .replace(/\n/g, '\\n')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 };
 

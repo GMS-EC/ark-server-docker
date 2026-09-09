@@ -32,6 +32,11 @@ OFFICIAL_MAPS = [
     {"id": "TheCenter", "name": "The Center", "server_port": 7799, "query_port": 27026, "rcon_port": 27031, "alt_save_dir": "TheCenter"}
 ]
 
+def _clean_cfg_value(value: Any) -> str:
+    """Elimina comillas dobles y saltos de línea de un valor antes de escribirlo en un
+    archivo .cfg de arkmanager (evita romper la línea o inyectar directivas)."""
+    return str(value).replace('"', "").replace("\r", "").replace("\n", "")
+
 
 class ClusterManager:
     """
@@ -253,20 +258,21 @@ class ClusterManager:
         if not inst:
             return
 
-        map_name = inst.get("map", "ScorchedEarth_P")
+        inst_name = _clean_cfg_value(inst.get("name", instance_id))
+        map_name = _clean_cfg_value(inst.get("map", "ScorchedEarth_P"))
         server_port = inst.get("server_port", 7779)
         query_port = inst.get("query_port", 27016)
         rcon_port = inst.get("rcon_port", 27021)
-        rcon_pass = inst.get("rcon_password", settings.admin_ark_password)
-        server_pass = inst.get("server_password", "")
-        alt_save = inst.get("alt_save_dir", map_name)
-        session_name = inst.get("session_name", f"{settings.session_name} - {inst.get('name')}")
+        rcon_pass = _clean_cfg_value(inst.get("rcon_password", settings.admin_ark_password))
+        server_pass = _clean_cfg_value(inst.get("server_password", ""))
+        alt_save = _clean_cfg_value(inst.get("alt_save_dir", inst.get("map", "ScorchedEarth_P")))
+        session_name = _clean_cfg_value(inst.get("session_name", f"{settings.session_name} - {inst.get('name')}"))
         max_players = inst.get("max_players", settings.max_players)
-        cluster_id = settings.cluster_id
-        cluster_dir = str(settings.cluster_dir)
+        cluster_id = _clean_cfg_value(settings.cluster_id)
+        cluster_dir = _clean_cfg_value(settings.cluster_dir)
 
         cfg_content = (
-            f"# Configuración de Instancia Clúster: {inst.get('name', instance_id)}\n"
+            f"# Configuración de Instancia Clúster: {inst_name}\n"
             f"serverMap=\"{map_name}\"\n"
             f"ark_SessionName=\"{session_name}\"\n"
             f"ark_ServerPassword=\"{server_pass}\"\n"

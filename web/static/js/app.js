@@ -180,8 +180,11 @@ function initWebSocket() {
 
     socket.onmessage = (event) => {
         if (!consoleOutput) return;
+        const text = event.data;
+        // Heartbeat del servidor: no se muestra en la consola
+        if (text === "\u200b") return;
         const line = document.createElement("div");
-        line.textContent = event.data;
+        line.textContent = text;
         consoleOutput.appendChild(line);
 
         // Optimización: Limitar el DOM a un máximo de 1.000 líneas visibles
@@ -2468,7 +2471,8 @@ function renderActivityLogs(logs) {
         "Instalación": "#f0883e"
     };
 
-    tbody.innerHTML = logs.map(item => {
+    const visible = logs.slice(0, 100);
+    const rows = visible.map(item => {
         const color = categoryColors[item.category] || "#8b949e";
         return `
             <tr style="border-bottom: 1px solid var(--border-color);">
@@ -2483,6 +2487,12 @@ function renderActivityLogs(logs) {
             </tr>
         `;
     }).join("");
+
+    // Limitar el DOM: se muestran las 100 más recientes (el filtro opera sobre el total)
+    if (logs.length > 100) {
+        rows += `<tr><td colspan="4" style="text-align:center; padding:10px; color:var(--text-dim); font-size:0.78rem;">Mostrando las 100 más recientes de ${logs.length} registros. Usa el buscador para filtrar.</td></tr>`;
+    }
+    tbody.innerHTML = rows;
 }
 
 function filterActivityLogs(query) {
