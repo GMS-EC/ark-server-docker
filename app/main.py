@@ -362,34 +362,46 @@ WS_HEARTBEAT_TOKEN = "\u200b"
 WS_HEARTBEAT_IDLE_SECONDS = 25
 
 async def _console_relay(websocket: WebSocket, on_command) -> None:
-    """Relevo de comandos de consola con heartbeat.
+    """Relevo de comandos de consola con heartbeat en segundo plano.
 
-    Si el cliente no envía nada en WS_HEARTBEAT_IDLE_SECONDS, se envía un
-    carácter invisible para verificar que la conexión sigue viva. Si el envío
-    falla (cliente muerto sin cerrar el TCP), se cierra la sesión y se limpia
-    el socket de la lista de conectados en el 'finally' del endpoint.
+    Una tarea independiente envía periódicamente un carácter invisible para verificar
+    que la conexión sigue viva y mantenerla activa. Si el envío falla (cliente muerto
+    sin cerrar el TCP), se detiene el relevo y el 'finally' del endpoint limpia el
+    socket de la lista de conectados. El bucle principal NO usa timeout sobre receive,
+    por lo que nunca se pierde un comando por cancelación.
     """
-    try:
-        while True:
+    stop = asyncio.Event()
+
+    async def _heartbeat():
+        while not stop.is_set():
             try:
-                cmd = await asyncio.wait_for(websocket.receive_text(), timeout=WS_HEARTBEAT_IDLE_SECONDS)
-            except asyncio.TimeoutError:
-                try:
-                    await websocket.send_text(WS_HEARTBEAT_TOKEN)
-                except Exception:
-                    break
-                continue
+                await asyncio.sleep(WS_HEARTBEAT_IDLE_SECONDS)
+                if stop.is_set():
+                    return
+                await websocket.send_text(WS_HEARTBEAT_TOKEN)
+            except Exception:
+                stop.set()
+                return
+
+    hb = asyncio.create_task(_heartbeat())
+    try:
+        while not stop.is_set():
+            try:
+                cmd = await websocket.receive_text()
             except WebSocketDisconnect:
                 break
             except Exception:
+                break
+            if stop.is_set():
                 break
             if cmd:
                 try:
                     await on_command(cmd)
                 except Exception:
                     break
-    except Exception:
-        pass
+    finally:
+        stop.set()
+        hb.cancel()
 
 
 # --- Endpoints de API (Control de Servidor) ---
