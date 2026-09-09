@@ -74,8 +74,9 @@ fi
 # Clúster
 if [ -n "${CLUSTER_ID}" ]; then
     echo "arkopt_clusterid=\"${CLUSTER_ID}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
-fi
-if [ -n "${CLUSTER_DIR_OVERRIDE}" ]; then
+    cluster_dir="${CLUSTER_DIR_OVERRIDE:-/home/steam/clusters}"
+    echo "arkopt_ClusterDirOverride=\"${cluster_dir}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
+elif [ -n "${CLUSTER_DIR_OVERRIDE}" ]; then
     echo "arkopt_ClusterDirOverride=\"${CLUSTER_DIR_OVERRIDE}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
 fi
 

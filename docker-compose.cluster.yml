@@ -29,7 +29,6 @@ services:
       - SESSION_NAME=ARK Cluster - The Island
       - WORLD=TheIsland
       - CLUSTER_ID=MiGranCluster
-      - CLUSTER_DIR_OVERRIDE=/home/steam/clusters
       - SERVER_PORT=7777
       - QUERY_PORT=27015
       - RCON_PORT=27020
@@ -62,7 +61,6 @@ services:
       - SESSION_NAME=ARK Cluster - Scorched Earth
       - WORLD=ScorchedEarth_P
       - CLUSTER_ID=MiGranCluster
-      - CLUSTER_DIR_OVERRIDE=/home/steam/clusters
       - SERVER_PORT=7777
       - QUERY_PORT=27015
       - RCON_PORT=27020

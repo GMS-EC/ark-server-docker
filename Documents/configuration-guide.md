@@ -199,7 +199,7 @@ This guide details how to fully customize your ARK server, from environment vari
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CLUSTER_ID` | *(empty)* | Cluster ID for linking multiple servers and enabling cross-travel. |
-| `CLUSTER_DIR_OVERRIDE` | *(empty)* | Custom shared directory path for cluster data storage. |
+| `CLUSTER_DIR_OVERRIDE` | `/home/steam/clusters` | Custom shared directory path for cluster data storage (automatic by default matching volume `/home/steam/clusters`). |
 
 ##### 🔄 Steam Updates & Branches
 | Variable | Default | Description |

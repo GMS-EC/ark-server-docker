@@ -156,7 +156,7 @@ class ArkSettingsManager:
                 "world": settings.world,
                 "mod_ids": settings.runtime_config.get("mod_ids", os.getenv("MOD_IDS", "")),
                 "cluster_id": settings.runtime_config.get("cluster_id", os.getenv("CLUSTER_ID", "")),
-                "cluster_dir_override": settings.runtime_config.get("cluster_dir_override", os.getenv("CLUSTER_DIR_OVERRIDE", "")),
+                "cluster_dir_override": settings.runtime_config.get("cluster_dir_override", os.getenv("CLUSTER_DIR_OVERRIDE", "/home/steam/clusters")),
                 "additional_args": settings.runtime_config.get("additional_args", os.getenv("ADDITIONAL_ARGS", "")),
                 "beta": settings.runtime_config.get("beta", os.getenv("BETA", "public")),
                 "update_on_start": settings.runtime_config.get("update_on_start", os.getenv("UPDATE_ON_START", "true").lower() in ("true", "1", "yes")),
