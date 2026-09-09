@@ -6,7 +6,7 @@ mkdir -p /etc/arkmanager /var/log/arktools /etc/arkmanager/instances
 
 tee /etc/arkmanager/arkmanager.cfg > /dev/null << EOF
 # ARK Server Manager Configuration
-arkserverroot="/home/steam/steamcmd/ark"
+arkserverroot="${ARK_DATA_DIR:-/home/steam/steamcmd/ark}"
 arkserverexec="ShooterGame/Binaries/Linux/ShooterGameServer"
 arkbackupdir="${BACKUP_DIR:-/home/steam/ark-backups}"
 arkwarnminutes="15"
@@ -116,7 +116,7 @@ echo "arkflag_log=true" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
 # Configuración de instancia principal
 tee /etc/arkmanager/instances/main.cfg > /dev/null << EOF
 # Configuración de instancia principal @main
-arkserverroot="/home/steam/steamcmd/ark"
+arkserverroot="${ARK_DATA_DIR:-/home/steam/steamcmd/ark}"
 arkserverexec="ShooterGame/Binaries/Linux/ShooterGameServer"
 EOF
 

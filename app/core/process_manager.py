@@ -69,11 +69,15 @@ class ProcessManager:
         if self.process and self.process.returncode is None:
             return True
         try:
+            main_port_str = f"Port={settings.server_port}"
             for p in psutil.process_iter(['name', 'cmdline']):
                 name = p.info.get('name') or ''
-                cmdline = ' '.join(p.info.get('cmdline') or [])
+                cmdline_list = p.info.get('cmdline') or []
+                cmdline = ' '.join(cmdline_list)
                 if 'ShooterGameServer' in name or 'ShooterGameServer' in cmdline:
-                    return True
+                    has_other_port = any("Port=" in arg and main_port_str not in arg for arg in cmdline_list)
+                    if not has_other_port:
+                        return True
         except Exception:
             pass
         return False
@@ -82,11 +86,15 @@ class ProcessManager:
         if self.process and self.process.returncode is None:
             return self.process.pid
         try:
+            main_port_str = f"Port={settings.server_port}"
             for p in psutil.process_iter(['pid', 'name', 'cmdline']):
                 name = p.info.get('name') or ''
-                cmdline = ' '.join(p.info.get('cmdline') or [])
+                cmdline_list = p.info.get('cmdline') or []
+                cmdline = ' '.join(cmdline_list)
                 if 'ShooterGameServer' in name or 'ShooterGameServer' in cmdline:
-                    return p.info['pid']
+                    has_other_port = any("Port=" in arg and main_port_str not in arg for arg in cmdline_list)
+                    if not has_other_port:
+                        return p.info['pid']
         except Exception:
             pass
         return None
@@ -229,6 +237,11 @@ class ProcessManager:
             start_env["ADDITIONAL_ARGS"] = str(settings.runtime_config.get("additional_args", os.getenv("ADDITIONAL_ARGS", "")))
             start_env["UPDATE_ON_START"] = "true" if settings.runtime_config.get("update_on_start", True) else "false"
             start_env["BATTLEEYE"] = "true" if settings.runtime_config.get("battleeye", False) else "false"
+            start_env["SERVER_PORT"] = str(settings.server_port)
+            start_env["QUERY_PORT"] = str(settings.query_port)
+            start_env["RCON_PORT"] = str(settings.rcon_port)
+            start_env["RCON_ENABLED"] = "True" if settings.rcon_enabled else "False"
+            start_env["CLUSTER_DIR_OVERRIDE"] = str(settings.cluster_dir)
 
             self.process = await asyncio.create_subprocess_exec(
                 *cmd,

@@ -14,7 +14,8 @@ fi
 # Si arkmanager está disponible en el PATH
 if command -v arkmanager >/dev/null 2>&1; then
     # 1. Si no existe el ejecutable, instalar si UPDATE_ON_START=true o AUTO_INSTALL=true
-    if [ ! -f "/home/steam/steamcmd/ark/ShooterGame/Binaries/Linux/ShooterGameServer" ]; then
+    ARK_ROOT="${ARK_DATA_DIR:-/home/steam/steamcmd/ark}"
+    if [ ! -f "${ARK_ROOT}/ShooterGame/Binaries/Linux/ShooterGameServer" ]; then
         if [ "${UPDATE_ON_START:-true}" = "true" ] || [ "${AUTO_INSTALL:-false}" = "true" ]; then
             echo "[ARK Server Manager] Servidor no detectado. Iniciando instalación automática de ARK (SteamCMD AppID 376030)..."
             if [ "${BETA}" = "public" ] || [ -z "${BETA}" ]; then
@@ -36,7 +37,7 @@ if command -v arkmanager >/dev/null 2>&1; then
         for mod in "${MODS[@]}"; do
             mod=$(echo "$mod" | tr -d ' ')
             [ -z "$mod" ] && continue
-            if [ ! -d "/home/steam/steamcmd/ark/ShooterGame/Content/Mods/$mod" ]; then
+            if [ ! -d "${ARK_ROOT}/ShooterGame/Content/Mods/$mod" ]; then
                 echo "[ARK Server Manager] Mod $mod no detectado. Descargando e instalando con SteamCMD..."
                 arkmanager installmod "$mod" @main || true
             else

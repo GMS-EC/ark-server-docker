@@ -860,6 +860,8 @@ async def api_cluster_instance_command(instance_id: str, payload: Dict[str, str]
     cmd = payload.get("command", "")
     if not cmd:
         return {"success": False, "error": "Comando vacío"}
+    if cluster_manager.get_instance_status(instance_id) != "RUNNING":
+        return {"success": False, "error": f"El nodo '{instance_id}' no está en ejecución", "response": f"[AVISO] El nodo '{instance_id}' está apagado o iniciando. Los comandos RCON solo están disponibles cuando está RUNNING."}
     resp = await cluster_manager.send_command(instance_id, cmd)
     return {"success": True, "response": resp}
 

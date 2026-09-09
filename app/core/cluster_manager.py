@@ -159,7 +159,43 @@ class ClusterManager:
         proc = self._processes.get(instance_id)
         if proc and proc.returncode is None:
             return "RUNNING"
+        inst = self._instances.get(instance_id)
+        if inst:
+            inst_port = inst.get("server_port")
+            if inst_port:
+                try:
+                    import psutil
+                    port_str = f"Port={inst_port}"
+                    for p in psutil.process_iter(['name', 'cmdline']):
+                        cmdline = ' '.join(p.info.get('cmdline') or [])
+                        name = p.info.get('name') or ''
+                        if ('ShooterGameServer' in name or 'ShooterGameServer' in cmdline) and port_str in cmdline:
+                            return "RUNNING"
+                except Exception:
+                    pass
         return "OFFLINE"
+
+    def get_instance_pid(self, instance_id: str) -> Optional[int]:
+        if instance_id == "main":
+            return process_manager.get_server_pid()
+        proc = self._processes.get(instance_id)
+        if proc and proc.returncode is None:
+            return proc.pid
+        inst = self._instances.get(instance_id)
+        if inst:
+            inst_port = inst.get("server_port")
+            if inst_port:
+                try:
+                    import psutil
+                    port_str = f"Port={inst_port}"
+                    for p in psutil.process_iter(['pid', 'name', 'cmdline']):
+                        cmdline = ' '.join(p.info.get('cmdline') or [])
+                        name = p.info.get('name') or ''
+                        if ('ShooterGameServer' in name or 'ShooterGameServer' in cmdline) and port_str in cmdline:
+                            return p.info['pid']
+                except Exception:
+                    pass
+        return None
 
     def get_rcon_client(self, instance_id: str) -> ArkRconClient:
         if instance_id == "main" or instance_id not in self._rcon_clients:
