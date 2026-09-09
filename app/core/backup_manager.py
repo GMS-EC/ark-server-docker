@@ -24,6 +24,23 @@ class BackupManager:
         self.backup_dir: Path = settings.backups_dir
         self.saved_dir: Path = settings.ark_data_dir / "ShooterGame" / "Saved"
 
+    def _resolve_backup(self, filename: str) -> Optional[Path]:
+        """Resuelve un nombre de backup dentro de backup_dir rechazando path traversal."""
+        if not filename or "/" in filename or "\\" in filename or ".." in filename:
+            return None
+        target = (self.backup_dir / Path(filename).name).resolve()
+        if not self._is_subpath(target, self.backup_dir):
+            return None
+        return target if target.exists() and target.is_file() else None
+
+    @staticmethod
+    def _is_subpath(path: Path, parent: Path) -> bool:
+        try:
+            path.resolve().relative_to(parent.resolve())
+            return True
+        except (ValueError, AttributeError):
+            return False
+
     def list_backups(self) -> List[Dict[str, Any]]:
         """Lista todos los archivos de respaldo (.tar.gz, .tar.bz2, .zip, .tgz) en orden cronológico."""
         self.backup_dir.mkdir(parents=True, exist_ok=True)
@@ -155,8 +172,8 @@ class BackupManager:
 
     async def restore_backup(self, filename: str) -> Dict[str, Any]:
         """Restaura una copia de seguridad soportando tanto formato organizado como legado."""
-        target_file = self.backup_dir / filename
-        if not target_file.exists():
+        target_file = self._resolve_backup(filename)
+        if not target_file:
             return {"success": False, "error": "El archivo de respaldo no existe."}
 
         was_running = process_manager.get_status() == "RUNNING"
@@ -223,8 +240,8 @@ class BackupManager:
             return {"success": False, "error": str(e)}
 
     def delete_backup(self, filename: str) -> bool:
-        target = self.backup_dir / filename
-        if target.exists() and target.is_file():
+        target = self._resolve_backup(filename)
+        if target:
             try:
                 target.unlink()
                 return True
@@ -233,10 +250,7 @@ class BackupManager:
         return False
 
     def get_backup_path(self, filename: str) -> Optional[Path]:
-        target = self.backup_dir / filename
-        if target.exists() and target.is_file():
-            return target
-        return None
+        return self._resolve_backup(filename)
 
     def _rotate_backups(self, max_count: int = 10):
         backups = self.list_backups()

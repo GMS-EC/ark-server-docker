@@ -16,6 +16,12 @@ from app.core.webhook_manager import webhook_manager
 
 logger = logging.getLogger("arkserver.players")
 
+# Persistencia del historial: debounce de escritura y poda para evitar
+# reescrituras constantes del JSON y crecimiento ilimitado del archivo.
+HISTORY_SAVE_DEBOUNCE_SECONDS = 20
+HISTORY_MAX_ENTRIES = 2000
+HISTORY_MAX_AGE_DAYS = 365
+
 class PlayerManager:
     """
     Gestor de supervivientes para ARK: Survival Evolved.
@@ -28,6 +34,8 @@ class PlayerManager:
         self._current_online: Dict[str, str] = {}
         self._monitor_running: bool = False
         self._monitor_task: Optional[asyncio.Task] = None
+        self._history_dirty: bool = False
+        self._last_history_save: float = 0.0
         self._load_history()
 
     def start_monitor(self):
@@ -39,6 +47,8 @@ class PlayerManager:
         self._monitor_running = False
         if self._monitor_task:
             self._monitor_task.cancel()
+        if self._history_dirty:
+            self._save_history()
 
     async def _monitor_loop(self):
         while self._monitor_running:
@@ -89,9 +99,37 @@ class PlayerManager:
 
     def _save_history(self) -> None:
         try:
+            self._prune_history()
             atomic_write_json(self._history_file, self._player_history, indent=2)
+            self._history_dirty = False
+            self._last_history_save = time.time()
         except Exception as e:
             logger.debug(f"Error guardando historial de jugadores: {e}")
+
+    def _prune_history(self) -> None:
+        """Poda el historial: elimina entradas antiguas y limita el número de jugadores únicos."""
+        cutoff = time.time() - (HISTORY_MAX_AGE_DAYS * 86400)
+        pruned = {
+            steam_id: rec for steam_id, rec in self._player_history.items()
+            if rec.get("banned") or rec.get("last_ts", 0) >= cutoff
+        }
+        if len(pruned) > HISTORY_MAX_ENTRIES:
+            ordered = sorted(
+                pruned.values(),
+                key=lambda r: r.get("last_ts", 0),
+                reverse=True
+            )[:HISTORY_MAX_ENTRIES]
+            keep_ids = {r.get("steam_id") for r in ordered}
+            pruned = {sid: rec for sid, rec in pruned.items() if sid in keep_ids}
+        self._player_history = pruned
+
+    def _schedule_save(self) -> None:
+        """Marca el historial como pendiente y guarda con debounce para no reescribir
+        el JSON completo en cada ciclo del monitor (cada 10 s)."""
+        self._history_dirty = True
+        now = time.time()
+        if now - self._last_history_save >= HISTORY_SAVE_DEBOUNCE_SECONDS:
+            self._save_history()
 
     async def get_online_players(self) -> List[Dict[str, Any]]:
         """Devuelve la lista de jugadores conectados actualmente."""
@@ -140,7 +178,7 @@ class PlayerManager:
                 })
 
             if history_updated:
-                self._save_history()
+                self._schedule_save()
             # Si RCON respondió con éxito (incluso si está vacío con 0 jugadores), es la verdad autoritativa
             return players
         except Exception as e:

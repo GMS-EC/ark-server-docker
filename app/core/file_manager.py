@@ -10,12 +10,16 @@ from fastapi import HTTPException, UploadFile
 from app.config import settings
 from app.core.fs_utils import atomic_write_text
 
+# Archivos de configuración/secreto del panel que no deben editarse/leerse
+# desde el explorador web para evitar fugas accidentales o auto-compromiso.
+PROTECTED_FILES = {"ark_panel_config.json", "arkraft_panel_config.json"}
+
 class FileManager:
     """
     Gestor de archivos completo y seguro para ARK Server Manager.
     Previene vulnerabilidades de Path Traversal verificando que todas las operaciones
     se restrinjan estrictamente a settings.ark_data_dir.
-    Soporta navegación, creación, edición, renombrado, duplicación, subida,
+    Soporta navegación, creación, edición, renombrado, duplicado, subida,
     descarga, compresión y descompresión de archivos ZIP.
     """
     def __init__(self):
@@ -27,6 +31,26 @@ class FileManager:
             return True
         except (ValueError, AttributeError):
             return False
+
+    def _rel_to_root(self, path: Path) -> str:
+        """Calcula la ruta relativa del elemento respecto a la raíz que lo contiene
+        (ark_data, clusters o backups) para reportarla correctamente en la API."""
+        for root in (self.base_dir, settings.cluster_dir, settings.backups_dir):
+            try:
+                rel = path.resolve().relative_to(root.resolve())
+                return str(rel).replace("\\", "/")
+            except (ValueError, AttributeError):
+                continue
+        return path.name
+
+    def _is_special_root(self, path: Path) -> bool:
+        """True si el path es una raíz que no debe eliminarse/renombrarse/duplicarse completa."""
+        p = path.resolve()
+        return p in (self.base_dir.resolve(), settings.cluster_dir.resolve(), settings.backups_dir.resolve())
+
+    def _assert_not_protected(self, path: str) -> None:
+        if Path(path).name in PROTECTED_FILES:
+            raise HTTPException(status_code=403, detail="Archivo de configuración protegido: use el panel de Ajustes.")
 
     def _resolve_safe_path(self, relative_path: str = "") -> Path:
         clean_rel = (relative_path or "").replace("\\", "/").strip("/")
@@ -51,6 +75,15 @@ class FileManager:
             raise HTTPException(status_code=403, detail="Acceso denegado: Path traversal detectado")
         return target
 
+    def resolve_download(self, relative_path: str) -> Path:
+        """Resuelve un archivo descargable dentro de las raíces permitidas
+        y bloquea la descarga de archivos de configuración protegidos."""
+        self._assert_not_protected(relative_path)
+        safe = self._resolve_safe_path(relative_path)
+        if not safe.exists() or not safe.is_file():
+            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+        return safe
+
     def list_directory(self, relative_path: str = "") -> Dict[str, Any]:
         target_dir = self._resolve_safe_path(relative_path)
         if not target_dir.exists() or not target_dir.is_dir():
@@ -59,6 +92,8 @@ class FileManager:
         items: List[Dict[str, Any]] = []
         try:
             for entry in os.scandir(target_dir):
+                if entry.name in PROTECTED_FILES:
+                    continue
                 stat = entry.stat()
                 items.append({
                     "name": entry.name,
@@ -127,6 +162,7 @@ class FileManager:
 
     def read_file(self, relative_path: str) -> Dict[str, Any]:
         target = self._resolve_safe_path(relative_path)
+        self._assert_not_protected(target.name)
         if not target.exists() or not target.is_file():
             raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
@@ -146,6 +182,7 @@ class FileManager:
 
     def write_file(self, relative_path: str, content: str) -> Dict[str, Any]:
         target = self._resolve_safe_path(relative_path)
+        self._assert_not_protected(target.name)
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             atomic_write_text(target, content)
@@ -179,8 +216,8 @@ class FileManager:
         if not target.exists():
             raise HTTPException(status_code=404, detail="Elemento no encontrado")
 
-        if target == self.base_dir:
-            raise HTTPException(status_code=400, detail="No se puede eliminar la raíz del servidor")
+        if self._is_special_root(target):
+            raise HTTPException(status_code=400, detail="No se puede eliminar una carpeta raíz (servidor, clusters o backups)")
 
         try:
             if target.is_dir():
@@ -240,18 +277,22 @@ class FileManager:
         if not target.exists():
             raise HTTPException(status_code=404, detail="Elemento no encontrado")
 
-        if target == self.base_dir:
-            raise HTTPException(status_code=400, detail="No se puede renombrar el directorio raíz")
+        if self._is_special_root(target):
+            raise HTTPException(status_code=400, detail="No se puede renombrar una carpeta raíz (servidor, clusters o backups)")
 
         dest = target.parent / clean_new
-        if not dest.resolve().is_relative_to(self.base_dir.resolve()):
+        allowed = any(
+            self._is_subpath(dest, r)
+            for r in (self.base_dir, settings.cluster_dir, settings.backups_dir)
+        )
+        if not allowed:
             raise HTTPException(status_code=403, detail="Ruta de destino no válida")
 
         if dest.exists():
             raise HTTPException(status_code=400, detail=f"Ya existe un elemento llamado '{clean_new}'")
 
         target.rename(dest)
-        rel_dest = str(dest.relative_to(self.base_dir.resolve())).replace("\\", "/")
+        rel_dest = self._rel_to_root(dest)
         return {"status": "renamed", "old_path": relative_path, "new_path": rel_dest, "name": clean_new}
 
     def duplicate_item(self, relative_path: str) -> Dict[str, Any]:
@@ -259,8 +300,8 @@ class FileManager:
         if not target.exists():
             raise HTTPException(status_code=404, detail="Elemento no encontrado")
 
-        if target == self.base_dir:
-            raise HTTPException(status_code=400, detail="No se puede duplicar el directorio raíz")
+        if self._is_special_root(target):
+            raise HTTPException(status_code=400, detail="No se puede duplicar una carpeta raíz (servidor, clusters o backups)")
 
         parent = target.parent
         if target.is_file():
@@ -283,13 +324,16 @@ class FileManager:
             dest = parent / candidate
             shutil.copytree(target, dest)
 
-        rel_dest = str(dest.relative_to(self.base_dir.resolve())).replace("\\", "/")
+        rel_dest = self._rel_to_root(dest)
         return {"status": "duplicated", "old_path": relative_path, "new_path": rel_dest, "new_name": dest.name}
 
     def compress_item(self, relative_path: str) -> Dict[str, Any]:
         target = self._resolve_safe_path(relative_path)
         if not target.exists():
             raise HTTPException(status_code=404, detail="Elemento no encontrado")
+
+        if self._is_special_root(target):
+            raise HTTPException(status_code=400, detail="No se puede comprimir una carpeta raíz (servidor, clusters o backups)")
 
         parent = target.parent
         zip_name = f"{target.name}.zip"
@@ -310,7 +354,7 @@ class FileManager:
                         arc = full.relative_to(target.parent)
                         zf.write(full, arcname=str(arc))
 
-        rel_dest = str(zip_path.relative_to(self.base_dir.resolve())).replace("\\", "/")
+        rel_dest = self._rel_to_root(zip_path)
         return {"status": "compressed", "path": rel_dest, "filename": zip_name, "archive_name": zip_name}
 
 file_manager = FileManager()

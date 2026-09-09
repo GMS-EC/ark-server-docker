@@ -14,6 +14,24 @@ ATTEMPT_WINDOW_SECONDS = 15 * 60    # Ventana de 15 minutos para contabilizar in
 
 # In-memory tracking: { ip: { "attempts": [float, ...], "locked_until": float } }
 _ip_security_tracker: Dict[str, Dict[str, Any]] = {}
+_MAX_TRACKED_IPS = 1000
+
+def _purge_stale_ip_records():
+    """Elimina registros de IPs sin bloqueo activo y sin intentos recientes."""
+    now = time.time()
+    stale = [
+        ip for ip, rec in _ip_security_tracker.items()
+        if now >= rec.get("locked_until", 0.0)
+        and not [t for t in rec.get("attempts", []) if now - t < ATTEMPT_WINDOW_SECONDS]
+    ]
+    for ip in stale:
+        _ip_security_tracker.pop(ip, None)
+
+    # Acotar tamaño máximo del diccionario (orden aproximado por antigüedad de inserción)
+    overflow = len(_ip_security_tracker) - _MAX_TRACKED_IPS
+    if overflow > 0:
+        for ip in list(_ip_security_tracker.keys())[:overflow]:
+            _ip_security_tracker.pop(ip, None)
 
 def create_session_token(username: str) -> str:
     """Genera un token de sesión criptográficamente firmado."""
@@ -78,6 +96,7 @@ def check_login_rate_limit(ip: str) -> Tuple[bool, int]:
     Retorna (is_allowed, remaining_lockout_seconds).
     """
     now = time.time()
+    _purge_stale_ip_records()
     record = _ip_security_tracker.get(ip)
     if not record:
         return True, 0

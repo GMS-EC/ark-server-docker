@@ -9,8 +9,25 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+// Escapa una cadena para insertarla DENTRO de un string de JS delimitado por
+// comillas simples, dentro de un atributo HTML onclick="...". Previene que datos
+// externos (p. ej. nombres de jugadores) rompan el atributo o inyecten código.
+function attrJsStr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 // ARK Server Manager Main Client Script
-let ws = null;
 let metricsChart = null;
 let currentInstanceId = localStorage.getItem("ark_active_instance") || "main";
 let clusterData = null;
@@ -99,6 +116,9 @@ function switchTab(tabId) {
 
     if (tabId === "tasks") {
         loadTaskSettings();
+        pollTasksStatusIfActive();
+    } else {
+        stopTasksStatusPolling();
     }
 
     if (tabId === "webhooks") {
@@ -130,15 +150,35 @@ function switchTab(tabId) {
 }
 
 // --- WebSocket de Consola ---
+let ws = null;
+let wsReconnectTimer = null;
+let wsShouldReconnect = true;
+
+function scheduleWsReconnect() {
+    if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = setTimeout(initWebSocket, 3000);
+}
+
 function initWebSocket() {
+    if (wsReconnectTimer) {
+        clearTimeout(wsReconnectTimer);
+        wsReconnectTimer = null;
+    }
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const instParam = encodeURIComponent(currentInstanceId || "main");
     const wsUrl = `${protocol}//${window.location.host}/ws/console?instance=${instParam}`;
     const consoleOutput = document.getElementById("console-output");
 
-    ws = new WebSocket(wsUrl);
+    let socket;
+    try {
+        socket = new WebSocket(wsUrl);
+    } catch (e) {
+        scheduleWsReconnect();
+        return;
+    }
+    ws = socket;
 
-    ws.onmessage = (event) => {
+    socket.onmessage = (event) => {
         if (!consoleOutput) return;
         const line = document.createElement("div");
         line.textContent = event.data;
@@ -178,8 +218,19 @@ function initWebSocket() {
         });
     }
 
-    ws.onclose = () => {
-        setTimeout(initWebSocket, 3000);
+    socket.onclose = (ev) => {
+        // Solo reconectar si este socket sigue siendo el actual (evita sockets huérfanos
+        // duplicados al cambiar de nodo o al reconectar).
+        if (ws !== socket) return;
+        ws = null;
+        // Cierre por sesión expirada / no autorizado: no reintentar en bucle infinito.
+        if (ev && ev.code === 1008) {
+            wsShouldReconnect = false;
+            return;
+        }
+        if (wsShouldReconnect) {
+            scheduleWsReconnect();
+        }
     };
 }
 
@@ -740,7 +791,7 @@ function renderPlayersList() {
                 <div class="steam-id-pill">
                     <span>${escapeHtml(p.steam_id)}</span>
                     ${hasValidSteamId ? `
-                        <button type="button" class="btn-copy-steam" onclick="copySteamId('${escapeHtml(p.steam_id)}')" title="Copiar SteamID al portapapeles">
+                        <button type="button" class="btn-copy-steam" onclick="copySteamId('${attrJsStr(p.steam_id)}')" title="Copiar SteamID al portapapeles">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         </button>
                     ` : ''}
@@ -756,25 +807,25 @@ function renderPlayersList() {
             <td style="text-align: right;">
                 <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">
                     ${p.is_online && hasValidSteamId ? `
-                        <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.76rem; border-color: #58a6ff; color: #79c0ff;" onclick="messagePlayer('${escapeHtml(p.steam_id)}', '${escapeHtml(p.name)}')">
+                        <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.76rem; border-color: #58a6ff; color: #79c0ff;" onclick="messagePlayer('${attrJsStr(p.steam_id)}', '${attrJsStr(p.name)}')">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                             <span>Mensaje</span>
                         </button>
                     ` : ''}
                     ${p.is_online && hasValidSteamId ? `
-                        <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.76rem;" onclick="kickPlayer('${escapeHtml(p.steam_id)}', '${escapeHtml(p.name)}')">
+                        <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.76rem;" onclick="kickPlayer('${attrJsStr(p.steam_id)}', '${attrJsStr(p.name)}')">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                             <span>Expulsar</span>
                         </button>
                     ` : ''}
                     ${!p.banned && hasValidSteamId ? `
-                        <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;" onclick="banPlayer('${escapeHtml(p.steam_id)}', '${escapeHtml(p.name)}')">
+                        <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;" onclick="banPlayer('${attrJsStr(p.steam_id)}', '${attrJsStr(p.name)}')">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                             <span>Banear</span>
                         </button>
                     ` : ''}
                     ${p.banned && hasValidSteamId ? `
-                        <button class="btn btn-success" style="padding: 4px 10px; font-size: 0.76rem;" onclick="unbanPlayer('${escapeHtml(p.steam_id)}', '${escapeHtml(p.name)}')">
+                        <button class="btn btn-success" style="padding: 4px 10px; font-size: 0.76rem;" onclick="unbanPlayer('${attrJsStr(p.steam_id)}', '${attrJsStr(p.name)}')">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
                             <span>Desbanear</span>
                         </button>
@@ -908,8 +959,8 @@ async function loadBackups() {
                         <a href="/api/backups/download/${encodeURIComponent(b.filename)}" class="btn btn-outline" title="Descargar copia de seguridad" download style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; color: #58a6ff; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08); text-decoration: none; border-radius: 6px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </a>
-                        <button class="btn btn-warning" style="padding: 4px 10px; font-size: 11px;" onclick="restoreBackup('${escapeHtml(b.filename)}')">Restaurar</button>
-                        <button class="btn btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="deleteBackup('${escapeHtml(b.filename)}')">Eliminar</button>
+                        <button class="btn btn-warning" style="padding: 4px 10px; font-size: 11px;" onclick="restoreBackup('${attrJsStr(b.filename)}')">Restaurar</button>
+                        <button class="btn btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="deleteBackup('${attrJsStr(b.filename)}')">Eliminar</button>
                     </div>
                 </td>
             `;
@@ -1135,6 +1186,12 @@ async function saveTaskSettings() {
         auto_restart_hours: parseInt(getVal("task-restart-hours", "0")) || 0
     };
 
+    const btn = document.getElementById("btn-save-tasks");
+    if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = "0.6";
+        btn.querySelector("span").textContent = "Guardando...";
+    }
     try {
         const res = await fetch("/api/tasks/config", {
             method: "POST",
@@ -1144,12 +1201,113 @@ async function saveTaskSettings() {
         const data = await res.json();
         if (data.success) {
             showToast("Horarios y automatizaciones guardados con éxito", "success");
+            const savedEl = document.getElementById("tasks-last-saved");
+            if (savedEl) {
+                const now = new Date();
+                const hh = String(now.getHours()).padStart(2, "0");
+                const mm = String(now.getMinutes()).padStart(2, "0");
+                const ss = String(now.getSeconds()).padStart(2, "0");
+                savedEl.textContent = `✓ Guardado ${hh}:${mm}:${ss} (se aplica en ≤30 s)`;
+            }
+            // Recargar desde el servidor para reflejar exactamente lo persistido
+            await loadTaskSettings();
+            await loadTasksStatus();
         } else {
             showToast("Error al guardar tareas programadas.", "error");
         }
     } catch (e) {
         showToast("Error de conexión al guardar tareas.", "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = "";
+            btn.querySelector("span").textContent = "Guardar Horarios";
+        }
     }
+}
+
+// --- Estado en tiempo real del planificador de tareas ---
+function fmtCountdown(sec) {
+    if (sec === null || sec === undefined || sec < 0) return "--";
+    if (sec === 0) return "ahora";
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return `en ${h}h ${m}m`;
+    if (m > 0) return `en ${m}m ${s}s`;
+    return `en ${s}s`;
+}
+
+async function loadTasksStatus() {
+    const el = (id) => document.getElementById(id);
+    try {
+        const res = await fetch("/api/tasks/status");
+        if (!res.ok) return;
+        const s = await res.json();
+        const cfg = s.config || {};
+        const sch = s.schedule || {};
+
+        // Píldora de estado del planificador
+        const dot = el("ts-status-dot");
+        if (dot) dot.style.background = s.running ? "#3fb950" : (s.errors ? "#f85149" : "#d29922");
+        if (el("ts-running")) el("ts-running").textContent = s.running ? "ACTIVO" : "DETENIDO";
+        if (el("ts-ticks")) el("ts-ticks").textContent = s.ticks;
+        if (el("ts-errors")) {
+            el("ts-errors").textContent = s.errors;
+            el("ts-errors").style.color = s.errors ? "#f85149" : "";
+        }
+
+        // Horario / Power schedule
+        const schState = cfg.schedule_enabled ? `Activo (${sch.start} – ${sch.stop})` : "Desactivado (24/7)";
+        if (el("ts-schedule")) el("ts-schedule").textContent = schState;
+        if (el("ts-power-event")) {
+            let lastEv = "";
+            if (sch.last_event) {
+                lastEv = ` · último evento: ${sch.last_event}`;
+                if (sch.last_event_at) lastEv += ` (${sch.last_event_at})`;
+            }
+            el("ts-power-event").textContent = lastEv;
+        }
+
+        // Respaldo
+        if (el("ts-backup")) {
+            el("ts-backup").textContent = cfg.backup_enabled
+                ? `activo cada ${cfg.auto_backup_interval_hours}h · último: ${s.last_backup || "—"} · próximo ${fmtCountdown(s.next_backup_seconds)}`
+                : "desactivado";
+        }
+        // Dino Wipe
+        if (el("ts-wipe")) {
+            el("ts-wipe").textContent = cfg.auto_dino_wipe_hours
+                ? `cada ${cfg.auto_dino_wipe_hours}h · último: ${s.last_dino_wipe || "—"} · próximo ${fmtCountdown(s.next_dino_wipe_seconds)}`
+                : "desactivado";
+        }
+        // Reinicio
+        if (el("ts-restart")) {
+            el("ts-restart").textContent = cfg.auto_restart_hours
+                ? `cada ${cfg.auto_restart_hours}h · último: ${s.last_restart || "—"} · próximo ${fmtCountdown(s.next_restart_seconds)}`
+                : "desactivado";
+        }
+        if (el("ts-cleanup")) el("ts-cleanup").textContent = s.last_cleanup || "pendiente (cada 24h)";
+        if (el("ts-error-msg")) el("ts-error-msg").textContent = s.last_error ? `⚠ último error: ${s.last_error}` : "";
+    } catch (e) {
+        console.error("Error cargando estado de tareas:", e);
+    }
+}
+
+let tasksStatusTimer = null;
+function stopTasksStatusPolling() {
+    if (tasksStatusTimer) {
+        clearTimeout(tasksStatusTimer);
+        tasksStatusTimer = null;
+    }
+}
+
+async function pollTasksStatusIfActive() {
+    stopTasksStatusPolling();
+    const pane = document.getElementById("tab-tasks");
+    if (!pane || !pane.classList.contains("active")) return;
+    await loadTasksStatus();
+    tasksStatusTimer = setTimeout(pollTasksStatusIfActive, 20000);
 }
 
 async function triggerRestartSafeModal() {
@@ -1597,7 +1755,7 @@ async function loadClusterInstances() {
                             <span>Administrar</span>
                         </button>
                         ${!inst.is_primary ? `
-                            <button class="action-icon-btn" onclick="deleteClusterInstance('${inst.id}', '${inst.name}')" title="Eliminar del clúster" style="padding: 7px 10px; color: #f85149; border: 1px solid rgba(248, 81, 73, 0.3); border-radius: 6px; margin-left: auto;">
+                            <button class="action-icon-btn" onclick="deleteClusterInstance('${attrJsStr(inst.id)}', '${attrJsStr(inst.name)}')" title="Eliminar del clúster" style="padding: 7px 10px; color: #f85149; border: 1px solid rgba(248, 81, 73, 0.3); border-radius: 6px; margin-left: auto;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             </button>
                         ` : ''}
@@ -1655,7 +1813,7 @@ async function loadClusterTributes() {
                 <td>${t.size_kb} KB</td>
                 <td>${t.updated_at}</td>
                 <td style="text-align: right;">
-                    <button class="btn btn-danger" style="padding: 3px 8px; font-size: 0.72rem;" onclick="deleteTribute('${t.filename}')" title="Eliminar si está corrupto o atascado">
+                    <button class="btn btn-danger" style="padding: 3px 8px; font-size: 0.72rem;" onclick="deleteTribute('${attrJsStr(t.filename)}')" title="Eliminar si está corrupto o atascado">
                         Eliminar
                     </button>
                 </td>
@@ -1704,6 +1862,7 @@ function onSwitchClusterServer(instanceId) {
         try { ws.close(); } catch(e) {}
         ws = null;
     }
+    wsShouldReconnect = true;
     const consoleOut = document.getElementById("console-output");
     if (consoleOut) {
         const nodeTitle = targetInst ? targetInst.name : instanceId;
@@ -2176,35 +2335,6 @@ function filterConsoleLogs(term) {
     }
 }
 
-// --- HISTORIAL DE AUDITORÍA Y ACTIVIDAD ---
-async function loadActivityLogs() {
-    const tbody = document.getElementById("activity-log-body");
-    if (!tbody) return;
-    try {
-        const res = await fetch("/api/activity");
-        const data = await res.json();
-        const activities = data.activities || [];
-
-        if (activities.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 14px; color: var(--text-dim);">No hay registros de actividad recientes.</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = activities.slice(0, 30).map(act => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                <td style="padding: 8px 14px; color: var(--text-dim); font-family: var(--font-mono); font-size: 0.78rem;">${act.timestamp}</td>
-                <td style="padding: 8px 14px;">
-                    <span class="badge" style="background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3); font-size: 0.72rem; padding: 2px 6px;">${act.category}</span>
-                </td>
-                <td style="padding: 8px 14px; font-weight: 600; color: #c9d1d9;">${act.user}</td>
-                <td style="padding: 8px 14px; color: #8b949e;">${act.message}</td>
-            </tr>
-        `).join("");
-    } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 14px; color: #ff7b72;">Error al cargar el historial de actividad.</td></tr>`;
-    }
-}
-
 // --- Webhooks de Discord (Dockraft Style) ---
 async function loadWebhookSettings() {
     try {
@@ -2342,14 +2472,14 @@ function renderActivityLogs(logs) {
         const color = categoryColors[item.category] || "#8b949e";
         return `
             <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 8px 14px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">${item.timestamp}</td>
+                <td style="padding: 8px 14px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">${escapeHtml(item.timestamp)}</td>
                 <td style="padding: 8px 14px; white-space: nowrap;">
                     <span style="font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.06); color: ${color}; border: 1px solid ${color}44;">
-                        ${item.category}
+                        ${escapeHtml(item.category)}
                     </span>
                 </td>
-                <td style="padding: 8px 14px; color: var(--text-color); font-weight: 500; font-size: 0.8rem; white-space: nowrap;">${item.user || "Sistema"}</td>
-                <td style="padding: 8px 14px; color: var(--text-muted); font-size: 0.82rem; word-break: break-word;">${item.message}</td>
+                <td style="padding: 8px 14px; color: var(--text-color); font-weight: 500; font-size: 0.8rem; white-space: nowrap;">${escapeHtml(item.user || "Sistema")}</td>
+                <td style="padding: 8px 14px; color: var(--text-muted); font-size: 0.82rem; word-break: break-word;">${escapeHtml(item.message)}</td>
             </tr>
         `;
     }).join("");

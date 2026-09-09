@@ -10,10 +10,29 @@
         Control de horario de encendido/apagado (Power Schedule), respaldos automáticos, dino wipes y reinicios programados.
       </p>
     </div>
-    <button class="btn btn-primary" onclick="saveTaskSettings()" style="padding: 7px 18px; font-size: 0.84rem;">
+    <button class="btn btn-primary" id="btn-save-tasks" onclick="saveTaskSettings()" style="padding: 7px 18px; font-size: 0.84rem;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       <span>Guardar Horarios</span>
     </button>
+    <span id="tasks-last-saved" style="font-size: 0.75rem; color: var(--text-dim);"></span>
+  </div>
+
+  <!-- Estado en tiempo real del Planificador de Tareas -->
+  <div class="card" style="padding: 14px 18px; margin-bottom: 18px; background: var(--bg-subtle);">
+    <div style="display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; font-size: 0.82rem;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #8b949e; display: inline-block;" id="ts-status-dot"></span>
+        <strong>Planificador:</strong>
+        <span id="ts-running">--</span>
+        <span style="color: var(--text-dim);">(ciclos: <span id="ts-ticks">0</span> · errores: <span id="ts-errors">0</span>)</span>
+      </div>
+      <div><strong>Horario:</strong> <span id="ts-schedule">--</span> <span style="color: var(--text-dim);" id="ts-power-event"></span></div>
+      <div><strong>Respaldo auto:</strong> <span id="ts-backup">--</span></div>
+      <div><strong>Dino Wipe:</strong> <span id="ts-wipe">--</span></div>
+      <div><strong>Reinicio auto:</strong> <span id="ts-restart">--</span></div>
+      <div><strong>Limpieza logs:</strong> <span id="ts-cleanup">--</span></div>
+      <div style="color: var(--text-dim);" id="ts-error-msg"></div>
+    </div>
   </div>
 
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 16px; align-items: stretch;">

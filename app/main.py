@@ -3,6 +3,7 @@ import json
 import shutil
 import os
 import asyncio
+import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Dict, Any, Optional, List
@@ -43,6 +44,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        if request.url.scheme == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         if request.url.path.startswith("/static/"):
             response.headers["Cache-Control"] = "no-cache, must-revalidate"
         return response
@@ -51,6 +55,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Ciclo de vida de la aplicación ARK Server Manager."""
+    # Configurar logging para que los módulos (task_scheduler, rcon, etc.)
+    # muestren su actividad en los logs del contenedor (nivel INFO).
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+    # Evitar ruido por cada request HTTP de httpx (webhooks)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     metrics_manager.start()
     task_scheduler.start_loop()
     player_manager.start_monitor()
@@ -272,6 +284,7 @@ async def login_post(request: Request, response: Response, username: str = Form(
             key=SESSION_COOKIE_NAME,
             value=token,
             httponly=True,
+            secure=(request.url.scheme == "https"),
             samesite="lax",
             max_age=3600  # 60 minutos de caducidad
         )
@@ -515,6 +528,11 @@ async def api_get_mods():
 async def api_save_mods(req: ModsUpdateRequest):
     """Guarda la lista de mods en la configuración activa y arkmanager.cfg."""
     raw_mods = ",".join([m.strip() for m in req.mod_ids.split(",") if m.strip()])
+    # Validar formato: los IDs de Steam Workshop son numéricos. Esto evita inyección
+    # de directivas en /etc/arkmanager/arkmanager.cfg a través del campo de mods.
+    for token in raw_mods.split(","):
+        if not token.strip().isdigit():
+            return {"success": False, "error": "La lista de mods solo puede contener IDs numéricos separados por comas."}
     settings.runtime_config["mod_ids"] = raw_mods
     settings.save_runtime_config({"mod_ids": raw_mods})
 
@@ -598,7 +616,7 @@ async def api_player_unban(req: KickBanRequest):
 # --- Endpoints de Métricas ---
 @app.get("/api/metrics", dependencies=[Depends(require_auth)])
 async def api_metrics():
-    curr = metrics_manager.get_current_metrics()
+    curr = dict(metrics_manager.get_current_metrics())
     try:
         players = await player_manager.get_online_players()
         curr["players_online"] = len(players)
@@ -691,6 +709,11 @@ async def api_save_tasks_config(payload: Dict[str, Any]):
     activity_manager.log("Tareas", "Configuración de horarios y tareas automáticas actualizada")
     return {"success": True}
 
+@app.get("/api/tasks/status", dependencies=[Depends(require_auth)])
+async def api_tasks_status():
+    """Estado en tiempo real del planificador: bucle activo, últimas ejecuciones y próximas."""
+    return task_scheduler.get_status()
+
 
 
 # --- Endpoints de Backups ---
@@ -772,9 +795,7 @@ async def file_unzip(req: UnzipRequest):
 
 @app.get("/api/files/download", dependencies=[Depends(require_auth)])
 async def file_download(path: str = Query(...)):
-    safe_path = file_manager._resolve_safe_path(path)
-    if not safe_path.exists() or not safe_path.is_file():
-        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+    safe_path = file_manager.resolve_download(path)
     return FileResponse(
         str(safe_path),
         filename=safe_path.name,

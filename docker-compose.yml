@@ -20,7 +20,10 @@ services:
       # --- Zona Horaria del Contenedor ---
       - TZ=America/Guayaquil
 
-      # --- Acceso al Panel Web (Opcional - por defecto: admin / adminpassword) ---
+      # --- Acceso al Panel Web (¡CAMBIA estas credenciales por defecto!) ---
+      # El panel se sirve en HTTP sin cifrar y se expone en 0.0.0.0:8080.
+      # No lo expongas a Internet con las contraseñas por defecto; usa un proxy
+      # inverso con TLS y contraseñas largas/aleatorias.
       - PANEL_USER=admin
       - PANEL_PASSWORD=adminpassword
 
