@@ -1503,9 +1503,12 @@ function onMapSelectionChange(mapId) {
 async function submitNewInstance() {
     const name = document.getElementById("add-inst-name").value.trim();
     const map = document.getElementById("add-inst-map").value;
-    const server_port = parseInt(document.getElementById("add-inst-port").value);
-    const query_port = parseInt(document.getElementById("add-inst-query").value);
-    const rcon_port = parseInt(document.getElementById("add-inst-rcon").value);
+    const portVal = parseInt(document.getElementById("add-inst-port").value);
+    const queryVal = parseInt(document.getElementById("add-inst-query").value);
+    const rconVal = parseInt(document.getElementById("add-inst-rcon").value);
+    const server_port = isNaN(portVal) ? undefined : portVal;
+    const query_port = isNaN(queryVal) ? undefined : queryVal;
+    const rcon_port = isNaN(rconVal) ? undefined : rconVal;
     const max_players = parseInt(document.getElementById("add-inst-players").value) || 20;
     const alt_save_dir = document.getElementById("add-inst-altsave").value.trim() || map;
 

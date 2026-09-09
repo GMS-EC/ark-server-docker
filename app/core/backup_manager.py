@@ -77,17 +77,32 @@ class BackupManager:
             target_arks.mkdir(parents=True, exist_ok=True)
             target_config.mkdir(parents=True, exist_ok=True)
 
-            source_arks = self.saved_dir / "SavedArks"
             source_config = self.saved_dir / "Config" / "LinuxServer"
             source_savegames = self.saved_dir / "SaveGames"
 
-            # Copiar archivos de mapa, perfiles y tribus
-            if source_arks.exists():
-                for f in source_arks.iterdir():
-                    if f.is_file():
-                        # Omitir autoguardados periódicos muy pesados con fecha antigua si se desea o copiar mapa principal
-                        if f.name.endswith(".ark") or f.name.endswith(".arkprofile") or f.name.endswith(".arktribe"):
-                            shutil.copy2(f, target_arks / f.name)
+            # Copiar archivos de mapa, perfiles y tribus desde cualquier directorio de guardado válido
+            possible_ark_dirs = [
+                self.saved_dir / "SavedArks",
+                self.saved_dir / f"{settings.world}SavedArks",
+                self.saved_dir / f"{settings.world.replace('_P', '')}SavedArks",
+                self.saved_dir / settings.world / "SavedArks",
+                self.saved_dir / settings.world,
+            ]
+            if self.saved_dir.exists():
+                for sub in self.saved_dir.iterdir():
+                    if sub.is_dir() and (sub.name.endswith("SavedArks") or sub.name == settings.world):
+                        if sub not in possible_ark_dirs:
+                            possible_ark_dirs.append(sub)
+
+            copied_save_files = set()
+            for s_dir in possible_ark_dirs:
+                if s_dir.exists() and s_dir.is_dir():
+                    for f in s_dir.iterdir():
+                        if f.is_file():
+                            if f.name.endswith((".ark", ".arkprofile", ".arktribe", ".profilebak", ".tribebak")):
+                                if f.name not in copied_save_files:
+                                    shutil.copy2(f, target_arks / f.name)
+                                    copied_save_files.add(f.name)
 
             # Copiar Game.ini y GameUserSettings.ini
             if source_config.exists():
@@ -181,6 +196,20 @@ class BackupManager:
                             elif f in ("Game.ini", "GameUserSettings.ini"):
                                 shutil.copy2(src_p, target_config / f)
                     shutil.rmtree(temp_dir, ignore_errors=True)
+
+            # Sincronizar copias si el mapa activo utiliza nombre de carpeta personalizado (ej: ScorchedEarth_PSavedArks)
+            clean_world = settings.world.replace("_P", "")
+            if clean_world.lower() != "theisland":
+                custom_saved_dir = shooter_dir / "Saved" / f"{clean_world}SavedArks"
+                source_arks = shooter_dir / "Saved" / "SavedArks"
+                if source_arks.exists() and source_arks.is_dir():
+                    custom_saved_dir.mkdir(parents=True, exist_ok=True)
+                    for f in source_arks.iterdir():
+                        if f.is_file() and not (custom_saved_dir / f.name).exists():
+                            try:
+                                shutil.copy2(f, custom_saved_dir / f.name)
+                            except Exception:
+                                pass
 
         try:
             await loop.run_in_executor(None, _do_extract)

@@ -272,9 +272,9 @@ class ClusterManager:
 
         # Asignar o validar puertos
         ports = self.suggest_next_ports()
-        server_port = int(data.get("server_port", ports["server_port"]))
-        query_port = int(data.get("query_port", ports["query_port"]))
-        rcon_port = int(data.get("rcon_port", ports["rcon_port"]))
+        server_port = int(data.get("server_port") or ports["server_port"])
+        query_port = int(data.get("query_port") or ports["query_port"])
+        rcon_port = int(data.get("rcon_port") or ports["rcon_port"])
 
         # Validar colisión de puertos
         for existing_id, existing in self._instances.items():
@@ -297,7 +297,7 @@ class ClusterManager:
             "rcon_port": rcon_port,
             "rcon_password": data.get("rcon_password", settings.admin_ark_password),
             "server_password": data.get("server_password", settings.server_password),
-            "max_players": int(data.get("max_players", settings.max_players)),
+            "max_players": int(data.get("max_players") or settings.max_players),
             "alt_save_dir": alt_save_dir,
             "is_primary": False,
             "enabled": True,
@@ -469,6 +469,13 @@ class ClusterManager:
         except Exception:
             pass
 
+        if shutil.which("arkmanager"):
+            try:
+                stop_proc = await asyncio.create_subprocess_exec("arkmanager", "stop", "--saveworld", f"@{instance_id}")
+                await asyncio.wait_for(stop_proc.wait(), timeout=15)
+            except Exception:
+                pass
+
         proc = self._processes.get(instance_id)
         if proc and proc.returncode is None:
             try:
@@ -477,7 +484,12 @@ class ClusterManager:
             except asyncio.TimeoutError:
                 proc.kill()
             self._processes.pop(instance_id, None)
-            return True
+
+        try:
+            await rcon.disconnect()
+        except Exception:
+            pass
+
         return True
 
     async def restart_instance(self, instance_id: str) -> bool:
@@ -577,6 +589,7 @@ class ClusterManager:
                 continue
             alt_save = inst.get("alt_save_dir", inst.get("map"))
             alt_config_dir = saved_root / alt_save / "Config" / "LinuxServer"
+            alt_config_dir.mkdir(parents=True, exist_ok=True)
             if alt_config_dir.exists():
                 gus = alt_config_dir / "GameUserSettings.ini"
                 game = alt_config_dir / "Game.ini"
