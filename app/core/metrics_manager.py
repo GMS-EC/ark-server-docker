@@ -4,7 +4,7 @@ import asyncio
 import psutil
 from pathlib import Path
 from collections import deque
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set
 
 from app.config import settings
 from app.core.process_manager import process_manager
@@ -74,6 +74,9 @@ class MetricsManager:
         self.history: deque = deque(maxlen=max_history)
         self._task: Optional[asyncio.Task] = None
         self._running = False
+        self._proc_cache: Dict[int, psutil.Process] = {}
+        self._last_metrics: Optional[Dict[str, Any]] = None
+        self._last_collected_at: float = 0.0
 
     def start(self):
         if not self._running:
@@ -101,7 +104,15 @@ class MetricsManager:
             await asyncio.sleep(2)
 
     def get_current_metrics(self) -> Dict[str, Any]:
-        """Calcula el estado actual de recursos."""
+        """Devuelve el estado actual de recursos con caché de intervalo mínimo para asegurar deltas precisos de CPU."""
+        now = time.time()
+        if self._last_metrics is None or (now - self._last_collected_at >= 1.2):
+            self._last_metrics = self._collect_metrics()
+            self._last_collected_at = now
+        return self._last_metrics
+
+    def _collect_metrics(self) -> Dict[str, Any]:
+        """Calcula el estado actual de recursos e inspecciona procesos de ARK."""
         vm = psutil.virtual_memory()
         cpu_pct = psutil.cpu_percent(interval=None)
 
@@ -120,48 +131,61 @@ class MetricsManager:
         ram_used_gb = round(used_ram_bytes / (1024**3), 2)
         ram_pct = round((used_ram_bytes / total_ram_bytes) * 100, 1) if total_ram_bytes > 0 else 0.0
 
-        # 2. Medir memoria y CPU del proceso real ShooterGameServer (compatible con comm de 15 caracteres en Linux)
-        ark_ram_bytes = 0
-        ark_cpu_pct = 0.0
+        # 2. Localizar procesos pertenecientes al servidor de ARK (runner y ShooterGameServer)
+        target_pids: Set[int] = set()
+        status = process_manager.get_status()
 
-        # Prioridad A: Árbol de procesos del subproceso runner de ARK
-        if process_manager.process and process_manager.process.returncode is None:
+        if status not in ("OFFLINE", "INSTALLING"):
+            # A) Árbol de procesos del subproceso runner de ARK (start.sh, arkmanager, steamcmd, ShooterGameServer)
+            if process_manager.process and process_manager.process.returncode is None:
+                runner_pid = process_manager.process.pid
+                target_pids.add(runner_pid)
+                try:
+                    runner_proc = self._proc_cache.get(runner_pid) or psutil.Process(runner_pid)
+                    for child in runner_proc.children(recursive=True):
+                        target_pids.add(child.pid)
+                except Exception:
+                    pass
+
+            # B) Búsqueda global en el sistema de procesos ShooterGameServer
             try:
-                parent = psutil.Process(process_manager.process.pid)
-                for child in parent.children(recursive=True):
-                    try:
-                        c_name = (child.name() or '').lower()
-                        c_cmd = (' '.join(child.cmdline() or [])).lower()
-                        if 'shootergame' in c_name or 'shootergame' in c_cmd:
-                            minfo = child.memory_info()
-                            if minfo:
-                                ark_ram_bytes += minfo.rss
-                            c_cpu = child.cpu_percent(interval=None)
-                            if c_cpu:
-                                ark_cpu_pct += c_cpu
-                    except Exception:
-                        pass
+                for p in psutil.process_iter(['pid', 'name', 'cmdline']):
+                    pname = (p.info.get('name') or '').lower()
+                    if pname in ('python', 'python.exe', 'python3', 'bash', 'sh', 'powershell.exe', 'pwsh.exe', 'cmd.exe'):
+                        continue
+                    pcmd = (' '.join(p.info.get('cmdline') or [])).lower()
+                    is_server = 'shootergameserver' in pname or pname.startswith('shootergameserv') or 'shootergameserver' in pcmd
+                    if is_server:
+                        target_pids.add(p.info['pid'])
             except Exception:
                 pass
 
-        # Prioridad B: Búsqueda global en process_iter con coincidencia case-insensitive
-        if ark_ram_bytes == 0:
-            for p in psutil.process_iter(['pid', 'name', 'cmdline', 'memory_info']):
-                try:
-                    pname = (p.info.get('name') or '').lower()
-                    pcmd = (' '.join(p.info.get('cmdline') or [])).lower()
-                    if 'shootergame' in pname or 'shootergame' in pcmd:
-                        minfo = p.info.get('memory_info')
-                        if minfo:
-                            ark_ram_bytes += minfo.rss
-                        try:
-                            p_cpu = p.cpu_percent(interval=None)
-                            if p_cpu:
-                                ark_cpu_pct += p_cpu
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
+        ark_ram_bytes = 0
+        ark_raw_cpu = 0.0
+
+        for pid in target_pids:
+            try:
+                if pid not in self._proc_cache:
+                    proc = psutil.Process(pid)
+                    proc.cpu_percent(interval=None)  # Inicializa el temporizador delta psutil
+                    self._proc_cache[pid] = proc
+                else:
+                    proc = self._proc_cache[pid]
+
+                minfo = proc.memory_info()
+                if minfo:
+                    ark_ram_bytes += minfo.rss
+
+                c_cpu = proc.cpu_percent(interval=None)
+                if c_cpu is not None and c_cpu > 0:
+                    ark_raw_cpu += c_cpu
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                self._proc_cache.pop(pid, None)
+
+        # Limpiar del caché los procesos finalizados
+        for cached_pid in list(self._proc_cache.keys()):
+            if cached_pid not in target_pids:
+                self._proc_cache.pop(cached_pid, None)
 
         # 3. Espacio en disco
         disk_total_gb = 0.0
@@ -175,25 +199,28 @@ class MetricsManager:
         except Exception:
             pass
 
-        # 4. Uptime y cálculo exclusivo de CPU de ARK
+        # 4. Uptime y cálculo de CPU de ARK
         uptime_seconds = 0
-        status = process_manager.get_status()
         if process_manager.started_at and status == "RUNNING":
             uptime_seconds = int(time.time() - process_manager.started_at)
 
-        # Si el servidor de ARK está apagado, su consumo es estrictamente 0.0%
-        # No caer al host_cpu_percent para evitar brincos del VPS en la interfaz
+        num_cores = psutil.cpu_count() or 1
+        ark_cpu_pct = min(100.0, ark_raw_cpu / num_cores)
+
         if status in ("OFFLINE", "INSTALLING"):
             cpu_display = 0.0
             ark_ram_bytes = 0
+            self._proc_cache.clear()
         else:
             cpu_display = round(ark_cpu_pct, 1)
 
         return {
             "status": status,
             "cpu_percent": cpu_display,
-            "ark_cpu_percent": round(ark_cpu_pct, 1),
+            "ark_cpu_percent": cpu_display,
+            "ark_cpu_raw": round(ark_raw_cpu, 1),
             "host_cpu_percent": round(cpu_pct, 1),
+            "num_cores": num_cores,
             "ram_total_gb": ram_total_gb,
             "ram_used_gb": ram_used_gb,
             "ram_percent": ram_pct,

@@ -74,10 +74,13 @@ class ProcessManager:
         try:
             main_port_str = f"Port={settings.server_port}"
             for p in psutil.process_iter(['name', 'cmdline']):
-                name = p.info.get('name') or ''
+                name = (p.info.get('name') or '').lower()
+                if name in ('python', 'python.exe', 'python3', 'bash', 'sh', 'powershell.exe', 'pwsh.exe', 'cmd.exe'):
+                    continue
                 cmdline_list = p.info.get('cmdline') or []
-                cmdline = ' '.join(cmdline_list)
-                if 'shootergame' in name.lower() or 'shootergame' in cmdline.lower():
+                cmdline = ' '.join(cmdline_list).lower()
+                is_server = 'shootergameserver' in name or name.startswith('shootergameserv') or 'shootergameserver' in cmdline
+                if is_server:
                     has_other_port = any("Port=" in arg and main_port_str not in arg for arg in cmdline_list)
                     if not has_other_port:
                         return True
@@ -91,10 +94,13 @@ class ProcessManager:
         try:
             main_port_str = f"Port={settings.server_port}"
             for p in psutil.process_iter(['pid', 'name', 'cmdline']):
-                name = p.info.get('name') or ''
+                name = (p.info.get('name') or '').lower()
+                if name in ('python', 'python.exe', 'python3', 'bash', 'sh', 'powershell.exe', 'pwsh.exe', 'cmd.exe'):
+                    continue
                 cmdline_list = p.info.get('cmdline') or []
-                cmdline = ' '.join(cmdline_list)
-                if 'shootergame' in name.lower() or 'shootergame' in cmdline.lower():
+                cmdline = ' '.join(cmdline_list).lower()
+                is_server = 'shootergameserver' in name or name.startswith('shootergameserv') or 'shootergameserver' in cmdline
+                if is_server:
                     has_other_port = any("Port=" in arg and main_port_str not in arg for arg in cmdline_list)
                     if not has_other_port:
                         return p.info['pid']
