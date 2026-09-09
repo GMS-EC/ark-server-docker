@@ -12,7 +12,7 @@ services:
     # Detectado automáticamente por el panel vía Cgroups v1/v2.
     mem_limit: 8g
     ports:
-      - "${PANEL_PORT:-8080}:8080"      # Panel Web ARK Server Manager (HTTP)
+      - "8080:8080"                    # Panel Web ARK Server Manager (HTTP)
       - "7777-7800:7777-7800/udp"      # Puertos de Juego UDP (Principal + hasta 12 Mapas Clúster)
       - "27015-27035:27015-27035/udp"  # Puertos Query Steam UDP (Buscador de Servidores)
       - "27020-27035:27020-27035/tcp"  # Puertos RCON TCP (Consola Remota y Administración)
