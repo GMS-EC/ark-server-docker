@@ -120,25 +120,48 @@ class MetricsManager:
         ram_used_gb = round(used_ram_bytes / (1024**3), 2)
         ram_pct = round((used_ram_bytes / total_ram_bytes) * 100, 1) if total_ram_bytes > 0 else 0.0
 
-        # 2. Medir memoria y CPU del proceso real ShooterGameServer directamente
+        # 2. Medir memoria y CPU del proceso real ShooterGameServer (compatible con comm de 15 caracteres en Linux)
         ark_ram_bytes = 0
         ark_cpu_pct = 0.0
-        for p in psutil.process_iter(['pid', 'name', 'cmdline', 'memory_info']):
+
+        # Prioridad A: Árbol de procesos del subproceso runner de ARK
+        if process_manager.process and process_manager.process.returncode is None:
             try:
-                pname = p.info.get('name') or ''
-                pcmd = ' '.join(p.info.get('cmdline') or [])
-                if 'ShooterGameServer' in pname or 'ShooterGameServer' in pcmd:
-                    minfo = p.info.get('memory_info')
-                    if minfo:
-                        ark_ram_bytes += minfo.rss
+                parent = psutil.Process(process_manager.process.pid)
+                for child in parent.children(recursive=True):
                     try:
-                        p_cpu = p.cpu_percent(interval=None)
-                        if p_cpu:
-                            ark_cpu_pct += p_cpu
+                        c_name = (child.name() or '').lower()
+                        c_cmd = (' '.join(child.cmdline() or [])).lower()
+                        if 'shootergame' in c_name or 'shootergame' in c_cmd:
+                            minfo = child.memory_info()
+                            if minfo:
+                                ark_ram_bytes += minfo.rss
+                            c_cpu = child.cpu_percent(interval=None)
+                            if c_cpu:
+                                ark_cpu_pct += c_cpu
                     except Exception:
                         pass
             except Exception:
                 pass
+
+        # Prioridad B: Búsqueda global en process_iter con coincidencia case-insensitive
+        if ark_ram_bytes == 0:
+            for p in psutil.process_iter(['pid', 'name', 'cmdline', 'memory_info']):
+                try:
+                    pname = (p.info.get('name') or '').lower()
+                    pcmd = (' '.join(p.info.get('cmdline') or [])).lower()
+                    if 'shootergame' in pname or 'shootergame' in pcmd:
+                        minfo = p.info.get('memory_info')
+                        if minfo:
+                            ark_ram_bytes += minfo.rss
+                        try:
+                            p_cpu = p.cpu_percent(interval=None)
+                            if p_cpu:
+                                ark_cpu_pct += p_cpu
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
 
         # 3. Espacio en disco
         disk_total_gb = 0.0

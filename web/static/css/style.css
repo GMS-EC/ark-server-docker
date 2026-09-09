@@ -62,14 +62,14 @@ body {
 .header {
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
-  padding: 10px 20px;
+  padding: 8px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: sticky;
   top: 0;
   z-index: 100;
-  gap: 12px;
+  gap: 8px;
 }
 
 .logo-container {
@@ -117,9 +117,9 @@ body {
 
 .nav-tabs {
   display: flex;
-  gap: 3px;
+  gap: 2px;
   background-color: var(--bg-main);
-  padding: 3px;
+  padding: 2px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   max-width: 100%;
@@ -140,15 +140,15 @@ body {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: var(--radius-sm);
   font-family: var(--font-ui);
-  font-size: 0.8rem;
+  font-size: 0.77rem;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   white-space: nowrap;
   flex-shrink: 0;
   transition: all 0.15s ease;
@@ -2291,8 +2291,8 @@ input:checked + .slider:before {
    Mobile & PWA Responsive Layout Overrides
    ========================================================================== */
 
-/* Tablets, Laptops & Responsive Viewports (<= 1200px) */
-@media (max-width: 1200px) {
+/* Tablets, Laptops & Responsive Viewports (<= 1260px) */
+@media (max-width: 1260px) {
   .header {
     padding: 10px 14px 6px 14px;
     flex-wrap: wrap;

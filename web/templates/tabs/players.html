@@ -1,25 +1,31 @@
 <!-- TAB: SUPERVIVIENTES & MODERACIÓN (Dockraft Style) -->
-<div class="overview-banner" style="margin-bottom: 20px;">
-  <div class="overview-item">
-    <div class="overview-label">Supervivientes En Línea</div>
-    <div class="overview-val" style="color: #3fb950; display: flex; align-items: center; gap: 8px;">
-      <span class="status-dot online" style="width: 8px; height: 8px;"></span>
-      <span id="players-online-stat">0 / {{ max_players }}</span>
+<div class="card" style="margin-bottom: 18px; padding: 16px 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">Supervivientes En Línea</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="status-dot online" style="width: 8px; height: 8px;"></span>
+          <span id="players-online-stat" style="font-size: 1.3rem; font-weight: 700; color: #3fb950; font-family: var(--font-mono);">0 / {{ max_players }}</span>
+        </div>
+      </div>
+      <div style="width: 1px; height: 36px; background: var(--border-color);"></div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">Registrados (Historial)</span>
+        <span id="players-history-stat" style="font-size: 1.3rem; font-weight: 700; color: #58a6ff; font-family: var(--font-mono);">0</span>
+      </div>
+      <div style="width: 1px; height: 36px; background: var(--border-color);"></div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">Sanciones Activas</span>
+        <span id="players-banned-stat" style="font-size: 1.3rem; font-weight: 700; color: #f85149; font-family: var(--font-mono);">0</span>
+      </div>
     </div>
-  </div>
-  <div class="overview-item">
-    <div class="overview-label">Supervivientes Registrados</div>
-    <div class="overview-val" id="players-history-stat" style="color: #79c0ff;">0</div>
-  </div>
-  <div class="overview-item">
-    <div class="overview-label">Sanciones Activas</div>
-    <div class="overview-val" id="players-banned-stat" style="color: #f85149;">0</div>
-  </div>
-  <div class="overview-item" style="display: flex; align-items: center; gap: 8px;">
-    <button type="button" class="btn btn-outline" onclick="triggerBroadcast()" title="Enviar mensaje global in-game a todos los jugadores" style="padding: 7px 14px; font-size: 0.82rem; border-color: #58a6ff; color: #79c0ff;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-      <span>Mensaje Global (Broadcast)</span>
-    </button>
+    <div>
+      <button type="button" class="btn btn-outline" onclick="triggerBroadcast()" title="Enviar mensaje global in-game a todos los jugadores" style="padding: 7px 14px; font-size: 0.82rem; border-color: rgba(56, 189, 248, 0.4); color: #79c0ff; display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <span>Transmisión Global</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -28,53 +34,49 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
       <!-- Selector de Vista Segmentado -->
-      <div class="player-segmented-tabs" style="display: inline-flex; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 3px; gap: 4px;">
+      <div class="player-segmented-tabs">
         <button type="button" class="player-seg-btn active" id="btn-tab-players-online" onclick="switchPlayerTab('online')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
           <span>En Línea</span>
-          <span class="badge" id="count-tab-online" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; font-size: 0.68rem; margin-left: 4px; padding: 2px 6px;">0</span>
+          <span class="badge" id="count-tab-online" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71;">0</span>
         </button>
         <button type="button" class="player-seg-btn" id="btn-tab-players-history" onclick="switchPlayerTab('history')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span>Historial & Sanciones</span>
-          <span class="badge" id="count-tab-history" style="background: rgba(121, 192, 255, 0.2); color: #79c0ff; font-size: 0.68rem; margin-left: 4px; padding: 2px 6px;">0</span>
+          <span class="badge" id="count-tab-history" style="background: rgba(121, 192, 255, 0.2); color: #79c0ff;">0</span>
         </button>
       </div>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-      <!-- Buscador en tiempo real -->
-      <div style="display: flex; align-items: center; position: relative; width: 260px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 10px; color: var(--text-dim); pointer-events: none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="players-search-input" class="form-input" placeholder="Buscar superviviente o SteamID..." style="font-size: 0.8rem; padding-left: 30px; height: 34px; width: 100%; border-radius: 6px;" oninput="filterPlayers(this.value)">
+    <!-- Buscador en tiempo real y botón de refrescar -->
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="position: relative; width: 260px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="players-search-input" class="form-input" placeholder="Buscar superviviente o SteamID..." oninput="filterPlayers(this.value)" style="padding-left: 32px; font-size: 0.8rem; height: 32px; width: 100%; border-radius: 6px;">
       </div>
-
-      <button class="btn btn-outline" onclick="loadPlayers()" title="Actualizar lista de supervivientes" style="padding: 6px 14px; font-size: 0.82rem; height: 34px; display: inline-flex; align-items: center; gap: 6px;">
+      <button type="button" class="btn btn-outline" onclick="loadPlayers()" title="Recargar lista de jugadores" style="padding: 5px 12px; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 6px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         <span>Actualizar</span>
       </button>
     </div>
   </div>
 
-  <!-- Contenedor de la Tabla de Jugadores -->
+  <!-- Tabla Responsiva de Jugadores -->
   <div class="table-container" style="overflow-x: auto;">
-    <table class="custom-table player-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+    <table class="custom-table" style="width: 100%; border-collapse: collapse; text-align: left;">
       <thead>
         <tr>
-          <th style="min-width: 220px;">Superviviente</th>
-          <th style="min-width: 180px;">Steam ID</th>
-          <th style="min-width: 160px;">Última Actividad</th>
+          <th style="min-width: 180px;">Superviviente</th>
+          <th style="min-width: 200px;">Steam ID</th>
+          <th style="min-width: 140px;">Última Actividad</th>
           <th style="min-width: 110px;">Estado</th>
-          <th style="min-width: 200px; text-align: right;">Acciones de Moderación</th>
+          <th style="text-align: right; min-width: 200px;">Acciones de Moderación</th>
         </tr>
       </thead>
       <tbody id="players-table-body">
         <tr>
-          <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 36px 20px;">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#484f58" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-              <span style="font-size: 0.88rem;">Cargando lista de supervivientes...</span>
-            </div>
+          <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 32px;">
+            Cargando supervivientes...
           </td>
         </tr>
       </tbody>

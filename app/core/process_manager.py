@@ -75,7 +75,7 @@ class ProcessManager:
                 name = p.info.get('name') or ''
                 cmdline_list = p.info.get('cmdline') or []
                 cmdline = ' '.join(cmdline_list)
-                if 'ShooterGameServer' in name or 'ShooterGameServer' in cmdline:
+                if 'shootergame' in name.lower() or 'shootergame' in cmdline.lower():
                     has_other_port = any("Port=" in arg and main_port_str not in arg for arg in cmdline_list)
                     if not has_other_port:
                         return True
@@ -92,7 +92,7 @@ class ProcessManager:
                 name = p.info.get('name') or ''
                 cmdline_list = p.info.get('cmdline') or []
                 cmdline = ' '.join(cmdline_list)
-                if 'ShooterGameServer' in name or 'ShooterGameServer' in cmdline:
+                if 'shootergame' in name.lower() or 'shootergame' in cmdline.lower():
                     has_other_port = any("Port=" in arg and main_port_str not in arg for arg in cmdline_list)
                     if not has_other_port:
                         return p.info['pid']

@@ -896,9 +896,13 @@ async function loadBackups() {
                 <td>${b.size_mb} MB</td>
                 <td>${b.created_at}</td>
                 <td>
-                    <a href="/api/backups/download/${b.filename}" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; text-decoration: none;">Descargar</a>
-                    <button class="btn btn-warning" style="padding: 4px 8px; font-size: 11px;" onclick="restoreBackup('${b.filename}')">Restaurar</button>
-                    <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteBackup('${b.filename}')">Eliminar</button>
+                    <div style="display: inline-flex; align-items: center; gap: 6px;">
+                        <a href="/api/backups/download/${encodeURIComponent(b.filename)}" class="btn btn-outline" title="Descargar copia de seguridad" download style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; color: #58a6ff; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08); text-decoration: none; border-radius: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </a>
+                        <button class="btn btn-warning" style="padding: 4px 10px; font-size: 11px;" onclick="restoreBackup('${escapeHtml(b.filename)}')">Restaurar</button>
+                        <button class="btn btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="deleteBackup('${escapeHtml(b.filename)}')">Eliminar</button>
+                    </div>
                 </td>
             `;
             tbody.appendChild(tr);
