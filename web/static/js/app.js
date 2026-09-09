@@ -1396,9 +1396,10 @@ function onSwitchClusterServer(instanceId) {
     const select = document.getElementById("cluster-server-select");
     if (select) select.value = instanceId;
 
+    let targetInst = null;
     // Actualizar datos del mapa y puertos en banner superior
     if (clusterData && clusterData.instances) {
-        const targetInst = clusterData.instances.find(i => i.id === instanceId);
+        targetInst = clusterData.instances.find(i => i.id === instanceId);
         if (targetInst) {
             const topPort = document.getElementById("top-server-port");
             if (topPort && targetInst.game_port) topPort.textContent = `${targetInst.game_port} (UDP)`;

@@ -28,6 +28,7 @@ class ProcessManager:
         self._log_file_task: Optional[asyncio.Task] = None
         self.started_at: Optional[float] = None
         self._intentional_stop: bool = False
+        self._server_up_detected: bool = False
         
         # Cliente RCON dedicado
         self.rcon = ArkRconClient(
@@ -268,6 +269,8 @@ class ProcessManager:
             if not line:
                 break
             decoded = line.decode("utf-8", errors="replace")
+            if "Server is up" in decoded or "Server is ready" in decoded:
+                self._server_up_detected = True
             await self.broadcast_log(decoded)
 
         await process.wait()
@@ -309,7 +312,9 @@ class ProcessManager:
             pass
 
     async def is_server_ready(self) -> bool:
-        """Comprueba si el servidor de ARK está listo conectándose al puerto RCON."""
+        """Comprueba si el servidor de ARK está listo conectándose al puerto RCON o por detección directa."""
+        if getattr(self, "_server_up_detected", False):
+            return True
         # 1. Intentar conectar al puerto RCON vía TCP
         try:
             _, writer = await asyncio.wait_for(

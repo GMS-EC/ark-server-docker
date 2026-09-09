@@ -64,6 +64,7 @@ async def lifespan(app: FastAPI):
             await asyncio.sleep(2)
             if process_manager.get_status() == "OFFLINE":
                 activity_manager.log("Servidor", "Inicio automático activado al arrancar ARK Server Manager")
+                await webhook_manager.notify_starting()
                 await process_manager.start_server()
         asyncio.create_task(_autostart())
 
