@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any
+from app.core.fs_utils import atomic_write_json
 
 from app.config import settings
 
@@ -36,8 +37,7 @@ class ActivityManager:
     def _save(self):
         try:
             self._purge_old()
-            with open(self._file, "w", encoding="utf-8") as f:
-                json.dump(self._logs, f, indent=2, ensure_ascii=False)
+            atomic_write_json(self._file, self._logs, indent=2)
         except Exception:
             pass
 

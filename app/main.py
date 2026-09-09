@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 from app.config import settings, BASE_DIR
 from app.core.security import (
-    create_session_token, verify_admin_credentials, is_authenticated,
+    create_session_token, verify_session_token, verify_admin_credentials, is_authenticated,
     require_auth, check_login_rate_limit, record_failed_login, reset_failed_login,
     SESSION_COOKIE_NAME
 )
@@ -69,14 +69,24 @@ async def lifespan(app: FastAPI):
     yield
     task_scheduler.stop_loop()
     metrics_manager.stop()
+    # Apagado seguro de ARK con guardado de mundo al detener el contenedor (SIGTERM)
+    if process_manager._is_ark_process_running():
+        try:
+            print("[ARK Server Manager] [SEGURIDAD] Contenedor deteniéndose. Ejecutando guardado de mundo (SaveWorld)...")
+            await process_manager.stop_server(grace_seconds=15)
+        except Exception as e:
+            print(f"[ARK Server Manager] Error durante guardado seguro al apagar: {e}")
     await process_manager.rcon.disconnect()
 
 
 app = FastAPI(
     title="ARK Server Manager",
     description="Panel Web Ultra-ligero para Servidor de ARK: Survival Evolved",
-    version="1.0.0",
-    lifespan=lifespan
+    version="2.0.0",
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
@@ -281,6 +291,13 @@ async def logout():
 # --- WebSocket de Consola en Tiempo Real (Soporta Instancia de Clúster) ---
 @app.websocket("/ws/console")
 async def websocket_console(websocket: WebSocket, instance: str = "main"):
+    # Protección de Seguridad: Validar autenticación de sesión
+    if settings.admin_password:
+        token = websocket.cookies.get(SESSION_COOKIE_NAME)
+        if not token or not verify_session_token(token):
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+
     await websocket.accept()
     if instance == "main":
         process_manager.connected_websockets.add(websocket)

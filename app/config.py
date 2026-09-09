@@ -3,6 +3,7 @@ import json
 import secrets
 from pathlib import Path
 from typing import Dict, Any
+from app.core.fs_utils import atomic_write_json
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -149,8 +150,7 @@ class Settings:
             except Exception:
                 pass
         try:
-            with open(self._config_file, "w", encoding="utf-8") as f:
-                json.dump(self.runtime_config, f, indent=2)
+            atomic_write_json(self._config_file, self.runtime_config, indent=2)
         except Exception as e:
             print(f"[Config] Error guardando ark_panel_config.json: {e}")
 
