@@ -17,7 +17,7 @@ services:
     stop_grace_period: 45s
     mem_limit: 12g
     ports:
-      - "8080:8080"        # Panel Web Principal
+      - "${PANEL_PORT:-8080}:8080" # Panel Web Principal
       - "7777:7777/udp"    # Juego
       - "7778:7778/udp"    # Raw UDP
       - "27015:27015/udp"  # Query Steam

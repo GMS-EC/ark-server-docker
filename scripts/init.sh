@@ -15,9 +15,16 @@ if [ -n "${PUID}" ] && [ -n "${PGID}" ]; then
     groupmod -o -g "${PGID}" steam 2>/dev/null || true
 fi
 
-# Crear directorios necesarios y ajustar permisos
+# Crear directorios necesarios y ajustar permisos de forma inmediata sin recorrer recursivamente decenas de GBs
 mkdir -p /etc/arkmanager /var/log/arktools /home/steam/steamcmd/ark /home/steam/ark-backups /home/steam/clusters /app/data
-chown -R steam:steam /home/steam /var/log/arktools /etc/arkmanager /app 2>/dev/null || true
+chown steam:steam /home/steam /home/steam/steamcmd 2>/dev/null || true
+chown -R steam:steam /var/log/arktools /etc/arkmanager /app /home/steam/ark-backups /home/steam/clusters /app/data 2>/dev/null || true
+
+# Solo si la raíz del juego no pertenece al usuario steam (o PUID), sincronizar permisos
+if [ -d "/home/steam/steamcmd/ark" ] && [ "$(stat -c '%u' /home/steam/steamcmd/ark 2>/dev/null)" != "${PUID:-1000}" ]; then
+    echo "[ARK Server Manager] Sincronizando permisos en datos de juego..."
+    chown -R steam:steam /home/steam/steamcmd/ark 2>/dev/null || true
+fi
 
 # Configurar Timezone del sistema desde la variable TZ
 if [ -n "${TZ}" ] && [ -f "/usr/share/zoneinfo/${TZ}" ]; then
