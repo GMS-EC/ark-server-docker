@@ -112,6 +112,7 @@ docker compose up -d
 #### Ejemplo de `docker-compose.yml`
 
 ```yaml
+---
 name: ark-server
 services:
   ark-server:
@@ -120,37 +121,25 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
-    # Límite de RAM del contenedor. Cambia el valor según cuánta
-    # memoria quieras asignarle a tu servidor (ej. 8g, 12g, 16g).
-    mem_limit: 12g
+    # Límite de memoria RAM del contenedor (ej: 8g, 12g, 16g).
+    # Detectado automáticamente por el panel vía Cgroups v1/v2.
+    mem_limit: 8g
     ports:
       - "8080:8080"                    # Panel Web ARK Server Manager (HTTP)
       - "7777-7800:7777-7800/udp"      # Puertos de Juego UDP (Principal + hasta 12 Mapas Clúster)
       - "27015-27035:27015-27035/udp"  # Puertos Query Steam UDP (Buscador de Servidores)
       - "27020-27035:27020-27035/tcp"  # Puertos RCON TCP (Consola Remota y Administración)
     environment:
-      # --- ARK Server Manager Web Panel ---
+      # --- Zona Horaria del Contenedor ---
+      - TZ=America/Guayaquil
+
+      # --- Acceso al Panel Web (Opcional - por defecto: admin / adminpassword) ---
       - PANEL_USER=admin
       - PANEL_PASSWORD=adminpassword
-      - AUTOSTART_SERVER=true
-      # --- Essential Server Settings ---
-      - SESSION_NAME=ARK Server
-      - SERVER_PASSWORD=
-      - ADMIN_PASSWORD=adminpass
-      - MAX_PLAYERS=10
-      - WORLD=TheIsland
-      - SERVER_PVE=false
-      - BATTLEEYE=false
-      - RCON_ENABLED=true
-      - MOD_IDS=
-      # --- Updates & Maintenance ---
-      - UPDATE_ON_START=true
-      - AUTO_RESTART_HOURS=0
-      # --- Timezone ---
-      - TZ=UTC
 
-      # En v2.0+, Webhooks, Horarios, Respaldos, Dino Wipes, Mods y Tasas
-      # se configuran y administran 100% dentro del Panel Web.
+      # NOTA: En la versión 2.0+, toda la configuración del juego (Nombre del servidor,
+      # contraseñas, mapa, mods de Steam Workshop, webhooks de Discord, horarios,
+      # copias de seguridad y multiplicadores de rates) se gestiona 100% desde la Interfaz Web.
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups
@@ -318,6 +307,7 @@ docker compose up -d
 #### Quick `docker-compose.yml` Example
 
 ```yaml
+---
 name: ark-server
 services:
   ark-server:
@@ -326,37 +316,25 @@ services:
     restart: unless-stopped
     container_name: ark-server
     stop_grace_period: 30s
-    # Container RAM limit. Change the value depending on how much
-    # memory you want to allocate to your server (e.g. 8g, 12g, 16g).
-    mem_limit: 12g
+    # Container RAM limit (e.g. 8g, 12g, 16g).
+    # Automatically detected by web panel via Cgroups v1/v2.
+    mem_limit: 8g
     ports:
       - "8080:8080"                    # ARK Server Manager Web Panel (HTTP)
       - "7777-7800:7777-7800/udp"      # Game UDP Ports (Primary + up to 12 Cluster Maps)
       - "27015-27035:27015-27035/udp"  # Steam Query UDP Ports (Server Browser)
       - "27020-27035:27020-27035/tcp"  # RCON TCP Ports (Remote Console & Administration)
     environment:
-      # --- ARK Server Manager Web Panel ---
+      # --- Container Timezone ---
+      - TZ=America/Guayaquil
+
+      # --- Web Panel Access (Optional - default: admin / adminpassword) ---
       - PANEL_USER=admin
       - PANEL_PASSWORD=adminpassword
-      - AUTOSTART_SERVER=true
-      # --- Essential Server Settings ---
-      - SESSION_NAME=ARK Server
-      - SERVER_PASSWORD=
-      - ADMIN_PASSWORD=adminpass
-      - MAX_PLAYERS=10
-      - WORLD=TheIsland
-      - SERVER_PVE=false
-      - BATTLEEYE=false
-      - RCON_ENABLED=true
-      - MOD_IDS=
-      # --- Updates & Maintenance ---
-      - UPDATE_ON_START=true
-      - AUTO_RESTART_HOURS=0
-      # --- Timezone ---
-      - TZ=UTC
 
-      # En v2.0+, Webhooks, Horarios, Respaldos, Dino Wipes, Mods y Tasas
-      # se configuran y administran 100% dentro del Panel Web.
+      # NOTE: In version 2.0+, all game configuration (Server Name, passwords,
+      # map, Steam Workshop mods, Discord webhooks, schedules, backups, and rate
+      # multipliers) is managed 100% from the Web Interface.
     volumes:
       - ./steamcmd/ark:/home/steam/steamcmd/ark
       - ./ark-backups:/home/steam/ark-backups
