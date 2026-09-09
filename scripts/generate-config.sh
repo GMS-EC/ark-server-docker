@@ -24,7 +24,6 @@ logdir="/var/log/arktools"
 # Server Identity & Ports
 serverMap="${WORLD:-TheIsland}"
 ark_SessionName="${SESSION_NAME:-ARK Server}"
-ark_ServerPassword="${SERVER_PASSWORD:-}"
 ark_ServerAdminPassword="${ADMIN_PASSWORD:-adminpass}"
 rconpassword="${ADMIN_PASSWORD:-adminpass}"
 ark_RCONEnabled="${RCON_ENABLED:-True}"
@@ -35,6 +34,11 @@ ark_QueryPort="${QUERY_PORT:-27015}"
 ark_MaxPlayers="${MAX_PLAYERS:-10}"
 arkNoPortDecrement="true"
 EOF
+
+# Contraseña de servidor (sólo agregar si está definida para no pasar ?ServerPassword? vacío a UE4)
+if [ -n "${SERVER_PASSWORD}" ]; then
+    echo "ark_ServerPassword=\"${SERVER_PASSWORD}\"" | tee -a /etc/arkmanager/arkmanager.cfg > /dev/null
+fi
 
 # Multiplicadores de Jugabilidad
 if [ -n "${XP_MULTIPLIER}" ]; then
@@ -118,6 +122,7 @@ tee /etc/arkmanager/instances/main.cfg > /dev/null << EOF
 # Configuración de instancia principal @main
 arkserverroot="${ARK_DATA_DIR:-/home/steam/steamcmd/ark}"
 arkserverexec="ShooterGame/Binaries/Linux/ShooterGameServer"
+serverMap="${WORLD:-TheIsland}"
 EOF
 
 chown -R steam:steam /etc/arkmanager /var/log/arktools 2>/dev/null || true
