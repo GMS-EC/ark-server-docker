@@ -152,15 +152,24 @@ class MetricsManager:
         except Exception:
             pass
 
-        # 4. Uptime
+        # 4. Uptime y cálculo exclusivo de CPU de ARK
         uptime_seconds = 0
-        if process_manager.started_at and process_manager.get_status() == "RUNNING":
+        status = process_manager.get_status()
+        if process_manager.started_at and status == "RUNNING":
             uptime_seconds = int(time.time() - process_manager.started_at)
 
-        cpu_display = round(ark_cpu_pct, 1) if ark_cpu_pct > 0 else round(cpu_pct, 1)
+        # Si el servidor de ARK está apagado, su consumo es estrictamente 0.0%
+        # No caer al host_cpu_percent para evitar brincos del VPS en la interfaz
+        if status in ("OFFLINE", "INSTALLING"):
+            cpu_display = 0.0
+            ark_ram_bytes = 0
+        else:
+            cpu_display = round(ark_cpu_pct, 1)
+
         return {
-            "status": process_manager.get_status(),
+            "status": status,
             "cpu_percent": cpu_display,
+            "ark_cpu_percent": round(ark_cpu_pct, 1),
             "host_cpu_percent": round(cpu_pct, 1),
             "ram_total_gb": ram_total_gb,
             "ram_used_gb": ram_used_gb,

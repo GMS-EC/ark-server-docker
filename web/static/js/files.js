@@ -747,6 +747,30 @@ const Files = {
     }
   },
 
+  filter(query) {
+    const q = (query || "").toLowerCase().trim();
+    const rows = document.querySelectorAll("#files-table-body .file-row");
+    rows.forEach(row => {
+      const name = row.getAttribute("data-name") || "";
+      if (!q || name.toLowerCase().includes(q)) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  },
+
+  openDirectConfig(filename) {
+    const knownPaths = {
+      'GameUserSettings.ini': 'ShooterGame/Saved/Config/CleanConfig/GameUserSettings.ini',
+      'Game.ini': 'ShooterGame/Saved/Config/CleanConfig/Game.ini',
+      'arkmanager.cfg': '/etc/arkmanager/arkmanager.cfg',
+      'ShooterGame.log': 'ShooterGame/Saved/Logs/ShooterGame.log'
+    };
+    const target = knownPaths[filename] || filename;
+    this.openEditor(target);
+  },
+
   escapeHtml(str) {
     if (!str) return '';
     return String(str)

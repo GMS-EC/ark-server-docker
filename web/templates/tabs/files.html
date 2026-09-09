@@ -26,6 +26,21 @@
     </div>
   </div>
 
+  <!-- Barra de Filtro y Accesos Directos a Archivos Críticos -->
+  <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 12px; padding: 8px 12px; background: rgba(22, 27, 34, 0.6); border: 1px solid var(--border-color); border-radius: 6px;">
+    <div style="display: flex; align-items: center; gap: 8px; position: relative;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 8px; color: var(--text-dim);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="files-filter-input" placeholder="Filtrar archivos en esta carpeta..." style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-color); font-size: 0.78rem; padding: 4px 8px 4px 26px; border-radius: 4px; width: 220px;" oninput="Files.filter(this.value)">
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+      <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 600;">Acceso Rápido:</span>
+      <button type="button" class="btn btn-outline" style="padding: 2px 7px; font-size: 0.72rem; color: #79c0ff;" onclick="Files.openDirectConfig('GameUserSettings.ini')">GameUserSettings.ini</button>
+      <button type="button" class="btn btn-outline" style="padding: 2px 7px; font-size: 0.72rem; color: #79c0ff;" onclick="Files.openDirectConfig('Game.ini')">Game.ini</button>
+      <button type="button" class="btn btn-outline" style="padding: 2px 7px; font-size: 0.72rem; color: #79c0ff;" onclick="Files.openDirectConfig('arkmanager.cfg')">arkmanager.cfg</button>
+      <button type="button" class="btn btn-outline" style="padding: 2px 7px; font-size: 0.72rem; color: #e3b341;" onclick="Files.openDirectConfig('ShooterGame.log')">ShooterGame.log</button>
+    </div>
+  </div>
+
   <div class="table-responsive" style="margin-top: 14px;">
     <table class="file-table" id="file-manager-table">
       <thead>

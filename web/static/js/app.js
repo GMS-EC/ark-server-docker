@@ -3,6 +3,10 @@ let ws = null;
 let metricsChart = null;
 let currentInstanceId = localStorage.getItem("ark_active_instance") || "main";
 let clusterData = null;
+let isAutoScroll = true;
+let commandHistory = JSON.parse(localStorage.getItem("ark_cmd_history") || "[]");
+let cmdHistoryIndex = -1;
+let cmdDraft = "";
 
 // Inicialización
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,8 +22,16 @@ document.addEventListener("DOMContentLoaded", () => {
     loadClusterTributes();
     loadMods();
     loadActivityLogs();
+    initConsoleHistory();
     if (typeof Files !== "undefined" && Files.init) {
         Files.init();
+    }
+
+    // Restaurar pestaña activa guardada
+    const hash = window.location.hash ? window.location.hash.substring(1) : "";
+    const savedTab = hash || localStorage.getItem("ark_active_tab");
+    if (savedTab && savedTab !== "console" && document.getElementById(`tab-${savedTab}`)) {
+        switchTab(savedTab);
     }
 });
 
@@ -44,6 +56,11 @@ function switchTab(tabId) {
 
     if (navLink) navLink.classList.add("active");
     if (targetPane) targetPane.classList.add("active");
+
+    localStorage.setItem("ark_active_tab", tabId);
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, `#${tabId}`);
+    }
 
     if (tabId === "metrics" && metricsChart) {
         metricsChart.resize();
@@ -101,8 +118,34 @@ function initWebSocket() {
             consoleOutput.removeChild(consoleOutput.firstChild);
         }
 
-        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        if (isAutoScroll) {
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
     };
+
+    if (consoleOutput && !consoleOutput.dataset.scrollBound) {
+        consoleOutput.dataset.scrollBound = "true";
+        consoleOutput.addEventListener("scroll", () => {
+            const distanceFromBottom = consoleOutput.scrollHeight - consoleOutput.scrollTop - consoleOutput.clientHeight;
+            const btn = document.getElementById("btn-autoscroll");
+            const text = document.getElementById("autoscroll-text");
+            if (distanceFromBottom > 40) {
+                isAutoScroll = false;
+                if (btn) {
+                    btn.style.borderColor = "#d29922";
+                    btn.style.color = "#e3b341";
+                }
+                if (text) text.textContent = "Auto-scroll: PAUSADO";
+            } else {
+                isAutoScroll = true;
+                if (btn) {
+                    btn.style.borderColor = "#238636";
+                    btn.style.color = "#3fb950";
+                }
+                if (text) text.textContent = "Auto-scroll: ON";
+            }
+        });
+    }
 
     ws.onclose = () => {
         setTimeout(initWebSocket, 3000);
@@ -117,10 +160,90 @@ function sendQuickRcon(cmd) {
     }
 }
 
+function toggleAutoScroll() {
+    const consoleOutput = document.getElementById("console-output");
+    isAutoScroll = !isAutoScroll;
+    const btn = document.getElementById("btn-autoscroll");
+    const text = document.getElementById("autoscroll-text");
+    if (isAutoScroll) {
+        if (btn) {
+            btn.style.borderColor = "#238636";
+            btn.style.color = "#3fb950";
+        }
+        if (text) text.textContent = "Auto-scroll: ON";
+        if (consoleOutput) consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    } else {
+        if (btn) {
+            btn.style.borderColor = "#d29922";
+            btn.style.color = "#e3b341";
+        }
+        if (text) text.textContent = "Auto-scroll: PAUSADO";
+    }
+}
+
+function initConsoleHistory() {
+    const input = document.getElementById("console-input");
+    if (!input || input.dataset.historyBound) return;
+    input.dataset.historyBound = "true";
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowUp") {
+            if (commandHistory.length === 0) return;
+            e.preventDefault();
+            if (cmdHistoryIndex === -1) {
+                cmdDraft = input.value;
+            }
+            if (cmdHistoryIndex < commandHistory.length - 1) {
+                cmdHistoryIndex++;
+                input.value = commandHistory[commandHistory.length - 1 - cmdHistoryIndex];
+                input.setSelectionRange(input.value.length, input.value.length);
+            }
+        } else if (e.key === "ArrowDown") {
+            if (cmdHistoryIndex > 0) {
+                e.preventDefault();
+                cmdHistoryIndex--;
+                input.value = commandHistory[commandHistory.length - 1 - cmdHistoryIndex];
+                input.setSelectionRange(input.value.length, input.value.length);
+            } else if (cmdHistoryIndex === 0) {
+                e.preventDefault();
+                cmdHistoryIndex = -1;
+                input.value = cmdDraft;
+            }
+        }
+    });
+}
+
+async function copySteamConnectLink() {
+    try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        const qPort = data.query_port || "27015";
+        const host = window.location.hostname || "127.0.0.1";
+        const link = `steam://connect/${host}:${qPort}`;
+        await navigator.clipboard.writeText(link);
+        showToast(`¡Enlace copiado! (${link})`, "success");
+    } catch (e) {
+        const host = window.location.hostname || "127.0.0.1";
+        const link = `steam://connect/${host}:27015`;
+        await navigator.clipboard.writeText(link);
+        showToast(`¡Enlace copiado! (${link})`, "success");
+    }
+}
+
 function sendConsoleCommand() {
     const input = document.getElementById("console-input");
     if (!input || !input.value.trim()) return;
     const cmd = input.value.trim();
+
+    // Guardar comando en historial
+    if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== cmd) {
+        commandHistory.push(cmd);
+        if (commandHistory.length > 50) commandHistory.shift();
+        localStorage.setItem("ark_cmd_history", JSON.stringify(commandHistory));
+    }
+    cmdHistoryIndex = -1;
+    cmdDraft = "";
+
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(cmd);
     } else {
@@ -329,7 +452,7 @@ async function fetchMetricsOnce() {
         const topUptime = document.getElementById("top-server-uptime");
         if (topUptime) topUptime.textContent = curr.uptime_formatted;
         const topCpu = document.getElementById("top-server-cpu");
-        if (topCpu) topCpu.textContent = `${curr.cpu_percent} %`;
+        if (topCpu) topCpu.textContent = `${isOffline ? 0.0 : curr.cpu_percent} %`;
         const topArkMem = document.getElementById("top-server-ark-memory");
         if (topArkMem) topArkMem.textContent = `${curr.ark_ram_gb} GB`;
         const topDisk = document.getElementById("top-server-disk");
@@ -348,17 +471,23 @@ async function fetchMetricsOnce() {
         if (statusText) statusText.textContent = curr.status;
 
         // Stat Boxes de Consola
+        const isOffline = curr.status === "OFFLINE";
+        const cpuValToDisplay = isOffline ? 0.0 : curr.cpu_percent;
         const statCpuVal = document.getElementById("stat-cpu-val");
-        if (statCpuVal) statCpuVal.textContent = `${curr.cpu_percent}%`;
+        if (statCpuVal) statCpuVal.textContent = `${cpuValToDisplay}%`;
         const statCpuBar = document.getElementById("stat-cpu-bar");
-        if (statCpuBar) statCpuBar.style.width = `${curr.cpu_percent}%`;
+        if (statCpuBar) statCpuBar.style.width = `${Math.min(cpuValToDisplay, 100)}%`;
         const statCpuSub = document.getElementById("stat-cpu-subtext");
-        if (statCpuSub && curr.host_cpu_percent !== undefined) {
-            statCpuSub.textContent = `Carga de procesamiento de ARK (Host: ${curr.host_cpu_percent}%)`;
+        if (statCpuSub) {
+            statCpuSub.textContent = isOffline
+                ? "Servidor inactivo (0.0%)"
+                : `Carga ShooterGame (Host: ${curr.host_cpu_percent || 0}%)`;
         }
         const valCpuSub = document.getElementById("val-cpu-subtext");
-        if (valCpuSub && curr.host_cpu_percent !== undefined) {
-            valCpuSub.textContent = `Carga de procesamiento de ARK (Host: ${curr.host_cpu_percent}%)`;
+        if (valCpuSub) {
+            valCpuSub.textContent = isOffline
+                ? "Servidor inactivo (0.0%)"
+                : `Carga ShooterGame (Host: ${curr.host_cpu_percent || 0}%)`;
         }
 
         const statMemVal = document.getElementById("stat-mem-val");

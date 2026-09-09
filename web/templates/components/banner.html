@@ -58,9 +58,15 @@
         <span class="overview-label">Espacio en Disco:</span>
         <span class="overview-val" id="top-server-disk">{{ metrics.disk_used_gb }} / {{ metrics.disk_total_gb }} GB</span>
       </div>
-      <div class="overview-item">
-        <span class="overview-label">Puerto de Juego:</span>
-        <span class="overview-val" id="top-server-port">{{ server_port }} (UDP)</span>
+      <div class="overview-item" style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <span class="overview-label">Puerto de Juego:</span>
+          <span class="overview-val" id="top-server-port">{{ server_port }} (UDP)</span>
+        </div>
+        <button type="button" class="btn btn-outline" style="padding: 2px 7px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; border-color: #388bfd; color: #58a6ff;" onclick="copySteamConnectLink()" title="Copiar enlace directo de conexión para Steam (steam://connect/...)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span>Enlace Steam</span>
+        </button>
       </div>
     </div>
   </div>
