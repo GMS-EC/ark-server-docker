@@ -1,3 +1,52 @@
+<style>
+.player-segmented-tabs {
+  display: inline-flex !important;
+  align-items: center !important;
+  background-color: #0d1117 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 8px !important;
+  padding: 3px !important;
+  gap: 3px !important;
+}
+.player-seg-btn {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #8b949e !important;
+  padding: 5px 12px !important;
+  border-radius: 6px !important;
+  font-family: inherit !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+}
+.player-seg-btn:hover {
+  color: #f0f6fc !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+.player-seg-btn.active {
+  color: #ffffff !important;
+  background-color: #1f6feb !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+.player-seg-btn .badge {
+  font-size: 0.7rem !important;
+  padding: 1px 6px !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+}
+.player-seg-btn.active .badge {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+</style>
 <!-- TAB: SUPERVIVIENTES & MODERACIÓN (Dockraft Style) -->
 <div class="card" style="margin-bottom: 18px; padding: 16px 20px;">
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">

@@ -85,7 +85,11 @@ function switchTab(tabId) {
     }
 
     if (tabId === "metrics") {
-        if (metricsChart) metricsChart.resize();
+        if (!metricsChart) {
+            initChart();
+        } else {
+            metricsChart.resize();
+        }
         fetchMetricsOnce();
     }
 
@@ -422,7 +426,9 @@ function initChart() {
                     backgroundColor: "rgba(16, 185, 129, 0.1)",
                     data: [],
                     tension: 0.3,
-                    fill: true
+                    fill: true,
+                    pointRadius: 2,
+                    pointHoverRadius: 4
                 },
                 {
                     label: "RAM Servidor (GB)",
@@ -430,7 +436,9 @@ function initChart() {
                     backgroundColor: "rgba(6, 182, 212, 0.1)",
                     data: [],
                     tension: 0.3,
-                    fill: true
+                    fill: true,
+                    pointRadius: 2,
+                    pointHoverRadius: 4
                 }
             ]
         },

@@ -215,6 +215,15 @@ class MetricsManager:
         return f"{minutes}m {seconds}s"
 
     def get_history(self) -> List[Dict[str, Any]]:
+        if not self.history:
+            cur = self.get_current_metrics()
+            return [{
+                "timestamp": time.strftime("%H:%M:%S"),
+                "cpu_percent": cur["cpu_percent"],
+                "ram_used_gb": cur["ram_used_gb"],
+                "ram_percent": cur["ram_percent"],
+                "ark_ram_gb": cur["ark_ram_gb"]
+            }]
         return list(self.history)
 
 metrics_manager = MetricsManager()
