@@ -3,6 +3,7 @@ import sys
 import time
 import shutil
 import asyncio
+import socket
 import psutil
 from collections import deque
 from pathlib import Path
@@ -29,6 +30,7 @@ class ProcessManager:
         self.started_at: Optional[float] = None
         self._intentional_stop: bool = False
         self._server_up_detected: bool = False
+        self._is_simulation: bool = False
         
         # Cliente RCON dedicado
         self.rcon = ArkRconClient(
@@ -225,6 +227,7 @@ class ProcessManager:
             cmd = ["arkmanager", "run", "@main"]
         else:
             cmd = [sys.executable, "-c", "import time; print('[ShooterGame] ARK Server Simulation Running...'); [time.sleep(2) for _ in range(300)]"]
+            self._is_simulation = True
 
         try:
             start_env = os.environ.copy()
@@ -271,13 +274,13 @@ class ProcessManager:
             decoded = line.decode("utf-8", errors="replace")
             if "Server is up" in decoded or "Server is ready" in decoded:
                 self._server_up_detected = True
+                await self.broadcast_log(f"[ARK Server Manager] [INFO] Motor del juego iniciado internamente. Verificando disponibilidad en Steam Query (puerto {settings.query_port} UDP) antes de dar apertura...")
             await self.broadcast_log(decoded)
 
         await process.wait()
         
         # Si arkmanager arrancó ShooterGameServer en segundo plano (demonio), monitorearlo activamente
         if self._is_ark_process_running():
-            self.status = "RUNNING"
             while self._is_ark_process_running():
                 await asyncio.sleep(2)
 
@@ -311,34 +314,65 @@ class ProcessManager:
         except Exception:
             pass
 
-    async def is_server_ready(self) -> bool:
-        """Comprueba si el servidor de ARK está listo conectándose al puerto RCON o por detección directa."""
-        if getattr(self, "_server_up_detected", False):
-            return True
-        # 1. Intentar conectar al puerto RCON vía TCP
+    def _check_steam_query(self, host: str = "127.0.0.1", port: Optional[int] = None, timeout: float = 2.0) -> bool:
+        """Verifica si el puerto de consulta Steam (A2S_INFO) responde con el header 0x49.
+        
+        Esto confirma de forma definitiva que ShooterGameServer ha cargado el mapa,
+        mods y se ha registrado en Steamworks Master Server, siendo visible en el
+        navegador de servidores de ARK y Steam.
+        """
+        if port is None:
+            port = settings.query_port
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(timeout)
         try:
-            _, writer = await asyncio.wait_for(
-                asyncio.open_connection("127.0.0.1", settings.rcon_port),
-                timeout=1.5
-            )
-            writer.close()
-            await writer.wait_closed()
-            return True
+            req = b"\xFF\xFF\xFF\xFF\x54Source Engine Query\x00"
+            sock.sendto(req, (host, port))
+            data, _ = sock.recvfrom(4096)
+            if len(data) >= 9 and data[:5] == b"\xFF\xFF\xFF\xFF\x41":
+                challenge = data[5:9]
+                sock.sendto(req + challenge, (host, port))
+                data, _ = sock.recvfrom(4096)
+            return len(data) >= 5 and data[:5] == b"\xFF\xFF\xFF\xFF\x49"
         except Exception:
-            pass
+            return False
+        finally:
+            sock.close()
 
-        # 2. Intentar autenticar con cliente RCON
-        try:
-            if self.rcon:
+    async def is_server_ready(self) -> bool:
+        """Comprueba si el servidor de ARK está 100% listo para que los jugadores se conecten.
+        
+        Para evitar falsos positivos donde el panel reporta 'ONLINE' 2 a 3 minutos antes
+        de que el servidor aparezca en el buscador de ARK:
+        1. Se requiere que el puerto de consulta Steam (QUERY_PORT / A2S_INFO) responda afirmativamente.
+        2. Si RCON está activo, se verifica adicionalmente la conectividad RCON.
+        """
+        if getattr(self, "_is_simulation", False):
+            if self.started_at and (time.time() - self.started_at > 6):
+                return True
+
+        loop = asyncio.get_running_loop()
+        
+        # 1. Comprobar que el puerto de consulta de Steam (A2S_INFO) responde
+        # (Esto es lo que determina que el servidor aparezca en la lista de ARK)
+        query_ok = await loop.run_in_executor(None, self._check_steam_query, "127.0.0.1", settings.query_port, 2.0)
+        if not query_ok and settings.rcon_host and settings.rcon_host != "127.0.0.1":
+            query_ok = await loop.run_in_executor(None, self._check_steam_query, settings.rcon_host, settings.query_port, 2.0)
+            
+        if not query_ok:
+            return False
+
+        # 2. Si RCON está habilitado, verificar que RCON también responda o conecte
+        if settings.rcon_enabled and self.rcon:
+            try:
                 ok = await self.rcon.connect(timeout=2.0)
                 if ok:
-                    chat = await self.rcon.get_chat()
-                    if chat is not None:
-                        return True
-        except Exception:
-            pass
+                    return True
+            except Exception:
+                pass
+            return False
 
-        return False
+        return True
 
     async def _watch_server_readiness(self):
         """Monitorea hasta que ShooterGameServer responda a RCON o complete la carga."""
@@ -363,7 +397,7 @@ class ProcessManager:
                 await self.broadcast_log("[ARK Server Manager] [OK] ¡SERVIDOR DE ARK 100% ONLINE Y DISPONIBLE!")
                 await self.broadcast_log(f"[ARK Server Manager] Nombre de Sesión: {settings.session_name}")
                 await self.broadcast_log(f"[ARK Server Manager] Mapa: {settings.world} | Puerto de Juego: {settings.server_port} (UDP)")
-                await self.broadcast_log(f"[ARK Server Manager] RCON: {settings.rcon_port} (Activo) | Supervivientes: 0/{settings.max_players}")
+                await self.broadcast_log(f"[ARK Server Manager] Steam Query: {settings.query_port} (Activo) | RCON: {settings.rcon_port} (Activo) | Supervivientes: 0/{settings.max_players}")
                 await self.broadcast_log(f"[ARK Server Manager] Tiempo total de carga: {elapsed_sec // 60}m {elapsed_sec % 60}s.")
                 await self.broadcast_log("========================================================================")
                 from app.core.webhook_manager import webhook_manager
@@ -377,10 +411,7 @@ class ProcessManager:
                 secs = elapsed_sec % 60
                 await self.broadcast_log(f"[ARK Server Manager] [EN PROCESO] Servidor iniciando... Cargando mundo y mods en RAM ({mins}m {secs}s transcurridos). Por favor espera...")
 
-        # Si el bucle terminó y el proceso sigue vivo
-        if self._is_ark_process_running() and self.status == "STARTING":
-            self.status = "RUNNING"
-            await self.broadcast_log("[ARK Server Manager] [OK] Servidor de ARK operativo en segundo plano.")
+
 
     async def stop_server(self, grace_seconds: int = 10) -> bool:
         if self.status == "OFFLINE" and not self._is_ark_process_running():

@@ -55,9 +55,13 @@ async def lifespan(app: FastAPI):
     task_scheduler.start_loop()
     player_manager.start_monitor()
 
-    # Si el servidor ya está corriendo en el host (ej. reinicio de panel), sincronizar estado a RUNNING
+    # Si el proceso del servidor ya está corriendo en el host (ej. reinicio de panel)
     if process_manager._is_ark_process_running():
-        process_manager.status = "RUNNING"
+        if await process_manager.is_server_ready():
+            process_manager.status = "RUNNING"
+        else:
+            process_manager.status = "STARTING"
+            asyncio.create_task(process_manager._watch_server_readiness())
 
     # Autoinicio si el servidor ya está instalado (producción) o si está activo en runtime_config
     autostart_cfg = settings.runtime_config.get("autostart_server", os.getenv("AUTOSTART_SERVER", "true").lower() in ("true", "1", "yes"))
