@@ -544,68 +544,311 @@ function initMetricsPolling() {
     });
 }
 
-// --- Jugadores ---
+// --- Jugadores & Moderación (Dockraft Enhanced) ---
+let playersCache = { online: [], history: [] };
+let activePlayerTab = "online";
+let playerSearchQuery = "";
+
+// Paleta de gradientes atractivos para avatares de supervivientes
+const AVATAR_GRADIENTS = [
+    "linear-gradient(135deg, #4f46e5, #06b6d4)",
+    "linear-gradient(135deg, #10b981, #059669)",
+    "linear-gradient(135deg, #f59e0b, #d97706)",
+    "linear-gradient(135deg, #ec4899, #8b5cf6)",
+    "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+    "linear-gradient(135deg, #8b5cf6, #6366f1)"
+];
+
+function getAvatarGradient(name) {
+    let hash = 0;
+    for (let i = 0; i < (name || "").length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const idx = Math.abs(hash) % AVATAR_GRADIENTS.length;
+    return AVATAR_GRADIENTS[idx];
+}
+
 async function loadPlayers() {
     try {
         const res = await fetch("/api/players");
         const data = await res.json();
-        const tbody = document.getElementById("players-table-body");
-        if (!tbody) return;
-        tbody.innerHTML = "";
+        playersCache = {
+            online: data.online || [],
+            history: data.history || []
+        };
 
-        if (data.online.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-dim);">No hay supervivientes conectados actualmente.</td></tr>`;
-            return;
+        // 1. Actualizar métricas del banner superior de jugadores
+        const statOnline = document.getElementById("players-online-stat");
+        if (statOnline) {
+            const maxP = (metricsChart && metricsChart.data && metricsChart.data.max_players) || 20;
+            statOnline.textContent = `${playersCache.online.length}`;
         }
+        const statHist = document.getElementById("players-history-stat");
+        if (statHist) statHist.textContent = playersCache.history.length;
 
-        data.online.forEach(p => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td><strong>${escapeHtml(p.name)}</strong></td>
-                <td><code style="color: var(--accent-cyan);">${escapeHtml(p.steam_id)}</code></td>
-                <td><span class="status-pill online" style="padding: 2px 8px; font-size: 11px;">En línea</span></td>
-                <td>
-                    <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="kickPlayer('${p.steam_id}')">Expulsar</button>
-                    <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="banPlayer('${p.steam_id}')">Banear</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    } catch (e) {}
+        const bannedCount = playersCache.history.filter(p => p.banned).length;
+        const statBanned = document.getElementById("players-banned-stat");
+        if (statBanned) statBanned.textContent = bannedCount;
+
+        // 2. Actualizar contadores en selector segmentado
+        const countOnline = document.getElementById("count-tab-online");
+        if (countOnline) countOnline.textContent = playersCache.online.length;
+        const countHist = document.getElementById("count-tab-history");
+        if (countHist) countHist.textContent = playersCache.history.length;
+
+        renderPlayersList();
+    } catch (e) {
+        console.error("Error cargando jugadores:", e);
+    }
 }
 
-async function kickPlayer(steamId) {
+function switchPlayerTab(tab) {
+    activePlayerTab = tab;
+    document.querySelectorAll(".player-seg-btn").forEach(btn => btn.classList.remove("active"));
+    const activeBtn = document.getElementById(`btn-tab-players-${tab}`);
+    if (activeBtn) activeBtn.classList.add("active");
+    renderPlayersList();
+}
+
+function filterPlayers(query) {
+    playerSearchQuery = (query || "").toLowerCase().trim();
+    renderPlayersList();
+}
+
+function renderPlayersList() {
+    const tbody = document.getElementById("players-table-body");
+    if (!tbody) return;
+
+    let list = [];
+    if (activePlayerTab === "online") {
+        list = playersCache.online.map(p => ({
+            name: p.name,
+            steam_id: p.steam_id,
+            is_online: true,
+            banned: false,
+            last_seen: p.last_seen || "En juego ahora"
+        }));
+    } else {
+        // En historial, cruzar con online para marcar los que estén activos
+        const onlineSteamIds = new Set(playersCache.online.map(p => p.steam_id));
+        list = playersCache.history.map(p => ({
+            name: p.name,
+            steam_id: p.steam_id,
+            is_online: onlineSteamIds.has(p.steam_id),
+            banned: !!p.banned,
+            last_seen: p.last_seen || p.first_seen || "-"
+        }));
+    }
+
+    if (playerSearchQuery) {
+        list = list.filter(p =>
+            p.name.toLowerCase().includes(playerSearchQuery) ||
+            p.steam_id.toLowerCase().includes(playerSearchQuery)
+        );
+    }
+
+    tbody.innerHTML = "";
+
+    if (list.length === 0) {
+        const emptyMsg = playerSearchQuery
+            ? `No se encontraron supervivientes que coincidan con "${escapeHtml(playerSearchQuery)}".`
+            : (activePlayerTab === "online"
+                ? "No hay supervivientes conectados actualmente en este servidor."
+                : "No hay historial registrado de supervivientes.");
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 40px 20px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#484f58" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        <span style="font-size: 0.88rem; color: #8b949e;">${emptyMsg}</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    list.forEach(p => {
+        const tr = document.createElement("tr");
+        const initial = (p.name || "?").charAt(0).toUpperCase();
+        const gradient = getAvatarGradient(p.name);
+        const hasValidSteamId = p.steam_id && p.steam_id !== "N/A" && p.steam_id !== "Desconocido";
+
+        let statusBadge = "";
+        if (p.banned) {
+            statusBadge = `<span class="status-pill offline" style="font-size: 0.72rem; padding: 2px 8px; border-color: #f85149; color: #ff7b72;">🔴 Baneado</span>`;
+        } else if (p.is_online) {
+            statusBadge = `<span class="status-pill running" style="font-size: 0.72rem; padding: 2px 8px;">🟢 En línea</span>`;
+        } else {
+            statusBadge = `<span class="status-pill offline" style="font-size: 0.72rem; padding: 2px 8px; color: #8b949e;">⚪ Desconectado</span>`;
+        }
+
+        tr.innerHTML = `
+            <td>
+                <div class="player-info-cell">
+                    <div class="player-avatar-badge" style="background: ${gradient};">
+                        ${escapeHtml(initial)}
+                    </div>
+                    <div>
+                        <div class="player-name-text">
+                            <span>${escapeHtml(p.name)}</span>
+                            ${p.is_online ? '<span style="width: 6px; height: 6px; border-radius: 50%; background: #3fb950; display: inline-block;" title="Actualmente jugando"></span>' : ''}
+                        </div>
+                        ${hasValidSteamId ? `
+                            <a href="https://steamcommunity.com/profiles/${escapeHtml(p.steam_id)}" target="_blank" rel="noopener noreferrer" class="player-steam-link" title="Ver perfil público en Steam">
+                                <span>Perfil de Steam</span>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            </a>
+                        ` : '<span style="font-size: 0.72rem; color: var(--text-dim);">Consulta local</span>'}
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="steam-id-pill">
+                    <span>${escapeHtml(p.steam_id)}</span>
+                    ${hasValidSteamId ? `
+                        <button type="button" class="btn-copy-steam" onclick="copySteamId('${escapeHtml(p.steam_id)}')" title="Copiar SteamID al portapapeles">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                    ` : ''}
+                </div>
+            </td>
+            <td>
+                <div style="font-size: 0.8rem; color: #8b949e; display: flex; align-items: center; gap: 5px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>${escapeHtml(p.last_seen)}</span>
+                </div>
+            </td>
+            <td>${statusBadge}</td>
+            <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                    ${p.is_online && hasValidSteamId ? `
+                        <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.76rem; border-color: #58a6ff; color: #79c0ff;" onclick="messagePlayer('${escapeHtml(p.steam_id)}', '${escapeHtml(p.name)}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <span>Mensaje</span>
+                        </button>
+                    ` : ''}
+                    ${p.is_online && hasValidSteamId ? `
+                        <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.76rem;" onclick="kickPlayer('${escapeHtml(p.steam_id)}', '${escapeHtml(p.name)}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                            <span>Expulsar</span>
+                        </button>
+                    ` : ''}
+                    ${!p.banned && hasValidSteamId ? `
+                        <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;" onclick="banPlayer('${escapeHtml(p.steam_id)}', '${escapeHtml(p.name)}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <span>Banear</span>
+                        </button>
+                    ` : ''}
+                    ${p.banned && hasValidSteamId ? `
+                        <button class="btn btn-success" style="padding: 4px 10px; font-size: 0.76rem;" onclick="unbanPlayer('${escapeHtml(p.steam_id)}', '${escapeHtml(p.name)}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                            <span>Desbanear</span>
+                        </button>
+                    ` : ''}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function copySteamId(steamId) {
+    if (!steamId) return;
+    navigator.clipboard.writeText(steamId).then(() => {
+        showToast(`SteamID ${steamId} copiado al portapapeles.`, "success");
+    }).catch(() => {
+        showToast(`SteamID: ${steamId}`, "info");
+    });
+}
+
+async function messagePlayer(steamId, name) {
+    const msg = await App.prompt({
+        title: `Mensaje a ${name}`,
+        message: `Escribe el mensaje privado in-game que se enviará en vivo a este jugador:`,
+        placeholder: "ej: Hola, por favor mueve tu base del obelisco...",
+        confirmText: "Enviar Mensaje"
+    });
+    if (!msg || !msg.trim()) return;
+
+    try {
+        const res = await fetch("/api/players/message", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ steam_id: steamId, message: msg.trim() })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Mensaje enviado a ${name}.`, "success");
+        } else {
+            showToast("Error enviando mensaje privado.", "error");
+        }
+    } catch (e) {
+        showToast("Error de conexión al enviar mensaje.", "error");
+    }
+}
+
+async function kickPlayer(steamId, name) {
     const ok = await App.confirm({
         title: "Expulsar Superviviente",
-        message: `¿Expulsar del servidor al superviviente con SteamID ${steamId}?`,
+        message: `¿Expulsar del servidor al superviviente "${name}" (SteamID: ${steamId})?`,
         confirmText: "Expulsar",
         danger: true
     });
     if (!ok) return;
-    await fetch("/api/players/kick", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ steam_id: steamId })
-    });
-    showToast("Superviviente expulsado.", "info");
-    loadPlayers();
+    try {
+        await fetch("/api/players/kick", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ steam_id: steamId })
+        });
+        showToast(`Superviviente ${name} expulsado.`, "info");
+        loadPlayers();
+    } catch (e) {
+        showToast("Error al expulsar superviviente.", "error");
+    }
 }
 
-async function banPlayer(steamId) {
+async function banPlayer(steamId, name) {
     const ok = await App.confirm({
         title: "Banear Superviviente",
-        message: `¿Banear permanentemente al superviviente con SteamID ${steamId}?`,
+        message: `¿Banear permanentemente del servidor al superviviente "${name}" (SteamID: ${steamId})?`,
         confirmText: "Banear",
         danger: true
     });
     if (!ok) return;
-    await fetch("/api/players/ban", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ steam_id: steamId })
+    try {
+        await fetch("/api/players/ban", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ steam_id: steamId })
+        });
+        showToast(`Superviviente ${name} baneado.`, "error");
+        loadPlayers();
+    } catch (e) {
+        showToast("Error al banear superviviente.", "error");
+    }
+}
+
+async function unbanPlayer(steamId, name) {
+    const ok = await App.confirm({
+        title: "Desbanear Superviviente",
+        message: `¿Remover la sanción y permitir que "${name}" (SteamID: ${steamId}) vuelva a ingresar al servidor?`,
+        confirmText: "Desbanear"
     });
-    showToast("Superviviente baneado.", "error");
-    loadPlayers();
+    if (!ok) return;
+    try {
+        await fetch("/api/players/unban", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ steam_id: steamId })
+        });
+        showToast(`Sanción removida para ${name}.`, "success");
+        loadPlayers();
+    } catch (e) {
+        showToast("Error al desbanear superviviente.", "error");
+    }
 }
 
 // --- Backups ---

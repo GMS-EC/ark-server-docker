@@ -209,6 +209,11 @@ class PlayerManager:
             self._save_history()
         return await process_manager.rcon.ban_player(steam_id)
 
+    async def message_player(self, steam_id: str, message: str) -> str:
+        """Envía un mensaje privado in-game al superviviente vía RCON."""
+        safe_msg = message.replace('"', '\"')
+        return await process_manager.rcon.send_command(f'ServerChatToPlayer "{steam_id}" {safe_msg}')
+
     async def unban(self, steam_id: str) -> str:
         """Desbanea a un superviviente."""
         if steam_id in self._player_history:

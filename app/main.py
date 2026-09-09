@@ -138,6 +138,10 @@ class BroadcastRequest(BaseModel):
 class KickBanRequest(BaseModel):
     steam_id: str
 
+class PlayerMessageRequest(BaseModel):
+    steam_id: str
+    message: str
+
 class FileSaveRequest(BaseModel):
     path: str
     content: str
@@ -559,6 +563,12 @@ async def api_players():
         "online_count": len(online),
         "history": history
     }
+
+@app.post("/api/players/message", dependencies=[Depends(require_auth)])
+async def api_player_message(req: PlayerMessageRequest):
+    resp = await player_manager.message_player(req.steam_id, req.message)
+    activity_manager.log("Jugadores", f"Mensaje privado a {req.steam_id}: {req.message}")
+    return {"success": True, "response": resp}
 
 @app.post("/api/players/kick", dependencies=[Depends(require_auth)])
 async def api_player_kick(req: KickBanRequest):
