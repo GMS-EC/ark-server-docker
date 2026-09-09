@@ -6,40 +6,56 @@
       <span>Telemetría y Rendimiento de ARK</span>
     </h2>
     <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.88rem;">
-      Monitoreo en tiempo real de CPU, memoria de ShooterGameServer y almacenamiento.
+      Monitoreo en tiempo real de CPU, memoria de ARK y almacenamiento.
     </p>
   </div>
 </div>
 
 <div class="grid-4" style="margin-bottom: 20px;">
-  <div class="card" style="padding: 16px; border-left: 3px solid #f59e0b;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim);">CPU Servidor</span>
-      <span id="val-cpu" style="font-size: 1.4rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono);">0.0%</span>
+  <!-- Card 1: CPU Servidor -->
+  <div class="card" style="padding: 16px 18px; border-left: 3px solid #f59e0b; display: flex; flex-direction: column; justify-content: space-between; min-height: 106px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">CPU Servidor</span>
+      <span class="status-dot online" style="width: 6px; height: 6px;"></span>
+    </div>
+    <div style="margin-bottom: 6px;">
+      <span id="val-cpu" style="font-size: 1.45rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono);">0.0%</span>
     </div>
     <div style="font-size: 0.75rem; color: var(--text-dim);" id="val-cpu-subtext">Carga de procesamiento de ARK</div>
   </div>
 
-  <div class="card" style="padding: 16px; border-left: 3px solid #38bdf8;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim);">RAM ShooterGame</span>
-      <span id="val-ark-ram" style="font-size: 1.4rem; font-weight: 700; color: #58a6ff; font-family: var(--font-mono);">0.0 GB</span>
+  <!-- Card 2: RAM Servidor -->
+  <div class="card" style="padding: 16px 18px; border-left: 3px solid #38bdf8; display: flex; flex-direction: column; justify-content: space-between; min-height: 106px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">RAM Servidor</span>
+      <span id="val-ram-pct" style="font-size: 0.72rem; font-weight: 600; color: #58a6ff; font-family: var(--font-mono); background: rgba(56, 189, 248, 0.12); padding: 1px 6px; border-radius: 4px;"></span>
     </div>
-    <div style="font-size: 0.75rem; color: var(--text-dim);">Memoria del servidor de juego</div>
+    <div style="margin-bottom: 6px;">
+      <span id="val-ark-ram" style="font-size: 1.45rem; font-weight: 700; color: #58a6ff; font-family: var(--font-mono);">0.0 GB</span>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-dim);">Memoria en uso por ARK</div>
   </div>
 
-  <div class="card" style="padding: 16px; border-left: 3px solid #3fb950;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim);">Supervivientes</span>
-      <span id="val-players-metric" style="font-size: 1.4rem; font-weight: 700; color: #3fb950; font-family: var(--font-mono);">0 / {{ max_players }}</span>
+  <!-- Card 3: Supervivientes -->
+  <div class="card" style="padding: 16px 18px; border-left: 3px solid #3fb950; display: flex; flex-direction: column; justify-content: space-between; min-height: 106px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">Supervivientes</span>
+      <span class="status-dot online" style="width: 6px; height: 6px; background: #3fb950;"></span>
+    </div>
+    <div style="margin-bottom: 6px;">
+      <span id="val-players-metric" style="font-size: 1.45rem; font-weight: 700; color: #3fb950; font-family: var(--font-mono);">0 / {{ max_players }}</span>
     </div>
     <div style="font-size: 0.75rem; color: var(--text-dim);">Jugadores activos en la sesión</div>
   </div>
 
-  <div class="card" style="padding: 16px; border-left: 3px solid #8957e5;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim);">Almacenamiento</span>
-      <span id="val-disk" style="font-size: 1.4rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono);">0 / 0 GB</span>
+  <!-- Card 4: Almacenamiento -->
+  <div class="card" style="padding: 16px 18px; border-left: 3px solid #8957e5; display: flex; flex-direction: column; justify-content: space-between; min-height: 106px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">Almacenamiento</span>
+      <span id="val-disk-pct" style="font-size: 0.72rem; font-weight: 600; color: #a371f7; font-family: var(--font-mono); background: rgba(137, 87, 229, 0.15); padding: 1px 6px; border-radius: 4px;"></span>
+    </div>
+    <div style="margin-bottom: 6px;">
+      <span id="val-disk" style="font-size: 1.22rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono); white-space: nowrap;">0 / 0 GB</span>
     </div>
     <div style="font-size: 0.75rem; color: var(--text-dim);">Volumen /steamcmd/ark</div>
   </div>

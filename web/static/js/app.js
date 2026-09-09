@@ -73,8 +73,13 @@ function switchTab(tabId) {
         window.history.replaceState(null, null, `#${tabId}`);
     }
 
-    if (tabId === "metrics" && metricsChart) {
-        metricsChart.resize();
+    if (tabId === "metrics") {
+        if (metricsChart) metricsChart.resize();
+        fetchMetricsOnce();
+    }
+
+    if (tabId === "players") {
+        loadPlayers();
     }
 
     if (tabId === "tasks") {
@@ -446,6 +451,14 @@ async function fetchMetricsOnce() {
         if (document.getElementById("val-ram")) document.getElementById("val-ram").textContent = `${curr.ram_used_gb} / ${curr.ram_total_gb} GB`;
         if (document.getElementById("val-ark-ram")) document.getElementById("val-ark-ram").textContent = `${curr.ark_ram_gb} GB`;
         if (document.getElementById("val-disk")) document.getElementById("val-disk").textContent = `${curr.disk_used_gb} / ${curr.disk_total_gb} GB`;
+        const valDiskPct = document.getElementById("val-disk-pct");
+        if (valDiskPct && curr.disk_percent !== undefined) {
+            valDiskPct.textContent = `${curr.disk_percent}%`;
+        }
+        const valRamPct = document.getElementById("val-ram-pct");
+        if (valRamPct && curr.ram_percent !== undefined) {
+            valRamPct.textContent = `${curr.ram_percent}%`;
+        }
 
         // Actualizar Tarjeta de Supervivientes en Métricas
         const metricPlayers = document.getElementById("val-players-metric");
@@ -492,13 +505,13 @@ async function fetchMetricsOnce() {
         if (statCpuSub) {
             statCpuSub.textContent = isOffline
                 ? "Servidor inactivo (0.0%)"
-                : `Carga ShooterGame (Host: ${curr.host_cpu_percent || 0}%)`;
+                : `Carga Servidor ARK (Host: ${curr.host_cpu_percent || 0}%)`;
         }
         const valCpuSub = document.getElementById("val-cpu-subtext");
         if (valCpuSub) {
             valCpuSub.textContent = isOffline
                 ? "Servidor inactivo (0.0%)"
-                : `Carga ShooterGame (Host: ${curr.host_cpu_percent || 0}%)`;
+                : `Carga Servidor ARK (Host: ${curr.host_cpu_percent || 0}%)`;
         }
 
         const statMemVal = document.getElementById("stat-mem-val");

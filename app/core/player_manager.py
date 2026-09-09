@@ -96,49 +96,60 @@ class PlayerManager:
         if process_manager.get_status() != "RUNNING":
             return []
 
-        # Intentar obtener vía RCON
+        # Intentar obtener vía RCON (fuente de verdad autoritativa en vivo)
         players = []
         try:
             rcon_players = await process_manager.rcon.list_players()
-            if rcon_players:
-                now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
-                now_ts = time.time()
-                for p in rcon_players:
-                    name = p["name"]
-                    steam_id = p["steam_id"]
-                    
-                    # Actualizar historial
+            now_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+            now_ts = time.time()
+            history_updated = False
+            for p in rcon_players:
+                name = p.get("name", "").strip()
+                steam_id = p.get("steam_id", "").strip()
+                if not name and not steam_id:
+                    continue
+
+                # Actualizar historial persistente
+                if steam_id and steam_id != "Desconocido":
                     if steam_id not in self._player_history:
                         self._player_history[steam_id] = {
-                            "name": name,
+                            "name": name or "Superviviente",
                             "steam_id": steam_id,
                             "first_seen": now_str,
                             "last_seen": now_str,
                             "last_ts": now_ts,
                             "banned": False
                         }
+                        history_updated = True
                     else:
-                        self._player_history[steam_id]["name"] = name
+                        self._player_history[steam_id]["name"] = name or self._player_history[steam_id].get("name", "Superviviente")
                         self._player_history[steam_id]["last_seen"] = now_str
                         self._player_history[steam_id]["last_ts"] = now_ts
-                    
-                    players.append({
-                        "name": name,
-                        "steam_id": steam_id,
-                        "status": "online",
-                        "last_seen": now_str
-                    })
+                        history_updated = True
+
+                players.append({
+                    "name": name or "Superviviente",
+                    "steam_id": steam_id or "Desconocido",
+                    "status": "online",
+                    "last_seen": now_str
+                })
+
+            if history_updated:
                 self._save_history()
-                return players
+            # Si RCON respondió con éxito (incluso si está vacío con 0 jugadores), es la verdad autoritativa
+            return players
         except Exception as e:
-            logger.debug(f"RCON listplayers error: {e}")
+            logger.debug(f"RCON listplayers no disponible, intentando fallback A2S: {e}")
 
-        # Fallback opcional: Steam A2S Query
-        a2s_players = await self._query_a2s_players()
-        if a2s_players:
-            return a2s_players
+        # Fallback opcional: Steam A2S Query ÚNICAMENTE si RCON arrojó excepción o no responde
+        try:
+            a2s_players = await self._query_a2s_players()
+            if a2s_players:
+                return a2s_players
+        except Exception as e:
+            logger.debug(f"A2S query error: {e}")
 
-        return players
+        return []
 
     async def _query_a2s_players(self) -> List[Dict[str, Any]]:
         """Consulta UDP al puerto Steam Query (27015) para A2S_PLAYER."""
@@ -170,9 +181,9 @@ class PlayerManager:
                             name_end = data2.find(b"\x00", offset)
                             if name_end == -1:
                                 break
-                            p_name = data2[offset:name_end].decode("utf-8", errors="replace")
+                            p_name = data2[offset:name_end].decode("utf-8", errors="replace").strip()
                             offset = name_end + 1 + 4 + 4  # skip name, score (int32), duration (float)
-                            if p_name:
+                            if p_name and p_name != "0":
                                 results.append({
                                     "name": p_name,
                                     "steam_id": "N/A",
