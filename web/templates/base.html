@@ -13,6 +13,7 @@
   
   <link rel="icon" type="image/png" href="/static/img/logo.png">
   <link rel="apple-touch-icon" href="/static/img/logo.png">
+  <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#161b22">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -34,5 +35,13 @@
   <div id="toast-container" class="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none;max-width:340px;"></div>
 
   {% block scripts %}{% endblock %}
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+      });
+    }
+  </script>
+
 </body>
 </html>

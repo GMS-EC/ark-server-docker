@@ -439,6 +439,7 @@ async function fetchMetricsOnce() {
         const res = await fetch("/api/metrics");
         const data = await res.json();
         const curr = data.current;
+        const isOffline = curr.status === "OFFLINE";
 
         // Actualizar Tarjetas de Métricas
         if (document.getElementById("val-cpu")) document.getElementById("val-cpu").textContent = `${curr.cpu_percent}%`;
@@ -482,7 +483,6 @@ async function fetchMetricsOnce() {
         if (statusText) statusText.textContent = curr.status;
 
         // Stat Boxes de Consola
-        const isOffline = curr.status === "OFFLINE";
         const cpuValToDisplay = isOffline ? 0.0 : curr.cpu_percent;
         const statCpuVal = document.getElementById("stat-cpu-val");
         if (statCpuVal) statCpuVal.textContent = `${cpuValToDisplay}%`;

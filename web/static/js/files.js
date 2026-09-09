@@ -86,7 +86,14 @@ const Files = {
 
     try {
       const res = await fetch(`/api/files/list?path=${encodeURIComponent(path)}`);
-      if (!res.ok) throw new Error("No se pudo cargar el directorio");
+      if (!res.ok) {
+        let errMsg = "No se pudo cargar el directorio";
+        try {
+          const errJson = await res.json();
+          if (errJson.detail) errMsg = errJson.detail;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
       const data = await res.json();
       this.renderFileList(data.items || []);
     } catch (e) {

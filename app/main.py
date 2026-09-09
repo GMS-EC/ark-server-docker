@@ -51,6 +51,7 @@ async def lifespan(app: FastAPI):
     """Ciclo de vida de la aplicación ARK Server Manager."""
     metrics_manager.start()
     task_scheduler.start_loop()
+    player_manager.start_monitor()
 
     # Si el servidor ya está corriendo en el host (ej. reinicio de panel), sincronizar estado a RUNNING
     if process_manager._is_ark_process_running():
@@ -67,6 +68,7 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(_autostart())
 
     yield
+    player_manager.stop_monitor()
     task_scheduler.stop_loop()
     metrics_manager.stop()
     # Apagado seguro de ARK con guardado de mundo al detener el contenedor (SIGTERM)
@@ -402,7 +404,7 @@ async def api_server_start():
     activity_manager.log("Servidor", "Iniciando servidor de ARK...")
     ok = await process_manager.start_server()
     if ok:
-        await webhook_manager.notify_server_status(True)
+        await webhook_manager.notify_starting()
     return {"success": ok, "status": process_manager.get_status()}
 
 @app.post("/api/server/stop", dependencies=[Depends(require_auth)])
@@ -710,7 +712,12 @@ async def api_backup_download(filename: str):
 # --- Endpoints de Archivos (Dockraft Replicated Suite) ---
 @app.get("/api/files/list", dependencies=[Depends(require_auth)])
 async def file_list(path: str = Query("")):
-    return file_manager.list_directory(path)
+    try:
+        return file_manager.list_directory(path)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/files/content", dependencies=[Depends(require_auth)])
 async def file_content(path: str = Query(...)):

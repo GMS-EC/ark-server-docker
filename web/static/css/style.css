@@ -2985,3 +2985,86 @@ input:checked + .slider:before {
   font-size: 13px;
   color: var(--text-muted);
 }
+
+/* ==========================================================================
+   Mobile & PWA Optimizations (Touch, Responsive & Viewports)
+   ========================================================================== */
+@media (max-width: 768px) {
+  #console-output {
+    height: 380px !important;
+  }
+
+  .rcon-quick-bar {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px !important;
+  }
+
+  .rcon-quick-bar::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .rcon-quick-bar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+  }
+
+  .table-container, .table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .custom-table th, .custom-table td,
+  .file-table th, .file-table td {
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .cluster-selector-wrapper {
+    max-width: 150px;
+  }
+
+  #cluster-single-badge {
+    padding: 3px 8px !important;
+    font-size: 0.72rem !important;
+    height: 28px !important;
+  }
+
+  .grid-4, .grid-3, .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .overview-banner {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .overview-banner {
+    grid-template-columns: 1fr !important;
+  }
+
+  .header {
+    padding: 8px 10px 4px 10px !important;
+  }
+
+  .logo-text h1 {
+    font-size: 0.92rem !important;
+  }
+
+  .nav-btn {
+    padding: 5px 8px !important;
+    font-size: 0.74rem !important;
+  }
+
+  #btn-logout {
+    padding: 4px 8px !important;
+    font-size: 0.74rem !important;
+  }
+}

@@ -12,6 +12,7 @@ from typing import Dict, Any, List, Optional
 from app.config import settings
 from app.core.process_manager import process_manager
 from app.core.fs_utils import atomic_write_json
+from app.core.webhook_manager import webhook_manager
 
 logger = logging.getLogger("arkserver.players")
 
@@ -24,7 +25,56 @@ class PlayerManager:
     def __init__(self):
         self._history_file = settings.ark_data_dir / "ark_players.json"
         self._player_history: Dict[str, Dict[str, Any]] = {}
+        self._current_online: Dict[str, str] = {}
+        self._monitor_running: bool = False
+        self._monitor_task: Optional[asyncio.Task] = None
         self._load_history()
+
+    def start_monitor(self):
+        if not self._monitor_running:
+            self._monitor_running = True
+            self._monitor_task = asyncio.create_task(self._monitor_loop())
+
+    def stop_monitor(self):
+        self._monitor_running = False
+        if self._monitor_task:
+            self._monitor_task.cancel()
+
+    async def _monitor_loop(self):
+        while self._monitor_running:
+            try:
+                if process_manager.get_status() == "RUNNING":
+                    current_players = await self.get_online_players()
+                    new_online = {p["steam_id"]: p["name"] for p in current_players}
+
+                    # Detectar nuevos supervivientes conectados
+                    for steam_id, name in new_online.items():
+                        if steam_id not in self._current_online:
+                            msg = f"[ARK] 👤 Superviviente conectado: {name} (SteamID: {steam_id})"
+                            await process_manager.broadcast_log(msg)
+                            await webhook_manager.send_discord_embed(
+                                "PLAYER_JOIN",
+                                f"El superviviente **{name}** (`{steam_id}`) se ha unido a la partida."
+                            )
+
+                    # Detectar supervivientes desconectados
+                    for steam_id, name in self._current_online.items():
+                        if steam_id not in new_online:
+                            msg = f"[ARK] 👋 Superviviente desconectado: {name} (SteamID: {steam_id})"
+                            await process_manager.broadcast_log(msg)
+                            await webhook_manager.send_discord_embed(
+                                "PLAYER_LEAVE",
+                                f"El superviviente **{name}** (`{steam_id}`) ha salido de la partida."
+                            )
+
+                    self._current_online = new_online
+                else:
+                    if self._current_online:
+                        self._current_online.clear()
+            except Exception as e:
+                logger.debug(f"Error en monitor de supervivientes: {e}")
+
+            await asyncio.sleep(10)
 
     def _load_history(self) -> None:
         if self._history_file.exists():

@@ -102,20 +102,23 @@ class FileManager:
         items.sort(key=lambda x: (not x["is_dir"], x["name"].lower()))
         
         # Calcular rel_str adecuado para la raíz y carpetas especiales
-        if self._is_subpath(target_dir, settings.cluster_dir):
-            if target_dir.resolve() == settings.cluster_dir.resolve():
-                rel_str = "clusters"
+        try:
+            if self._is_subpath(target_dir, settings.cluster_dir):
+                if target_dir.resolve() == settings.cluster_dir.resolve():
+                    rel_str = "clusters"
+                else:
+                    rel_str = "clusters/" + str(target_dir.resolve().relative_to(settings.cluster_dir.resolve())).replace("\\", "/")
+            elif self._is_subpath(target_dir, settings.backups_dir):
+                if target_dir.resolve() == settings.backups_dir.resolve():
+                    rel_str = "backups"
+                else:
+                    rel_str = "backups/" + str(target_dir.resolve().relative_to(settings.backups_dir.resolve())).replace("\\", "/")
             else:
-                rel_str = "clusters/" + str(target_dir.resolve().relative_to(settings.cluster_dir.resolve())).replace("\\", "/")
-        elif self._is_subpath(target_dir, settings.backups_dir):
-            if target_dir.resolve() == settings.backups_dir.resolve():
-                rel_str = "backups"
-            else:
-                rel_str = "backups/" + str(target_dir.resolve().relative_to(settings.backups_dir.resolve())).replace("\\", "/")
-        else:
-            rel_str = str(target_dir.relative_to(self.base_dir.resolve())).replace("\\", "/")
-            if rel_str == ".":
-                rel_str = ""
+                rel_str = str(target_dir.resolve().relative_to(self.base_dir.resolve())).replace("\\", "/")
+                if rel_str == ".":
+                    rel_str = ""
+        except Exception:
+            rel_str = clean_rel
 
         return {
             "current_path": rel_str,
