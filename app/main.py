@@ -662,6 +662,7 @@ async def api_get_tasks_config():
         "auto_backup_interval_hours": int(cfg.get("auto_backup_interval_hours", 6)),
         "backup_max_count": int(cfg.get("backup_max_count", 10)),
         "auto_dino_wipe_enabled": cfg.get("auto_dino_wipe_enabled", False),
+        "auto_dino_wipe_hours": int(cfg.get("auto_dino_wipe_hours", 24)),
         "auto_restart_hours": int(cfg.get("auto_restart_hours", 0))
     }
 
@@ -780,24 +781,6 @@ async def file_rename(req: FileRenameRequest):
     activity_manager.log("Archivos", f"Elemento renombrado a {req.new_name}")
     return res
 
-@app.post("/api/files/duplicate", dependencies=[Depends(require_auth)])
-async def file_duplicate(req: FileDuplicateRequest):
-    res = file_manager.duplicate_item(req.path)
-    activity_manager.log("Archivos", f"Elemento duplicado: {req.path}")
-    return res
-
-@app.post("/api/files/compress", dependencies=[Depends(require_auth)])
-async def file_compress(req: FileCompressRequest):
-    res = file_manager.compress_item(req.path)
-    activity_manager.log("Archivos", f"Elemento comprimido: {req.path}")
-    return res
-
-@app.post("/api/files/create", dependencies=[Depends(require_auth)])
-async def file_create(req: FileCreateRequest):
-    res = file_manager.create_file(req.path)
-    activity_manager.log("Archivos", f"Archivo creado: {req.path}")
-    return res
-
 # Retrocompatibilidad para llamadas previas
 @app.get("/api/files/read", dependencies=[Depends(require_auth)])
 async def api_files_read(path: str = Query(...)):
@@ -806,12 +789,6 @@ async def api_files_read(path: str = Query(...)):
 @app.post("/api/files/write", dependencies=[Depends(require_auth)])
 async def api_files_write(req: FileSaveRequest):
     return file_manager.write_file(req.path, req.content)
-
-
-# --- Endpoints de Actividad ---
-@app.get("/api/activity", dependencies=[Depends(require_auth)])
-async def api_activity():
-    return {"items": activity_manager.get_recent()}
 
 
 # --- Endpoints de Clúster & Multi-Instancia ---

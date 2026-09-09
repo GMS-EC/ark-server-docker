@@ -1,3 +1,14 @@
+// --- Sanitización XSS Global ---
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // ARK Server Manager Main Client Script
 let ws = null;
 let metricsChart = null;
@@ -550,8 +561,8 @@ async function loadPlayers() {
         data.online.forEach(p => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td><strong>${p.name}</strong></td>
-                <td><code style="color: var(--accent-cyan);">${p.steam_id}</code></td>
+                <td><strong>${escapeHtml(p.name)}</strong></td>
+                <td><code style="color: var(--accent-cyan);">${escapeHtml(p.steam_id)}</code></td>
                 <td><span class="status-pill online" style="padding: 2px 8px; font-size: 11px;">En línea</span></td>
                 <td>
                     <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="kickPlayer('${p.steam_id}')">Expulsar</button>
@@ -614,7 +625,7 @@ async function loadBackups() {
         data.backups.forEach(b => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td><strong>${b.filename}</strong></td>
+                <td><strong>${escapeHtml(b.filename)}</strong></td>
                 <td>${b.size_mb} MB</td>
                 <td>${b.created_at}</td>
                 <td>
@@ -819,6 +830,7 @@ async function loadTaskSettings() {
         setVal("task-backup-hours", cfg.auto_backup_interval_hours || 6);
         setVal("task-backup-max-count", cfg.backup_max_count || 10);
         setVal("task-dino-wipe-enabled", String(!!cfg.auto_dino_wipe_enabled));
+        setVal("task-dino-wipe-hours", cfg.auto_dino_wipe_hours || 24);
         setVal("task-restart-hours", cfg.auto_restart_hours || 0);
     } catch (e) {
         console.error("Error al cargar configuración de tareas:", e);
@@ -840,6 +852,7 @@ async function saveTaskSettings() {
         auto_backup_interval_hours: parseInt(getVal("task-backup-hours", "6")) || 6,
         backup_max_count: parseInt(getVal("task-backup-max-count", "10")) || 10,
         auto_dino_wipe_enabled: getVal("task-dino-wipe-enabled", "false") === "true",
+        auto_dino_wipe_hours: parseInt(getVal("task-dino-wipe-hours", "24")) || 24,
         auto_restart_hours: parseInt(getVal("task-restart-hours", "0")) || 0
     };
 
@@ -1263,7 +1276,7 @@ async function loadClusterInstances() {
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 12px;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
-                                <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #f0f6fc;">${inst.name}</h4>
+                                <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #f0f6fc;">${escapeHtml(inst.name)}</h4>
                                 ${inst.is_primary ? '<span class="badge" style="font-size: 0.68rem; background: #238636; color: #fff; padding: 2px 7px; border-radius: 4px;">Principal</span>' : ''}
                                 ${isSelected ? '<span class="badge" style="font-size: 0.68rem; background: #1f6feb; color: #fff; padding: 2px 7px; border-radius: 4px;">Activo en Panel</span>' : ''}
                             </div>
@@ -1357,7 +1370,7 @@ async function loadClusterTributes() {
         tributes.forEach(t => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td><code>${t.filename}</code></td>
+                <td><code>${escapeHtml(t.filename)}</code></td>
                 <td><span class="badge" style="font-size: 0.72rem;">${t.data_type}</span></td>
                 <td>${t.steam_id ? `<code>${t.steam_id}</code>` : '<span style="color:var(--text-dim);">-</span>'}</td>
                 <td>${t.size_kb} KB</td>

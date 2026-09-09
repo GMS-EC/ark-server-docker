@@ -4,6 +4,7 @@ import asyncio
 import logging
 from datetime import datetime
 from typing import Optional, Dict, Any
+from pathlib import Path
 
 from app.config import settings
 from app.core.process_manager import process_manager
@@ -99,7 +100,7 @@ class TaskScheduler:
 
         start_str = cfg.get("schedule_start", os.getenv("SCHEDULE_START", "20:00"))
         stop_str = cfg.get("schedule_stop", os.getenv("SCHEDULE_STOP", "00:00"))
-        warn_mins = int(cfg.get("schedule_warn_minutes", os.getenv("SCHEDULE_WARN_MINUTES", 10)))
+        warn_mins = int(cfg.get("schedule_warn_mins", cfg.get("schedule_warn_minutes", os.getenv("SCHEDULE_WARN_MINUTES", 10))))
 
         try:
             now_dt = datetime.now()

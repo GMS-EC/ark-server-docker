@@ -1,3 +1,4 @@
+import re
 import asyncio
 import struct
 import logging
@@ -184,7 +185,6 @@ class ArkRconClient:
                 name_part = parts[0].strip()
                 steam_part = parts[1].strip()
                 # Quitar únicamente prefijo numérico como "0. " sin alterar nombres legítimos con punto (ej: "Dr. Strange")
-                import re
                 name_part = re.sub(r"^\d+\.\s*", "", name_part).strip()
                 players.append({
                     "name": name_part,
