@@ -3,14 +3,20 @@
 {% block title %}ARK Server Manager — Panel de Control para ARK: Survival Evolved{% endblock %}
 
 {% block content %}
-  <!-- Top Navigation Header (Dockraft Layout) -->
-  {% include "components/header.html" %}
+<div class="app-shell">
+  <!-- Persistent Sidebar Navigation -->
+  {% include "components/sidebar.html" %}
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
 
-  <!-- Server Overview & Metrics Banner (Dockraft Layout) -->
-  {% include "components/banner.html" %}
+  <div class="app-main">
+    <!-- Top Utility Bar -->
+    {% include "components/header.html" %}
 
-  <!-- Main Tabs View Container -->
-  <main class="main-container">
+    <!-- Streamlined Server Telemetry Strip -->
+    {% include "components/banner.html" %}
+
+    <!-- Main Tabs View Container -->
+    <main class="main-container">
     <!-- Tab 0: Asistente Inicial & Instalador -->
     <section id="tab-installer" class="tab-pane {% if not is_installed %}active{% endif %}">
       {% include "tabs/installer.html" %}
@@ -68,11 +74,13 @@
     </section>
   </main>
 
-  <!-- Panel Footer (Dockraft Layout) -->
-  {% include "footer.html" %}
+    <!-- Panel Footer -->
+    {% include "footer.html" %}
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-  <script src="/static/js/files.js?v=2.0.2"></script>
-  <script src="/static/js/app.js?v=2.0.2"></script>
+  <script src="/static/js/files.js?v={{ get_app_version() }}"></script>
+  <script src="/static/js/app.js?v={{ get_app_version() }}"></script>
 {% endblock %}

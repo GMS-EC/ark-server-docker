@@ -7,11 +7,13 @@ import socket
 import psutil
 from collections import deque
 from pathlib import Path
-from typing import Set, List, Deque, Dict, Any, Optional
+from typing import Set, List, Deque, Dict, Any, Optional, Tuple
 from fastapi import WebSocket
 
 from app.config import settings
+from app.core.process_utils import find_ark_processes, invalidate_ark_process_cache
 from app.core.rcon_client import ArkRconClient
+
 
 class ProcessManager:
     """
@@ -31,7 +33,7 @@ class ProcessManager:
         self._intentional_stop: bool = False
         self._server_up_detected: bool = False
         self._is_simulation: bool = False
-        
+
         # Cliente RCON dedicado
         self.rcon = ArkRconClient(
             host=settings.rcon_host,
@@ -48,8 +50,6 @@ class ProcessManager:
         if self.status in ("INSTALLING", "STOPPING"):
             return self.status
 
-        # Si se encuentra en fase de arranque (STARTING), se mantiene fielmente en STARTING
-        # hasta que _watch_server_readiness() termine de certificar que el servidor cargó el mapa
         if self.status == "STARTING":
             if self.process and self.process.returncode is not None:
                 self.status = "OFFLINE"
@@ -68,45 +68,22 @@ class ProcessManager:
 
         return self.status
 
-    def _is_ark_process_running(self) -> bool:
+    def _is_ark_process_running(self, force_refresh: bool = False) -> bool:
         if self.process and self.process.returncode is None:
             return True
-        try:
-            main_port_str = f"Port={settings.server_port}"
-            for p in psutil.process_iter(['name', 'cmdline']):
-                name = (p.info.get('name') or '').lower()
-                if name in ('python', 'python.exe', 'python3', 'bash', 'sh', 'powershell.exe', 'pwsh.exe', 'cmd.exe'):
-                    continue
-                cmdline_list = p.info.get('cmdline') or []
-                cmdline = ' '.join(cmdline_list).lower()
-                is_server = 'shootergameserver' in name or name.startswith('shootergameserv') or 'shootergameserver' in cmdline
-                if is_server:
-                    has_other_port = any("Port=" in arg and main_port_str not in arg for arg in cmdline_list)
-                    if not has_other_port:
-                        return True
-        except Exception:
-            pass
-        return False
+        return bool(
+            find_ark_processes(
+                port=settings.server_port,
+                ttl=1.5,
+                force_refresh=force_refresh,
+            )
+        )
 
     def get_server_pid(self) -> Optional[int]:
         if self.process and self.process.returncode is None:
             return self.process.pid
-        try:
-            main_port_str = f"Port={settings.server_port}"
-            for p in psutil.process_iter(['pid', 'name', 'cmdline']):
-                name = (p.info.get('name') or '').lower()
-                if name in ('python', 'python.exe', 'python3', 'bash', 'sh', 'powershell.exe', 'pwsh.exe', 'cmd.exe'):
-                    continue
-                cmdline_list = p.info.get('cmdline') or []
-                cmdline = ' '.join(cmdline_list).lower()
-                is_server = 'shootergameserver' in name or name.startswith('shootergameserv') or 'shootergameserver' in cmdline
-                if is_server:
-                    has_other_port = any("Port=" in arg and main_port_str not in arg for arg in cmdline_list)
-                    if not has_other_port:
-                        return p.info['pid']
-        except Exception:
-            pass
-        return None
+        procs = find_ark_processes(port=settings.server_port, ttl=1.5)
+        return procs[0].pid if procs else None
 
     async def broadcast_log(self, message: str) -> None:
         """Añade un log al buffer y lo difunde a todos los clientes web conectados."""
@@ -121,6 +98,11 @@ class ProcessManager:
             except Exception:
                 dead_ws.add(ws)
         self.connected_websockets.difference_update(dead_ws)
+
+    def _cancel_log_file_task(self) -> None:
+        if self._log_file_task and not self._log_file_task.done():
+            self._log_file_task.cancel()
+        self._log_file_task = None
 
     async def install_server(self) -> bool:
         """
@@ -158,7 +140,6 @@ class ProcessManager:
                 "+quit"
             ]
         else:
-            # Modo Simulación para desarrollo local
             cmd = [
                 sys.executable, "-c",
                 "import time, sys\n"
@@ -192,7 +173,6 @@ class ProcessManager:
 
             if install_proc.returncode == 0:
                 await self.broadcast_log("[ARK Server Manager] [OK] ¡Instalación del servidor completada exitosamente!")
-                # Crear binario falso si estábamos simulando para marcar como instalado
                 bin_dir = settings.ark_data_dir / "ShooterGame" / "Binaries" / "Linux"
                 bin_dir.mkdir(parents=True, exist_ok=True)
                 (bin_dir / "ShooterGameServer").touch(exist_ok=True)
@@ -209,7 +189,8 @@ class ProcessManager:
 
     async def start_server(self) -> bool:
         """Arranca el servidor de ARK."""
-        if self.status in ("RUNNING", "STARTING", "INSTALLING") or self._is_ark_process_running():
+        is_running = await asyncio.to_thread(self._is_ark_process_running, True)
+        if self.status in ("RUNNING", "STARTING", "INSTALLING") or is_running:
             await self.broadcast_log("[ARK Server Manager] El servidor ya se encuentra en ejecución o iniciando.")
             return False
 
@@ -253,6 +234,8 @@ class ProcessManager:
             start_env["RCON_ENABLED"] = "True" if settings.rcon_enabled else "False"
             start_env["CLUSTER_DIR_OVERRIDE"] = str(settings.cluster_dir)
 
+            self._cancel_log_file_task()
+
             self.process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -284,15 +267,15 @@ class ProcessManager:
             await self.broadcast_log(decoded)
 
         await process.wait()
-        
+
         # Si arkmanager arrancó ShooterGameServer en segundo plano (demonio), monitorearlo activamente
-        if self._is_ark_process_running():
-            while self._is_ark_process_running():
-                await asyncio.sleep(2)
+        while await asyncio.to_thread(self._is_ark_process_running, True):
+            await asyncio.sleep(2)
 
         if not self._intentional_stop:
-            await self.broadcast_log(f"[ARK Server Manager] El servidor de ARK se ha detenido.")
+            await self.broadcast_log("[ARK Server Manager] El servidor de ARK se ha detenido.")
         self.status = "OFFLINE"
+        self._cancel_log_file_task()
         await self.rcon.disconnect()
 
     async def _stream_log_file(self):
@@ -307,6 +290,15 @@ class ProcessManager:
 
         try:
             with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                # Cargar las últimas líneas existentes con deque(f, maxlen=500) antes de seguir el final
+                recent_lines = deque(f, maxlen=500)
+                for raw_l in recent_lines:
+                    clean_l = raw_l.rstrip("\r\n")
+                    if clean_l:
+                        formatted = f"[ShooterGame] {clean_l}"
+                        if formatted not in self.log_buffer:
+                            await self.broadcast_log(formatted)
+
                 f.seek(0, os.SEEK_END)
                 while self.status in ("STARTING", "RUNNING"):
                     line = f.readline()
@@ -317,16 +309,13 @@ class ProcessManager:
                     else:
                         await asyncio.sleep(0.5)
                         f.seek(f.tell())
+        except asyncio.CancelledError:
+            return
         except Exception:
             pass
 
     def _check_steam_query(self, host: str = "127.0.0.1", port: Optional[int] = None, timeout: float = 2.0) -> bool:
-        """Verifica si el puerto de consulta Steam (A2S_INFO) responde con el header 0x49.
-        
-        Esto confirma de forma definitiva que ShooterGameServer ha cargado el mapa,
-        mods y se ha registrado en Steamworks Master Server, siendo visible en el
-        navegador de servidores de ARK y Steam.
-        """
+        """Verifica si el puerto de consulta Steam (A2S_INFO) responde con el header 0x49."""
         if port is None:
             port = settings.query_port
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -346,29 +335,18 @@ class ProcessManager:
             sock.close()
 
     async def is_server_ready(self) -> bool:
-        """Comprueba si el servidor de ARK está 100% listo para que los jugadores se conecten.
-        
-        Para evitar falsos positivos donde el panel reporta 'ONLINE' 2 a 3 minutos antes
-        de que el servidor aparezca en el buscador de ARK:
-        1. Se requiere que el puerto de consulta Steam (QUERY_PORT / A2S_INFO) responda afirmativamente.
-        2. Si RCON está activo, se verifica adicionalmente la conectividad RCON.
-        """
+        """Comprueba si el servidor de ARK está 100% listo para que los jugadores se conecten."""
         if getattr(self, "_is_simulation", False):
             if self.started_at and (time.time() - self.started_at > 6):
                 return True
 
-        loop = asyncio.get_running_loop()
-        
-        # 1. Comprobar que el puerto de consulta de Steam (A2S_INFO) responde
-        # (Esto es lo que determina que el servidor aparezca en la lista de ARK)
-        query_ok = await loop.run_in_executor(None, self._check_steam_query, "127.0.0.1", settings.query_port, 2.0)
+        query_ok = await asyncio.to_thread(self._check_steam_query, "127.0.0.1", settings.query_port, 2.0)
         if not query_ok and settings.rcon_host and settings.rcon_host != "127.0.0.1":
-            query_ok = await loop.run_in_executor(None, self._check_steam_query, settings.rcon_host, settings.query_port, 2.0)
-            
+            query_ok = await asyncio.to_thread(self._check_steam_query, settings.rcon_host, settings.query_port, 2.0)
+
         if not query_ok:
             return False
 
-        # 2. Si RCON está habilitado, verificar que RCON también responda o conecte
         if settings.rcon_enabled and self.rcon:
             try:
                 ok = await self.rcon.connect(timeout=2.0)
@@ -386,7 +364,7 @@ class ProcessManager:
         last_heartbeat = start_time
         await self.broadcast_log("[ARK Server Manager] [INFO] Monitor de disponibilidad activo. Verificando inicio de ShooterGameServer...")
 
-        while self.status == "STARTING" and self._is_ark_process_running():
+        while self.status == "STARTING" and await asyncio.to_thread(self._is_ark_process_running, True):
             await asyncio.sleep(3.0)
             if self.status != "STARTING":
                 return
@@ -394,7 +372,6 @@ class ProcessManager:
             now = time.time()
             elapsed_sec = int(now - start_time)
 
-            # Comprobación de disponibilidad (async await)
             is_ready = await self.is_server_ready()
 
             if is_ready:
@@ -410,23 +387,22 @@ class ProcessManager:
                 await webhook_manager.send_discord_embed("START")
                 return
 
-            # Mensaje periódico de progreso en la consola cada 45 segundos para dar tranquilidad
             if now - last_heartbeat >= 45:
                 last_heartbeat = now
                 mins = elapsed_sec // 60
                 secs = elapsed_sec % 60
                 await self.broadcast_log(f"[ARK Server Manager] [EN PROCESO] Servidor iniciando... Cargando mundo y mods en RAM ({mins}m {secs}s transcurridos). Por favor espera...")
 
-
-
     async def stop_server(self, grace_seconds: int = 10) -> bool:
-        if self.status == "OFFLINE" and not self._is_ark_process_running():
+        is_running = await asyncio.to_thread(self._is_ark_process_running, True)
+        if self.status == "OFFLINE" and not is_running:
             await self.broadcast_log("[ARK Server Manager] El servidor ya está apagado.")
             return False
 
         self.status = "STOPPING"
         self._intentional_stop = True
-        await self.broadcast_log(f"[ARK Server Manager] Guardando mundo antes de apagar...")
+        self._cancel_log_file_task()
+        await self.broadcast_log("[ARK Server Manager] Guardando mundo antes de apagar...")
 
         try:
             if self.rcon:
@@ -441,6 +417,7 @@ class ProcessManager:
                 proc = await asyncio.create_subprocess_exec("arkmanager", "stop", "--saveworld", "@main")
                 await proc.wait()
                 self.status = "OFFLINE"
+                invalidate_ark_process_cache()
                 await self.broadcast_log("[ARK Server Manager] Servidor detenido exitosamente mediante arkmanager.")
                 return True
             except Exception:
@@ -456,16 +433,21 @@ class ProcessManager:
             except Exception as e:
                 await self.broadcast_log(f"[ARK Server Manager] Error finalizando proceso: {e}")
 
-        try:
-            for p in psutil.process_iter(['name', 'cmdline']):
-                name = p.info.get('name') or ''
-                if 'ShooterGameServer' in name:
-                    p.terminate()
-        except Exception:
-            pass
+        def _terminate_residual():
+            try:
+                for proc in find_ark_processes(port=settings.server_port, force_refresh=True):
+                    try:
+                        psutil.Process(proc.pid).terminate()
+                    except Exception:
+                        pass
+            finally:
+                invalidate_ark_process_cache()
+
+        await asyncio.to_thread(_terminate_residual)
 
         self.status = "OFFLINE"
         self.started_at = None
+        invalidate_ark_process_cache()
         await self.rcon.disconnect()
         await self.broadcast_log("[ARK Server Manager] Servidor de ARK detenido.")
         return True
@@ -484,5 +466,6 @@ class ProcessManager:
             for line in resp.splitlines():
                 await self.broadcast_log(line)
         return resp
+
 
 process_manager = ProcessManager()

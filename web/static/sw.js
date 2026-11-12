@@ -1,5 +1,6 @@
-// Service Worker para ARK Server Manager (PWA) - Cache Buster v2.0.2
-const CACHE_NAME = 'ark-manager-cache-v2.0.2';
+// Service Worker para ARK Server Manager (PWA) - Sincronizado con CHANGELOG.md via ?v=
+const SW_VERSION = new URL(self.location.href).searchParams.get('v') || 'app';
+const CACHE_NAME = `ark-manager-cache-v${SW_VERSION}`;
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

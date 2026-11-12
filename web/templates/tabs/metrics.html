@@ -1,71 +1,97 @@
-<!-- TAB: METRICS & TELEMETRY (Dockraft Style) -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+{% from "components/icons.html" import icon %}
+<!-- TAB: METRICS & TELEMETRY -->
+<div class="tab-header tab-header-center tab-header-clean">
   <div>
-    <h2 style="margin: 0; font-size: 1.4rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+    <h2 class="tab-title">
+      {{ icon("activity", 22, "text-info") }}
       <span>Telemetría y Rendimiento de ARK</span>
     </h2>
-    <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.88rem;">
-      Monitoreo en tiempo real de CPU, memoria de ARK y almacenamiento.
+    <p class="tab-subtitle">
+      Monitoreo en tiempo real de CPU, memoria de ARK y almacenamiento en disco.
     </p>
   </div>
 </div>
 
-<div class="grid-4" style="margin-bottom: 20px;">
+<!-- Banner Inteligente de Alerta de Espacio en Disco (75% Advertencia / 90% Crítico) -->
+<div id="disk-alert-banner" class="disk-alert-banner" style="display: none;">
+  <div class="disk-alert-row">
+    <div class="disk-alert-info">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="disk-alert-icon" class="disk-alert-icon">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <div>
+        <div id="disk-alert-title" class="disk-alert-title">Advertencia de Espacio en Disco</div>
+        <div id="disk-alert-desc" class="disk-alert-desc">El almacenamiento del servidor está superando el umbral recomendado.</div>
+      </div>
+    </div>
+    <div class="toolbar-group">
+      <button type="button" class="btn btn-outline btn-chip" onclick="switchTab('backups')">Revisar Backups</button>
+      <button type="button" class="btn btn-outline btn-chip" onclick="switchTab('files')">Explorar Archivos</button>
+    </div>
+  </div>
+</div>
+
+<div class="grid-4">
   <!-- Card 1: CPU Servidor -->
-  <div class="card" style="padding: 16px 18px; border-left: 3px solid #f59e0b; display: flex; flex-direction: column; justify-content: space-between; min-height: 106px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">CPU Servidor</span>
-      <span class="status-dot online" style="width: 6px; height: 6px;"></span>
+  <div class="card kpi-card kpi-accent-amber">
+    <div class="kpi-head">
+      <span class="kpi-label">CPU Servidor</span>
+      <span class="dot-inline online"></span>
     </div>
-    <div style="margin-bottom: 6px;">
-      <span id="val-cpu" style="font-size: 1.45rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono);">0.0%</span>
+    <div>
+      <span id="val-cpu" class="kpi-val">0.0%</span>
     </div>
-    <div style="font-size: 0.75rem; color: var(--text-dim);" id="val-cpu-subtext">Carga de procesamiento de ARK</div>
+    <div class="kpi-sub" id="val-cpu-subtext">Carga de procesamiento de ARK</div>
   </div>
 
   <!-- Card 2: RAM Servidor -->
-  <div class="card" style="padding: 16px 18px; border-left: 3px solid #38bdf8; display: flex; flex-direction: column; justify-content: space-between; min-height: 106px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">RAM Servidor</span>
-      <span id="val-ram-pct" style="font-size: 0.72rem; font-weight: 600; color: #58a6ff; font-family: var(--font-mono); background: rgba(56, 189, 248, 0.12); padding: 1px 6px; border-radius: 4px;"></span>
+  <div class="card kpi-card kpi-accent-cyan">
+    <div class="kpi-head">
+      <span class="kpi-label">RAM Servidor</span>
+      <span id="val-ram-pct" class="badge-xs tone-info mono">0%</span>
     </div>
-    <div style="margin-bottom: 6px;">
-      <span id="val-ark-ram" style="font-size: 1.45rem; font-weight: 700; color: #58a6ff; font-family: var(--font-mono);">0.0 GB</span>
+    <div>
+      <span id="val-ark-ram" class="kpi-val text-info">0.0 GB</span>
     </div>
-    <div style="font-size: 0.75rem; color: var(--text-dim);">Memoria en uso por ARK</div>
+    <div class="kpi-sub" id="val-ram">Memoria en uso por ARK</div>
   </div>
 
   <!-- Card 3: Supervivientes -->
-  <div class="card" style="padding: 16px 18px; border-left: 3px solid #3fb950; display: flex; flex-direction: column; justify-content: space-between; min-height: 106px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">Supervivientes</span>
-      <span class="status-dot online" style="width: 6px; height: 6px; background: #3fb950;"></span>
+  <div class="card kpi-card kpi-accent-success">
+    <div class="kpi-head">
+      <span class="kpi-label">Supervivientes</span>
+      <span class="dot-inline online"></span>
     </div>
-    <div style="margin-bottom: 6px;">
-      <span id="val-players-metric" style="font-size: 1.45rem; font-weight: 700; color: #3fb950; font-family: var(--font-mono);">0 / {{ max_players }}</span>
+    <div>
+      <span id="val-players-metric" class="kpi-val text-success">0 / {{ max_players }}</span>
     </div>
-    <div style="font-size: 0.75rem; color: var(--text-dim);">Jugadores activos en la sesión</div>
+    <div class="kpi-sub">Jugadores activos en la sesión</div>
   </div>
 
   <!-- Card 4: Almacenamiento -->
-  <div class="card" style="padding: 16px 18px; border-left: 3px solid #8957e5; display: flex; flex-direction: column; justify-content: space-between; min-height: 106px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-      <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;">Almacenamiento</span>
-      <span id="val-disk-pct" style="font-size: 0.72rem; font-weight: 600; color: #a371f7; font-family: var(--font-mono); background: rgba(137, 87, 229, 0.15); padding: 1px 6px; border-radius: 4px;"></span>
+  <div class="card kpi-card kpi-accent-purple" id="card-disk-kpi">
+    <div class="kpi-head">
+      <span class="kpi-label">Almacenamiento</span>
+      <span id="val-disk-pct" class="badge-xs tone-purple mono">0%</span>
     </div>
-    <div style="margin-bottom: 6px;">
-      <span id="val-disk" style="font-size: 1.22rem; font-weight: 700; color: #f0f6fc; font-family: var(--font-mono); white-space: nowrap;">0 / 0 GB</span>
+    <div>
+      <span id="val-disk" class="kpi-val-sm">0 / 0 GB</span>
     </div>
-    <div style="font-size: 0.75rem; color: var(--text-dim);">Volumen /steamcmd/ark</div>
+    <div class="kpi-track">
+      <div id="val-disk-bar" class="kpi-fill" style="width: 0%;"></div>
+    </div>
+    <div class="kpi-sub-split">
+      <span>Volumen ARK</span>
+      <span id="val-disk-free">Libre: -- GB</span>
+    </div>
   </div>
 </div>
 
 <div class="card">
-  <div class="card-header" style="margin-bottom: 16px;">
-    <h3 style="font-size: 1.05rem; font-weight: 600; color: #f0f6fc;">Histórico en Tiempo Real</h3>
+  <div class="card-header mb-sm">
+    <h3 class="card-title-sm">Histórico en Tiempo Real (CPU, RAM &amp; Disco)</h3>
   </div>
-  <div style="height: 380px; width: 100%;">
+  <div class="chart-box">
     <canvas id="metrics-chart"></canvas>
   </div>
 </div>

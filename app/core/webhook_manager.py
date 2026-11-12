@@ -1,6 +1,9 @@
 import os
+import socket
+import ipaddress
 import httpx
 import logging
+from urllib.parse import urlparse
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
@@ -8,13 +11,97 @@ from app.config import settings
 
 logger = logging.getLogger("arkserver.webhooks")
 
+SECRET_MASK = "••••••••"
+
+
+def is_safe_webhook_url(url: str) -> bool:
+    """Valida una URL de Webhook previniendo ataques SSRF hacia redes internas, loopback o link-local."""
+    if not url or not isinstance(url, str):
+        return False
+    try:
+        parsed = urlparse(url.strip())
+        if parsed.scheme not in ("https", "http"):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        lower_host = hostname.lower()
+        if lower_host in ("localhost", "127.0.0.1", "::1", "0.0.0.0") or lower_host.endswith(".local") or lower_host.endswith(".internal"):
+            return False
+
+        # Si el hostname ya es un literal IP, validarlo directamente
+        try:
+            ip_literal = ipaddress.ip_address(hostname)
+            if (
+                ip_literal.is_private
+                or ip_literal.is_loopback
+                or ip_literal.is_link_local
+                or ip_literal.is_multicast
+                or ip_literal.is_reserved
+                or ip_literal.is_unspecified
+            ):
+                return False
+            return True
+        except ValueError:
+            pass
+
+        # Resolver DNS y verificar todas las direcciones IP asociadas
+        addr_info = socket.getaddrinfo(hostname, parsed.port or (443 if parsed.scheme == "https" else 80), proto=socket.IPPROTO_TCP)
+        if not addr_info:
+            return False
+
+        for entry in addr_info:
+            sockaddr = entry[4]
+            ip_str = sockaddr[0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if (
+                ip_obj.is_private
+                or ip_obj.is_loopback
+                or ip_obj.is_link_local
+                or ip_obj.is_multicast
+                or ip_obj.is_reserved
+                or ip_obj.is_unspecified
+            ):
+                return False
+
+        return True
+    except Exception:
+        return False
+
+
+def mask_webhook_url(url: str) -> str:
+    """Enmascara el token secreto de una URL de Webhook para no exponerlo en texto plano por API."""
+    if not url or not url.strip():
+        return ""
+    clean = url.strip()
+    try:
+        parsed = urlparse(clean)
+        parts = [p for p in parsed.path.split("/") if p]
+        if len(parts) >= 2:
+            # Conservar primeros 4 caracteres del último segmento si es largo
+            secret = parts[-1]
+            masked_secret = (secret[:4] + "••••••••••••") if len(secret) > 8 else "••••••••••••"
+            parts[-1] = masked_secret
+            new_path = "/" + "/".join(parts)
+            return f"{parsed.scheme}://{parsed.netloc}{new_path}"
+    except Exception:
+        pass
+    if len(clean) > 16:
+        return clean[:12] + "••••••••••••"
+    return "••••••••••••"
+
+
 class WebhookManager:
     """
     Envía notificaciones enriquecidas con embeds a Discord para todos los eventos de ARK,
-    con soporte bilingüe (español e inglés) y filtro granular de eventos estilo Dockraft.
+    con soporte bilingüe (español e inglés), validación anti-SSRF y filtro granular de eventos.
     """
     def __init__(self):
-        self.client = httpx.AsyncClient(timeout=6.0)
+        self.client = httpx.AsyncClient(timeout=6.0, follow_redirects=False)
+
+    # Alias estático para pruebas y llamadas directas
+    _is_safe_url = staticmethod(is_safe_webhook_url)
 
     def _get_lang(self) -> str:
         return (settings.runtime_config.get("discord_language") or os.getenv("DISCORD_LANGUAGE", "es")).lower()
@@ -23,7 +110,6 @@ class WebhookManager:
         """Comprueba si el usuario tiene habilitado este tipo de notificación en el panel."""
         events = settings.runtime_config.get("discord_events")
         if events is None:
-            # Valores por defecto
             return True
 
         mapping = {
@@ -46,8 +132,12 @@ class WebhookManager:
         return bool(events.get(event_key, True))
 
     async def send_discord_embed(self, event_type: str, custom_description: Optional[str] = None) -> bool:
-        webhook_url = settings.runtime_config.get("discord_webhook_url", "") or os.getenv("DISCORD_WEBHOOK_URL", "")
+        webhook_url = (settings.runtime_config.get("discord_webhook_url", "") or os.getenv("DISCORD_WEBHOOK_URL", "")).strip()
         if not webhook_url:
+            return False
+
+        if not is_safe_webhook_url(webhook_url):
+            logger.warning("URL de Webhook bloqueada por validación de seguridad Anti-SSRF.")
             return False
 
         if not self.is_event_enabled(event_type):
@@ -169,8 +259,6 @@ class WebhookManager:
         msg = f"Backup failed: {error}" if lang == "en" else f"Error al generar respaldo: {error}"
         await self.send_discord_embed("BACKUP_FAIL", msg)
 
-    notify_backup_failed = notify_backup_fail
-
     async def notify_restore(self, filename: str):
         lang = self._get_lang()
         msg = f"Server save successfully restored from `{filename}`." if lang == "en" else f"Servidor de ARK restaurado exitosamente desde `{filename}`."
@@ -188,5 +276,6 @@ class WebhookManager:
 
     async def notify_dino_wipe(self):
         await self.send_discord_embed("WILD_DINOS_WIPED")
+
 
 webhook_manager = WebhookManager()

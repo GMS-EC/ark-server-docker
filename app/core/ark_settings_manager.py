@@ -1,57 +1,107 @@
 import os
 import re
+import shutil
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 from app.config import settings
+from app.core.cluster_manager import cluster_manager
 from app.core.fs_utils import atomic_write_text
+
+# Expresiones regulares precompiladas para parseo y actualización de archivos .ini
+_SECTION_REGEX = re.compile(r"^\s*\[(.*)\]\s*$")
+_KV_REGEX = re.compile(r"^\s*([^=;#]+?)\s*=\s*(.*?)\s*$")
+
 
 class ArkSettingsManager:
     """
     Gestor de configuraciones para ARK: Survival Evolved.
     Lee y modifica de manera segura las directivas de GameUserSettings.ini y Game.ini,
-    así como parámetros de ejecución generales compatibles con ark-server-docker.
+    soportando tanto la instancia principal como instancias secundarias del Clúster.
     """
     def __init__(self):
         self.config_dir: Path = settings.ark_data_dir / "ShooterGame" / "Saved" / "Config" / "LinuxServer"
         self.gus_file: Path = self.config_dir / "GameUserSettings.ini"
         self.game_file: Path = self.config_dir / "Game.ini"
 
-    def _ensure_paths(self):
-        self.config_dir.mkdir(parents=True, exist_ok=True)
-        if not self.gus_file.exists():
-            default_gus = (
-                "[ServerSettings]\n"
-                f"SessionName={settings.session_name}\n"
-                f"ServerPassword={settings.server_password}\n"
-                f"ServerAdminPassword={settings.admin_ark_password}\n"
-                f"RCONEnabled={str(settings.rcon_enabled).capitalize()}\n"
-                f"RCONPort={settings.rcon_port}\n"
-                f"Port={settings.server_port}\n"
-                f"QueryPort={settings.query_port}\n"
-                f"MaxPlayers={settings.max_players}\n"
-                "DifficultyOffset=1.0\n"
-                "XPMultiplier=1.0\n"
-                "TamingSpeedMultiplier=1.0\n"
-                "HarvestAmountMultiplier=1.0\n"
-                "ShowMapPlayerLocation=True\n"
-                "AllowThirdPersonPlayer=True\n"
-                "ServerCrosshair=True\n"
-                "EnablePvPGamma=True\n"
-                "\n[SessionSettings]\n"
-                f"SessionName={settings.session_name}\n"
-            )
-            atomic_write_text(self.gus_file, default_gus)
+    def _ensure_paths(self, gus_path: Optional[Path] = None, game_path: Optional[Path] = None, inst_meta: Optional[Dict[str, Any]] = None):
+        target_gus = gus_path or self.gus_file
+        target_game = game_path or self.game_file
+        target_gus.parent.mkdir(parents=True, exist_ok=True)
+        target_game.parent.mkdir(parents=True, exist_ok=True)
 
-        if not self.game_file.exists():
-            default_game = (
-                "[/script/shootergame.shootergamemode]\n"
-                "MatingIntervalMultiplier=1.0\n"
-                "EggHatchSpeedMultiplier=1.0\n"
-                "BabyMatureSpeedMultiplier=1.0\n"
-                "BabyCuddleIntervalMultiplier=1.0\n"
-            )
-            atomic_write_text(self.game_file, default_game)
+        sess_name = (inst_meta or {}).get("session_name", settings.session_name)
+        srv_pass = (inst_meta or {}).get("server_password", settings.server_password)
+        adm_pass = (inst_meta or {}).get("rcon_password", settings.admin_ark_password)
+        rcon_port = (inst_meta or {}).get("rcon_port", settings.rcon_port)
+        srv_port = (inst_meta or {}).get("server_port", settings.server_port)
+        qry_port = (inst_meta or {}).get("query_port", settings.query_port)
+        max_pl = (inst_meta or {}).get("max_players", settings.max_players)
+
+        if not target_gus.exists():
+            if target_gus != self.gus_file and self.gus_file.exists():
+                try:
+                    shutil.copy2(self.gus_file, target_gus)
+                except Exception:
+                    pass
+            if not target_gus.exists():
+                default_gus = (
+                    "[ServerSettings]\n"
+                    f"SessionName={sess_name}\n"
+                    f"ServerPassword={srv_pass}\n"
+                    f"ServerAdminPassword={adm_pass}\n"
+                    f"RCONEnabled={str(settings.rcon_enabled).capitalize()}\n"
+                    f"RCONPort={rcon_port}\n"
+                    f"Port={srv_port}\n"
+                    f"QueryPort={qry_port}\n"
+                    f"MaxPlayers={max_pl}\n"
+                    "DifficultyOffset=1.0\n"
+                    "XPMultiplier=1.0\n"
+                    "TamingSpeedMultiplier=1.0\n"
+                    "HarvestAmountMultiplier=1.0\n"
+                    "ShowMapPlayerLocation=True\n"
+                    "AllowThirdPersonPlayer=True\n"
+                    "ServerCrosshair=True\n"
+                    "EnablePvPGamma=True\n"
+                    "\n[SessionSettings]\n"
+                    f"SessionName={sess_name}\n"
+                )
+                atomic_write_text(target_gus, default_gus)
+
+        if not target_game.exists():
+            if target_game != self.game_file and self.game_file.exists():
+                try:
+                    shutil.copy2(self.game_file, target_game)
+                except Exception:
+                    pass
+            if not target_game.exists():
+                default_game = (
+                    "[/script/shootergame.shootergamemode]\n"
+                    "MatingIntervalMultiplier=1.0\n"
+                    "EggHatchSpeedMultiplier=1.0\n"
+                    "BabyMatureSpeedMultiplier=1.0\n"
+                    "BabyCuddleIntervalMultiplier=1.0\n"
+                )
+                atomic_write_text(target_game, default_game)
+
+    def _resolve_instance_targets(self, instance_id: str = "main") -> Tuple[Path, Path, Optional[Dict[str, Any]]]:
+        """Resuelve las rutas de GameUserSettings.ini y Game.ini para la instancia dada."""
+        clean_id = (instance_id or "main").strip()
+        if not clean_id or clean_id == "main":
+            self._ensure_paths()
+            return self.gus_file, self.game_file, None
+
+        inst = cluster_manager._instances.get(clean_id)
+        if not inst:
+            self._ensure_paths()
+            return self.gus_file, self.game_file, None
+
+        alt_save = Path(str(inst.get("alt_save_dir") or inst.get("map") or clean_id)).name
+        inst_config_dir = settings.ark_data_dir / "ShooterGame" / "Saved" / alt_save / "Config" / "LinuxServer"
+        inst_gus = inst_config_dir / "GameUserSettings.ini"
+        inst_game = inst_config_dir / "Game.ini"
+        self._ensure_paths(inst_gus, inst_game, inst)
+        return inst_gus, inst_game, inst
 
     def read_ini_section(self, file_path: Path, target_section: str) -> Dict[str, str]:
         """Lee una sección específica de un archivo .ini preservando mayúsculas y minúsculas."""
@@ -59,20 +109,18 @@ class ArkSettingsManager:
             return {}
         result = {}
         in_section = False
-        section_regex = re.compile(r"^\s*\[(.*)\]\s*$")
-        kv_regex = re.compile(r"^\s*([^=;#]+?)\s*=\s*(.*?)\s*$")
 
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 for line in f:
-                    sec_match = section_regex.match(line)
+                    sec_match = _SECTION_REGEX.match(line)
                     if sec_match:
                         current_sec = sec_match.group(1).strip()
                         in_section = (current_sec.lower() == target_section.lower())
                         continue
 
                     if in_section:
-                        kv_match = kv_regex.match(line)
+                        kv_match = _KV_REGEX.match(line)
                         if kv_match:
                             key = kv_match.group(1).strip()
                             val = kv_match.group(2).strip()
@@ -95,12 +143,10 @@ class ArkSettingsManager:
         in_section = False
         section_found = False
         keys_written = set()
-        section_regex = re.compile(r"^\s*\[(.*)\]\s*$")
-        kv_regex = re.compile(r"^\s*([^=;#]+?)\s*=\s*(.*?)\s*$")
 
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
             for line in f:
-                sec_match = section_regex.match(line)
+                sec_match = _SECTION_REGEX.match(line)
                 if sec_match:
                     if in_section:
                         for k, v in updates.items():
@@ -115,7 +161,7 @@ class ArkSettingsManager:
                     continue
 
                 if in_section:
-                    kv_match = kv_regex.match(line)
+                    kv_match = _KV_REGEX.match(line)
                     if kv_match:
                         key = kv_match.group(1).strip()
                         key_lower = key.lower()
@@ -141,19 +187,27 @@ class ArkSettingsManager:
         atomic_write_text(file_path, "".join(new_lines))
         return True
 
-    def get_all_settings(self) -> Dict[str, Any]:
-        """Obtiene una vista consolidada y limpia de todas las configuraciones de ARK."""
-        self._ensure_paths()
-        gus_settings = self.read_ini_section(self.gus_file, "ServerSettings")
-        game_settings = self.read_ini_section(self.game_file, "/script/shootergame.shootergamemode")
+    def get_all_settings(self, instance_id: str = "main") -> Dict[str, Any]:
+        """Obtiene una vista consolidada y limpia de todas las configuraciones de ARK para la instancia."""
+        gus_file, game_file, inst = self._resolve_instance_targets(instance_id)
+        gus_settings = self.read_ini_section(gus_file, "ServerSettings")
+        game_settings = self.read_ini_section(game_file, "/script/shootergame.shootergamemode")
+
+        default_session = inst.get("session_name", settings.session_name) if inst else settings.session_name
+        default_srv_pass = inst.get("server_password", settings.server_password) if inst else settings.server_password
+        default_adm_pass = inst.get("rcon_password", settings.admin_ark_password) if inst else settings.admin_ark_password
+        default_max_p = str(inst.get("max_players", settings.max_players)) if inst else str(settings.max_players)
+        default_world = inst.get("map", settings.world) if inst else settings.world
 
         return {
+            "instance_id": instance_id if inst else "main",
+            "instance_name": inst.get("name", "Principal") if inst else "Principal",
             "server": {
-                "session_name": gus_settings.get("SessionName", settings.session_name),
-                "server_password": gus_settings.get("ServerPassword", settings.server_password),
-                "admin_password": gus_settings.get("ServerAdminPassword", settings.admin_ark_password),
-                "max_players": gus_settings.get("MaxPlayers", str(settings.max_players)),
-                "world": settings.world,
+                "session_name": gus_settings.get("SessionName", default_session),
+                "server_password": gus_settings.get("ServerPassword", default_srv_pass),
+                "admin_password": gus_settings.get("ServerAdminPassword", default_adm_pass),
+                "max_players": gus_settings.get("MaxPlayers", default_max_p),
+                "world": default_world,
                 "mod_ids": settings.runtime_config.get("mod_ids", os.getenv("MOD_IDS", "")),
                 "cluster_id": settings.runtime_config.get("cluster_id", os.getenv("CLUSTER_ID", "")),
                 "cluster_dir_override": settings.runtime_config.get("cluster_dir_override", os.getenv("CLUSTER_DIR_OVERRIDE", "/home/steam/clusters")),
@@ -185,43 +239,66 @@ class ArkSettingsManager:
             }
         }
 
-    def save_settings(self, payload: Dict[str, Any]) -> bool:
-        """Aplica y guarda los cambios en GameUserSettings.ini y Game.ini."""
+    def save_settings(self, payload: Dict[str, Any], instance_id: str = "main") -> bool:
+        """Aplica y guarda los cambios en GameUserSettings.ini y Game.ini para la instancia."""
+        gus_file, game_file, inst = self._resolve_instance_targets(instance_id)
         gus_updates = {}
         game_updates = {}
 
         if "server" in payload:
             srv = payload["server"]
-            runtime_updates = {}
-            if "world" in srv:
-                settings.world = srv["world"]
-                runtime_updates["world"] = srv["world"]
-            if "session_name" in srv:
-                settings.session_name = srv["session_name"]
-                runtime_updates["session_name"] = srv["session_name"]
-                gus_updates["SessionName"] = srv["session_name"]
-            if "server_password" in srv:
-                settings.server_password = srv["server_password"]
-                runtime_updates["server_password"] = srv["server_password"]
-                gus_updates["ServerPassword"] = srv["server_password"]
-            if "admin_password" in srv:
-                settings.admin_ark_password = srv["admin_password"]
-                runtime_updates["admin_ark_password"] = srv["admin_password"]
-                gus_updates["ServerAdminPassword"] = srv["admin_password"]
-            if "max_players" in srv:
-                try:
-                    settings.max_players = int(srv["max_players"])
-                    runtime_updates["max_players"] = int(srv["max_players"])
-                    gus_updates["MaxPlayers"] = str(srv["max_players"])
-                except Exception:
-                    pass
+            if inst is not None and instance_id != "main":
+                # Actualizar metadatos de la instancia secundaria de clúster
+                inst_updates: Dict[str, Any] = {}
+                if "world" in srv:
+                    inst["map"] = srv["world"]
+                if "session_name" in srv:
+                    inst_updates["session_name"] = srv["session_name"]
+                    gus_updates["SessionName"] = srv["session_name"]
+                if "server_password" in srv:
+                    inst_updates["server_password"] = srv["server_password"]
+                    gus_updates["ServerPassword"] = srv["server_password"]
+                if "admin_password" in srv:
+                    inst_updates["rcon_password"] = srv["admin_password"]
+                    gus_updates["ServerAdminPassword"] = srv["admin_password"]
+                if "max_players" in srv:
+                    try:
+                        inst_updates["max_players"] = int(srv["max_players"])
+                        gus_updates["MaxPlayers"] = str(srv["max_players"])
+                    except Exception:
+                        pass
+                if inst_updates:
+                    cluster_manager.update_instance(instance_id, inst_updates)
+            else:
+                runtime_updates = {}
+                if "world" in srv:
+                    settings.world = srv["world"]
+                    runtime_updates["world"] = srv["world"]
+                if "session_name" in srv:
+                    settings.session_name = srv["session_name"]
+                    runtime_updates["session_name"] = srv["session_name"]
+                    gus_updates["SessionName"] = srv["session_name"]
+                if "server_password" in srv:
+                    settings.server_password = srv["server_password"]
+                    runtime_updates["server_password"] = srv["server_password"]
+                    gus_updates["ServerPassword"] = srv["server_password"]
+                if "admin_password" in srv:
+                    settings.admin_ark_password = srv["admin_password"]
+                    runtime_updates["admin_ark_password"] = srv["admin_password"]
+                    gus_updates["ServerAdminPassword"] = srv["admin_password"]
+                if "max_players" in srv:
+                    try:
+                        settings.max_players = int(srv["max_players"])
+                        runtime_updates["max_players"] = int(srv["max_players"])
+                        gus_updates["MaxPlayers"] = str(srv["max_players"])
+                    except Exception:
+                        pass
 
-            # Persistir configuraciones de ejecución en runtime_config
-            for k in ["mod_ids", "cluster_id", "cluster_dir_override", "additional_args", "beta", "update_on_start", "battleeye", "autostart_server"]:
-                if k in srv:
-                    runtime_updates[k] = srv[k]
-            if runtime_updates:
-                settings.save_runtime_config(runtime_updates)
+                for k in ["mod_ids", "cluster_id", "cluster_dir_override", "additional_args", "beta", "update_on_start", "battleeye", "autostart_server"]:
+                    if k in srv:
+                        runtime_updates[k] = srv[k]
+                if runtime_updates:
+                    settings.save_runtime_config(runtime_updates)
 
         if "multipliers" in payload:
             m = payload["multipliers"]
@@ -261,8 +338,20 @@ class ArkSettingsManager:
             if "pve_mode" in r:
                 gus_updates["ServerPVE"] = "True" if r["pve_mode"] else "False"
 
-        ok1 = self.update_ini_section(self.gus_file, "ServerSettings", gus_updates)
-        ok2 = self.update_ini_section(self.game_file, "/script/shootergame.shootergamemode", game_updates)
+        ok1 = self.update_ini_section(gus_file, "ServerSettings", gus_updates)
+        ok2 = self.update_ini_section(game_file, "/script/shootergame.shootergamemode", game_updates)
         return ok1 and ok2
+
+    def sync_rates_to_all(self, rates: Dict[str, Any]) -> Dict[str, Any]:
+        """Sincroniza multiplicadores a todos los archivos .ini de las instancias del clúster."""
+        ok_main = self.save_settings({"multipliers": rates}, instance_id="main")
+        count = 1 if ok_main else 0
+        for inst_id in cluster_manager.list_instance_ids():
+            if inst_id == "main":
+                continue
+            if self.save_settings({"multipliers": rates}, instance_id=inst_id):
+                count += 1
+        return {"success": True, "synced_nodes": count}
+
 
 ark_settings_manager = ArkSettingsManager()

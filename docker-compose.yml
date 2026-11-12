@@ -9,7 +9,6 @@ services:
     container_name: ark-server
     stop_grace_period: 30s
     # Límite de memoria RAM del contenedor (ej: 8g, 12g, 16g).
-    # Detectado automáticamente por el panel vía Cgroups v1/v2.
     mem_limit: 8g
     ports:
       - "8080:8080"                    # Panel Web ARK Server Manager (HTTP)

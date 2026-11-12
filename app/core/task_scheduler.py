@@ -3,7 +3,7 @@ import time
 import asyncio
 import logging
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from pathlib import Path
 
 from app.config import settings
@@ -12,6 +12,7 @@ from app.core.backup_manager import backup_manager
 from app.core.webhook_manager import webhook_manager
 
 logger = logging.getLogger("arkserver.tasks")
+
 
 class TaskScheduler:
     """
@@ -30,6 +31,8 @@ class TaskScheduler:
         self._last_restart_time = time.time()
         self._last_cleanup_time = time.time()
         self._schedule_warn_sent = False
+        self._postponed_player_count: Optional[int] = None
+        self._last_schedule_minute: Optional[Tuple[int, int, int, int, int]] = None
 
         # Estado en tiempo real para el panel (últimas ejecuciones reales)
         self._started_at: Optional[float] = None
@@ -54,8 +57,9 @@ class TaskScheduler:
         now = time.time()
         cfg = settings.runtime_config
         schedule_enabled = str(cfg.get("schedule_enabled", os.getenv("SCHEDULE_ENABLED", "false"))).lower() in ("true", "1", "yes")
-        backup_enabled = cfg.get("auto_backup_enabled", True) and os.getenv("BACKUP_ENABLED", "true").lower() in ("true", "1", "yes")
+        backup_enabled = bool(cfg.get("auto_backup_enabled", True)) and os.getenv("BACKUP_ENABLED", "true").lower() in ("true", "1", "yes")
         backup_interval = int(cfg.get("auto_backup_interval_hours", os.getenv("BACKUP_INTERVAL_HOURS", 6)))
+        dino_wipe_enabled = bool(cfg.get("auto_dino_wipe_enabled", False))
         wipe_interval = int(cfg.get("auto_dino_wipe_hours", 24))
         restart_hours = int(cfg.get("auto_restart_hours", os.getenv("AUTO_RESTART_HOURS", 0)))
 
@@ -74,7 +78,10 @@ class TaskScheduler:
             "config": {
                 "schedule_enabled": schedule_enabled,
                 "backup_enabled": backup_enabled,
+                "auto_backup_enabled": backup_enabled,
                 "auto_backup_interval_hours": backup_interval,
+                "backup_max_count": int(cfg.get("backup_max_count", os.getenv("BACKUP_MAX_COUNT", 10))),
+                "auto_dino_wipe_enabled": dino_wipe_enabled,
                 "auto_dino_wipe_hours": wipe_interval,
                 "auto_restart_hours": restart_hours,
             },
@@ -89,7 +96,7 @@ class TaskScheduler:
             "last_backup": self._fmt_ts(self.last_backup_ts),
             "next_backup_seconds": next_in(backup_interval, self._last_backup_time) if backup_enabled else None,
             "last_dino_wipe": self._fmt_ts(self.last_dino_wipe_ts),
-            "next_dino_wipe_seconds": next_in(wipe_interval, self._last_dino_wipe_time) if cfg.get("auto_dino_wipe_enabled", False) else None,
+            "next_dino_wipe_seconds": next_in(wipe_interval, self._last_dino_wipe_time) if dino_wipe_enabled else None,
             "last_restart": self._fmt_ts(self.last_restart_ts),
             "next_restart_seconds": next_in(restart_hours, self._last_restart_time) if restart_hours > 0 else None,
             "last_cleanup": self._fmt_ts(self.last_cleanup_ts),
@@ -110,17 +117,21 @@ class TaskScheduler:
         while self._running:
             try:
                 now = time.time()
+                now_dt = datetime.now()
+                cur_minute = (now_dt.year, now_dt.month, now_dt.day, now_dt.hour, now_dt.minute)
                 self._ticks += 1
                 cfg = settings.runtime_config
 
-                # 1. Horario de Encendido / Apagado (Power Schedule)
-                await self._check_power_schedule()
+                # 1. Horario de Encendido / Apagado (alineado por minuto calendario)
+                if cur_minute != self._last_schedule_minute:
+                    self._last_schedule_minute = cur_minute
+                    await self._check_power_schedule(now_dt=now_dt)
 
                 # 2. Copia de seguridad automática
-                backup_enabled = cfg.get("auto_backup_enabled", True) and os.getenv("BACKUP_ENABLED", "true").lower() in ("true", "1", "yes")
+                backup_enabled = bool(cfg.get("auto_backup_enabled", True)) and os.getenv("BACKUP_ENABLED", "true").lower() in ("true", "1", "yes")
                 if backup_enabled:
                     interval_sec = int(cfg.get("auto_backup_interval_hours", os.getenv("BACKUP_INTERVAL_HOURS", 6))) * 3600
-                    if now - self._last_backup_time >= interval_sec:
+                    if interval_sec > 0 and now - self._last_backup_time >= interval_sec:
                         self._last_backup_time = now
                         logger.info("Ejecutando copia de seguridad programada...")
                         res = await backup_manager.create_backup("auto")
@@ -131,7 +142,7 @@ class TaskScheduler:
                 # 3. Dino Wipe automático
                 if cfg.get("auto_dino_wipe_enabled", False):
                     wipe_interval_sec = int(cfg.get("auto_dino_wipe_hours", 24)) * 3600
-                    if now - self._last_dino_wipe_time >= wipe_interval_sec:
+                    if wipe_interval_sec > 0 and now - self._last_dino_wipe_time >= wipe_interval_sec:
                         self._last_dino_wipe_time = now
                         if process_manager.get_status() == "RUNNING":
                             logger.info("Ejecutando Dino Wipe programado...")
@@ -155,7 +166,7 @@ class TaskScheduler:
                 # 5. Limpieza periódica de logs antiguos y crash dumps (>7 días)
                 if now - self._last_cleanup_time >= 86400:
                     self._last_cleanup_time = now
-                    self._cleanup_old_logs()
+                    await asyncio.to_thread(self._cleanup_old_logs)
                     self.last_cleanup_ts = time.time()
                     logger.info("Limpieza de logs antiguos y crash dumps finalizada.")
 
@@ -164,9 +175,9 @@ class TaskScheduler:
                 self._last_error = str(e)
                 logger.error(f"Error en bucle de tareas: {e}")
 
-            await asyncio.sleep(30)
+            await asyncio.sleep(15)
 
-    async def _check_power_schedule(self):
+    async def _check_power_schedule(self, now_dt: Optional[datetime] = None):
         """Monitorea la ventana de horario de juego configurada."""
         cfg = settings.runtime_config
         schedule_enabled = str(cfg.get("schedule_enabled", os.getenv("SCHEDULE_ENABLED", "false"))).lower() in ("true", "1", "yes")
@@ -178,7 +189,7 @@ class TaskScheduler:
         warn_mins = int(cfg.get("schedule_warn_mins", cfg.get("schedule_warn_minutes", os.getenv("SCHEDULE_WARN_MINUTES", 10))))
 
         try:
-            now_dt = datetime.now()
+            now_dt = now_dt or datetime.now()
             now_minutes = now_dt.hour * 60 + now_dt.minute
 
             s_h, s_m = map(int, start_str.split(":"))
@@ -202,6 +213,7 @@ class TaskScheduler:
             # Caso A: Dentro de la ventana y el servidor está apagado -> autoencender
             if in_window:
                 self._schedule_warn_sent = False
+                self._postponed_player_count = None
                 if server_status == "OFFLINE" and process_manager.is_installed():
                     await process_manager.broadcast_log(f"[Horario] Dentro de horario activo ({start_str} - {stop_str}). Encendiendo servidor...")
                     await webhook_manager.notify_starting()
@@ -209,7 +221,7 @@ class TaskScheduler:
                     self.last_power_event = f"autoencendido ({start_str})"
                     self.last_power_event_ts = time.time()
 
-            # Caso B: Servidor corriendo y aproximándose al límite de parada
+            # Caso B: Servidor corriendo y aproximándose o fuera del límite de parada
             elif server_status == "RUNNING":
                 if 0 < mins_until_stop <= warn_mins and not self._schedule_warn_sent:
                     warn_msg = f"[HORARIO] El horario activo finaliza en {mins_until_stop} min. El servidor se apagara en {stop_str}."
@@ -220,17 +232,24 @@ class TaskScheduler:
                     self.last_power_event = f"aviso apagado en {mins_until_stop} min"
                     self.last_power_event_ts = time.time()
 
-                # Al llegar a la hora de parada, verificar jugadores activos
+                # Al llegar a la hora de parada, verificar jugadores activos sin hacer spam en logs
                 if mins_until_stop <= 0 or not in_window:
-                    # Consultar si hay jugadores
                     players = await process_manager.rcon.list_players()
-                    if len(players) > 0:
-                        await process_manager.broadcast_log(f"[Horario] Hora de apagado ({stop_str}) alcanzada pero hay {len(players)} superviviente(s) conectados. Posponiendo...")
+                    player_count = len(players)
+                    if player_count > 0:
+                        if self._postponed_player_count != player_count:
+                            self._postponed_player_count = player_count
+                            await process_manager.broadcast_log(
+                                f"[Horario] Hora de apagado ({stop_str}) alcanzada pero hay {player_count} superviviente(s) conectado(s). Posponiendo apagado hasta que se desconecten..."
+                            )
+                            self.last_power_event = f"pospuesto ({player_count} online)"
+                            self.last_power_event_ts = time.time()
                     else:
                         await process_manager.broadcast_log(f"[Horario] Hora de apagado ({stop_str}) alcanzada y 0 jugadores. Deteniendo servidor...")
                         await webhook_manager.send_discord_embed("SHUTDOWN")
                         await process_manager.stop_server()
                         self._schedule_warn_sent = False
+                        self._postponed_player_count = None
                         self.last_power_event = f"apagado ({stop_str})"
                         self.last_power_event_ts = time.time()
 
@@ -248,7 +267,7 @@ class TaskScheduler:
             if ldir.exists() and ldir.is_dir():
                 try:
                     for item in ldir.iterdir():
-                        if item.is_file() and item.stat().st_mtime < cutoff:
+                        if item.is_file() and not item.is_symlink() and item.stat().st_mtime < cutoff:
                             if item.suffix in (".dmp", ".log", ".crashdump"):
                                 item.unlink()
                 except Exception:
@@ -287,5 +306,6 @@ class TaskScheduler:
 
         await process_manager.restart_server()
         self.last_restart_ts = time.time()
+
 
 task_scheduler = TaskScheduler()

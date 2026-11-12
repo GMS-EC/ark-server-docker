@@ -1,136 +1,167 @@
-<!-- TAB: FILE MANAGER (Dockraft Style con Menú Contextual y Editor Completo) -->
-<div class="card">
+{% from "components/icons.html" import icon %}
+<!-- TAB: FILE MANAGER -->
+<div class="card files-card" id="files-dropzone-card">
+  <!-- Overlay Drag & Drop -->
+  <div id="files-drop-overlay" class="drop-overlay" style="display: none;">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <div class="drop-overlay-title">Suelta los archivos aquí para subirlos</div>
+    <div id="files-drop-target-label" class="drop-overlay-path">Destino: /ark-server</div>
+  </div>
+
   <div class="file-manager-header">
     <div class="breadcrumbs" id="file-breadcrumbs">
       <span class="crumb-item">/ark-server</span>
     </div>
 
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-      <input type="file" id="file-upload-input" style="display:none;" onchange="if(this.files[0]) Files.uploadFile(this.files[0])">
-      <button class="btn btn-outline" onclick="document.getElementById('file-upload-input').click()" style="display: inline-flex; align-items: center; gap: 6px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <span>Subir Archivo</span>
+    <div class="toolbar-group">
+      <input type="file" id="file-upload-input" multiple class="hidden-input" onchange="if(this.files && this.files.length) { Files.uploadFiles(this.files); this.value=''; }">
+      <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('file-upload-input').click()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>Subir Archivos</span>
       </button>
-      <button class="btn btn-outline" onclick="Files.openCreateFileModal()" style="display: inline-flex; align-items: center; gap: 6px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      <button type="button" class="btn btn-outline btn-sm" onclick="Files.openCreateFileModal()">
+        {{ icon("plus", 15) }}
         <span>Nuevo Archivo</span>
       </button>
-      <button class="btn btn-outline" onclick="Files.createNewFolder()" style="display: inline-flex; align-items: center; gap: 6px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+      <button type="button" class="btn btn-outline btn-sm" onclick="Files.createNewFolder()">
+        {{ icon("folder", 15) }}
         <span>Nueva Carpeta</span>
       </button>
-      <button class="btn btn-outline" onclick="Files.loadDirectory(Files.currentPath)" style="display: inline-flex; align-items: center; gap: 6px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <button type="button" class="btn btn-outline btn-sm" onclick="Files.loadDirectory(Files.currentPath)">
+        {{ icon("refresh-cw", 15) }}
         <span>Refrescar</span>
       </button>
     </div>
   </div>
 
-  <!-- Barra de Filtro de Archivos -->
-  <div style="display: flex; gap: 10px; align-items: center; margin-top: 12px; padding: 8px 12px; background: rgba(22, 27, 34, 0.6); border: 1px solid var(--border-color); border-radius: 6px;">
-    <div style="display: flex; align-items: center; gap: 8px; position: relative; width: 100%; max-width: 320px;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 8px; color: var(--text-dim);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="files-filter-input" placeholder="Filtrar archivos en esta carpeta..." style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-color); font-size: 0.78rem; padding: 4px 8px 4px 26px; border-radius: 4px; width: 100%;" oninput="Files.filter(this.value)">
+  <!-- Barra de Filtro de Archivos + Accesos Rápidos -->
+  <div class="filter-strip">
+    <div class="search-box search-box-wide">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="files-filter-input" class="search-input-compact w-full" placeholder="Filtrar archivos en esta carpeta..." oninput="Files.filter(this.value)">
+    </div>
+    <div class="toolbar-group">
+      <span class="rcon-quick-label">Acceso rápido:</span>
+      <button type="button" class="btn btn-outline btn-chip" onclick="Files.openDirectConfig('GameUserSettings.ini')">GameUserSettings.ini</button>
+      <button type="button" class="btn btn-outline btn-chip" onclick="Files.openDirectConfig('Game.ini')">Game.ini</button>
+      <button type="button" class="btn btn-outline btn-chip" onclick="Files.openDirectConfig('ShooterGame.log')">ShooterGame.log</button>
     </div>
   </div>
 
-  <div class="table-responsive" style="margin-top: 14px;">
+  <div class="table-responsive mt-sm">
     <table class="file-table" id="file-manager-table">
       <thead>
         <tr>
           <th>Nombre</th>
-          <th style="width: 120px;">Tamaño</th>
-          <th style="width: 200px;">Modificado</th>
-          <th style="width: 140px; text-align: right;">Acciones</th>
+          <th class="th-w-120">Tamaño</th>
+          <th class="th-w-200">Modificado</th>
+          <th class="th-w-140 th-right">Acciones</th>
         </tr>
       </thead>
       <tbody id="files-table-body">
         <tr>
-          <td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">Cargando archivos...</td>
+          <td colspan="4" class="table-empty">Cargando archivos...</td>
         </tr>
       </tbody>
     </table>
   </div>
 </div>
 
-<!-- Floating Context Menu (Dockraft Style) -->
-<div id="file-context-menu" class="context-menu">
-  <!-- Inyectado dinámicamente por Files.showContextMenu -->
+<!-- Widget Flotante de Cola de Subidas -->
+<div id="upload-manager-widget" class="upload-widget" style="display: none;">
+  <div class="upload-widget-header">
+    <div class="upload-widget-title">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span id="upload-widget-title">Subiendo archivos...</span>
+    </div>
+    <div class="toolbar-group">
+      <button type="button" class="action-icon-btn" onclick="Files.toggleUploadWidgetBody()" title="Minimizar/Expandir">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button type="button" class="action-icon-btn" onclick="Files.closeUploadWidget()" title="Cerrar">
+        {{ icon("x", 13) }}
+      </button>
+    </div>
+  </div>
+  <div id="upload-widget-body" class="upload-widget-body"></div>
 </div>
+
+<!-- Floating Context Menu -->
+<div id="file-context-menu" class="context-menu"></div>
 
 <!-- Modal: Renombrar Archivo o Carpeta -->
 <div class="modal-backdrop" id="modal-file-rename">
-  <div class="modal-box" style="max-width: 420px; border: 1px solid #30363d;">
+  <div class="modal-box modal-box-sm">
     <div class="modal-header">
-      <h3 style="display: flex; align-items: center; gap: 8px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <h3 class="modal-title-row">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         <span>Renombrar</span>
       </h3>
-      <button class="action-icon-btn" onclick="Files.closeRenameModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="action-icon-btn" type="button" onclick="Files.closeRenameModal()">
+        {{ icon("x", 14) }}
       </button>
     </div>
     <div class="modal-body">
-      <div class="form-group" style="margin-bottom: 0;">
+      <div class="form-group mb-0">
         <label class="form-label" for="input-file-rename">Nuevo Nombre:</label>
         <input type="text" class="form-input" id="input-file-rename" required onkeydown="if(event.key === 'Enter') Files.submitRename()">
       </div>
     </div>
-    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
-      <button class="btn btn-outline" onclick="Files.closeRenameModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="Files.submitRename()">Guardar</button>
+    <div class="modal-footer modal-footer-end">
+      <button type="button" class="btn btn-outline" onclick="Files.closeRenameModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="Files.submitRename()">Guardar</button>
     </div>
   </div>
 </div>
 
 <!-- Modal: Crear Nuevo Archivo -->
 <div class="modal-backdrop" id="modal-file-create">
-  <div class="modal-box" style="max-width: 420px; border: 1px solid #30363d;">
+  <div class="modal-box modal-box-sm">
     <div class="modal-header">
-      <h3 style="display: flex; align-items: center; gap: 8px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      <h3 class="modal-title-row">
+        {{ icon("plus", 18, "text-info") }}
         <span>Nuevo Archivo</span>
       </h3>
-      <button class="action-icon-btn" onclick="Files.closeCreateFileModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="action-icon-btn" type="button" onclick="Files.closeCreateFileModal()">
+        {{ icon("x", 14) }}
       </button>
     </div>
     <div class="modal-body">
-      <div class="form-group" style="margin-bottom: 0;">
+      <div class="form-group mb-0">
         <label class="form-label" for="input-file-create-name">Nombre del Archivo (con extensión):</label>
         <input type="text" class="form-input" id="input-file-create-name" placeholder="ej: GameUserSettings.ini, whitelist.txt" required onkeydown="if(event.key === 'Enter') Files.submitCreateFile()">
       </div>
     </div>
-    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
-      <button class="btn btn-outline" onclick="Files.closeCreateFileModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="Files.submitCreateFile()">Crear Archivo</button>
+    <div class="modal-footer modal-footer-end">
+      <button type="button" class="btn btn-outline" onclick="Files.closeCreateFileModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="Files.submitCreateFile()">Crear Archivo</button>
     </div>
   </div>
 </div>
 
-<!-- Modal: Editor de Texto de Archivos (Dockraft Style) -->
+<!-- Modal: Editor de Texto de Archivos -->
 <div class="modal-backdrop" id="file-editor-modal">
-  <div class="modal-box" style="max-width: 900px;">
+  <div class="modal-box modal-box-lg">
     <div class="modal-header">
-      <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        <h3 id="editor-file-title" style="font-family: var(--font-mono); font-size: 0.95rem; margin: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">Editar Archivo</h3>
+      <div class="modal-title-row">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <h3 id="editor-file-title" class="modal-title-truncate">Editar Archivo</h3>
       </div>
-      <button class="action-icon-btn" onclick="Files.closeEditor()" title="Cerrar">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="action-icon-btn" type="button" onclick="Files.closeEditor()" title="Cerrar">
+        {{ icon("x", 14) }}
       </button>
     </div>
-    <div class="modal-body" style="padding: 14px 20px;">
+    <div class="modal-body">
       <textarea class="code-editor-area" id="editor-textarea" spellcheck="false" placeholder="Cargando contenido..."></textarea>
     </div>
-    <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 4px;">
-        <kbd style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 3px; padding: 2px 5px; font-family: var(--font-mono);">Ctrl + S</kbd> para guardar cambios rápidos
+    <div class="modal-footer modal-footer-between">
+      <span class="kbd-hint">
+        <kbd>Ctrl + S</kbd> para guardar cambios rápidos
       </span>
-      <div style="display: flex; gap: 8px;">
-        <button class="btn btn-outline" onclick="Files.closeEditor()">Cancelar</button>
-        <button id="btn-editor-save" class="btn btn-primary" onclick="Files.saveCurrentFile()" style="display: inline-flex; align-items: center; gap: 6px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <div class="toolbar-group">
+        <button type="button" class="btn btn-outline" onclick="Files.closeEditor()">Cancelar</button>
+        <button type="button" id="btn-editor-save" class="btn btn-primary" onclick="Files.saveCurrentFile()">
+          {{ icon("save", 15) }}
           <span>Guardar (Ctrl+S)</span>
         </button>
       </div>

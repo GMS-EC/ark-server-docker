@@ -12,6 +12,39 @@ SERVERDATA_AUTH_RESPONSE = 2
 SERVERDATA_EXECCOMMAND = 2
 SERVERDATA_RESPONSE_VALUE = 0
 
+_STEAM_ID_PATTERN = re.compile(r"^\d{5,25}$")
+
+
+def sanitize_steam_id(steam_id: Any) -> str:
+    """Valida que un SteamID sea estrictamente numérico antes de interpolarlo en comandos RCON."""
+    clean = str(steam_id or "").strip()
+    if not _STEAM_ID_PATTERN.fullmatch(clean):
+        raise ValueError("SteamID inválido: debe contener solo dígitos.")
+    return clean
+
+
+def escape_rcon_quoted_text(message: Any) -> str:
+    """Limpia caracteres de control y escapa comillas dobles para comandos RCON con texto."""
+    return (
+        str(message or "")
+        .replace("\x00", "")
+        .replace("\r", " ")
+        .replace("\n", " ")
+        .replace('"', '\\"')
+        .strip()
+    )
+
+
+def redact_rcon_command(command: str) -> str:
+    """Devuelve solo el verbo RCON (truncado) evitando filtrar contraseñas o argumentos en logs."""
+    clean = (command or "").replace("\x00", "").replace("\r", " ").replace("\n", " ").strip()
+    if not clean:
+        return "<empty>"
+    parts = clean.split(None, 1)
+    verb = parts[0][:32]
+    return f"{verb} ***" if len(parts) > 1 else verb
+
+
 class ArkRconClient:
     """
     Cliente RCON asíncrono nativo para ARK: Survival Evolved.
@@ -112,7 +145,8 @@ class ArkRconClient:
 
     async def send_command(self, command: str, timeout: float = 6.0) -> str:
         """Ejecuta un comando en la consola de ARK y devuelve la respuesta en texto."""
-        cmd = command.strip()
+        # Eliminar NUL y saltos de línea para evitar inyección de comandos/paquetes en TCP
+        cmd = command.replace("\x00", "").replace("\r", " ").replace("\n", " ").strip()
         if not cmd:
             return ""
 
@@ -145,7 +179,7 @@ class ArkRconClient:
                 _, _, body = resp
                 return body.strip()
             except Exception as e:
-                logger.error(f"Fallo enviando comando RCON '{cmd}': {e}")
+                logger.error("Fallo enviando comando RCON '%s': %s", redact_rcon_command(cmd), e)
                 await self._close_internal()
                 return f"Error ejecutando comando: {e}"
 
@@ -160,7 +194,9 @@ class ArkRconClient:
 
     async def broadcast(self, message: str) -> str:
         """Envía un mensaje flotante a todos los jugadores conectados."""
-        clean_msg = message.replace('"', '\\"')
+        clean_msg = escape_rcon_quoted_text(message)
+        if not clean_msg:
+            raise ValueError("El mensaje de broadcast no puede estar vacío.")
         return await self.send_command(f'Broadcast "{clean_msg}"')
 
     async def list_players(self) -> List[Dict[str, str]]:
@@ -206,10 +242,13 @@ class ArkRconClient:
         return players
 
     async def kick_player(self, steam_id: str) -> str:
-        return await self.send_command(f"KickPlayer {steam_id}")
+        clean_id = sanitize_steam_id(steam_id)
+        return await self.send_command(f"KickPlayer {clean_id}")
 
     async def ban_player(self, steam_id: str) -> str:
-        return await self.send_command(f"BanPlayer {steam_id}")
+        clean_id = sanitize_steam_id(steam_id)
+        return await self.send_command(f"BanPlayer {clean_id}")
 
     async def unban_player(self, steam_id: str) -> str:
-        return await self.send_command(f"UnbanPlayer {steam_id}")
+        clean_id = sanitize_steam_id(steam_id)
+        return await self.send_command(f"UnbanPlayer {clean_id}")

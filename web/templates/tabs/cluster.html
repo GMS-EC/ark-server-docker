@@ -1,100 +1,101 @@
-<!-- TAB: ADMINISTRACIÓN DE CLÚSTER MULTI-MAPA (Spacious Dockraft Style) -->
-<div class="card" style="padding: 28px 32px; margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 18px; flex-wrap: wrap; gap: 16px;">
+{% from "components/icons.html" import icon %}
+<!-- TAB: ADMINISTRACIÓN DE CLÚSTER MULTI-MAPA -->
+<div class="card">
+  <div class="tab-header">
     <div>
-      <h2 style="margin: 0; font-size: 1.35rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 10px;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+      <h2 class="tab-title">
+        {{ icon("layers", 22, "text-info") }}
         <span>Red de Clúster Multi-Mapa</span>
       </h2>
-      <p style="margin: 6px 0 0 0; color: var(--text-dim); font-size: 0.88rem; line-height: 1.5;">
+      <p class="tab-subtitle">
         Administración centralizada de mapas de ARK vinculados por obeliscos para transferencia libre de supervivientes y dinos.
       </p>
     </div>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-      <button class="btn btn-outline" onclick="syncClusterRatesModal()" style="padding: 7px 16px; font-size: 0.82rem;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+    <div class="toolbar-group">
+      <button type="button" class="btn btn-outline btn-sm" onclick="syncClusterRatesModal()">
+        {{ icon("repeat", 14) }}
         <span>Sincronizar Tasas</span>
       </button>
-      <button class="btn btn-secondary" onclick="startAllCluster()" style="padding: 7px 16px; font-size: 0.82rem; color: #3fb950; border-color: rgba(63, 185, 80, 0.4);">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <button type="button" class="btn btn-secondary btn-sm tone-success" onclick="startAllCluster()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         <span>Iniciar Todo</span>
       </button>
-      <button class="btn btn-outline" onclick="stopAllCluster()" style="padding: 7px 16px; font-size: 0.82rem; color: #f85149; border-color: rgba(248, 81, 73, 0.4);">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+      <button type="button" class="btn btn-outline btn-sm tone-danger" onclick="stopAllCluster()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
         <span>Detener Todo</span>
       </button>
-      <button class="btn btn-primary" onclick="openAddInstanceModal()" style="padding: 7px 18px; font-size: 0.82rem;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <button type="button" class="btn btn-primary btn-sm" onclick="openAddInstanceModal()">
+        {{ icon("plus", 14) }}
         <span>Nuevo Mapa</span>
       </button>
     </div>
   </div>
 
-  <!-- Resumen de Métricas del Clúster -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 28px;">
-    <div class="card" style="padding: 18px 22px; background: rgba(22, 27, 34, 0.7); border: 1px solid #30363d; border-radius: 10px; display: flex; align-items: center; gap: 16px;">
-      <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56, 139, 253, 0.15); border: 1px solid rgba(56, 139, 253, 0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+  <!-- Resumen de Métricas del Clúster (Subcards) -->
+  <div class="setting-grid mb-lg">
+    <div class="subcard subcard-summary">
+      <div class="icon-box-lg tone-info">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
       </div>
       <div>
-        <div style="font-size: 0.76rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 2px;">Cluster ID</div>
-        <div id="cluster-summary-id" style="font-size: 1.15rem; font-weight: 700; color: #58a6ff; font-family: var(--font-mono);">ArkCluster</div>
+        <div class="summary-kicker">Cluster ID</div>
+        <div id="cluster-summary-id" class="summary-val text-info mono">ArkCluster</div>
       </div>
     </div>
 
-    <div class="card" style="padding: 18px 22px; background: rgba(22, 27, 34, 0.7); border: 1px solid #30363d; border-radius: 10px; display: flex; align-items: center; gap: 16px;">
-      <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(63, 185, 80, 0.15); border: 1px solid rgba(63, 185, 80, 0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    <div class="subcard subcard-summary">
+      <div class="icon-box-lg tone-success">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
       </div>
       <div>
-        <div style="font-size: 0.76rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 2px;">Nodos Activos</div>
-        <div id="cluster-summary-nodes" style="font-size: 1.15rem; font-weight: 700; color: #f0f6fc;">1 / 1 Online</div>
+        <div class="summary-kicker">Nodos Activos</div>
+        <div id="cluster-summary-nodes" class="summary-val">1 / 1 Online</div>
       </div>
     </div>
 
-    <div class="card" style="padding: 18px 22px; background: rgba(22, 27, 34, 0.7); border: 1px solid #30363d; border-radius: 10px; display: flex; align-items: center; gap: 16px;">
-      <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(210, 153, 34, 0.15); border: 1px solid rgba(210, 153, 34, 0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d29922" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    <div class="subcard subcard-summary">
+      <div class="icon-box-lg tone-warning">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       </div>
       <div>
-        <div style="font-size: 0.76rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 2px;">Obeliscos (En Nube)</div>
-        <div id="cluster-summary-tributes" style="font-size: 1.15rem; font-weight: 700; color: #e3b341;">0 elementos</div>
+        <div class="summary-kicker">Obeliscos (En Nube)</div>
+        <div id="cluster-summary-tributes" class="summary-val text-warning">0 elementos</div>
       </div>
     </div>
   </div>
 
-  <!-- Nodos del Clúster (Tarjetas de Mapas) -->
-  <div style="margin-top: 10px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
-    <h3 style="font-size: 1.05rem; font-weight: 700; color: #f0f6fc; margin: 0; display: flex; align-items: center; gap: 8px;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+  <!-- Nodos del Clúster -->
+  <div class="section-subbar">
+    <h3 class="section-heading-sub">
+      {{ icon("hard-drive", 18) }}
       <span>Mapas y Servidores Vinculados</span>
     </h3>
   </div>
 
-  <div id="cluster-instances-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 36px;">
+  <div id="cluster-instances-grid" class="cluster-nodes-grid">
     <!-- Renderizado dinámicamente vía app.js -->
-    <div style="text-align: center; padding: 30px; color: var(--text-dim); grid-column: 1 / -1;">Cargando nodos del clúster...</div>
+    <div class="table-empty grid-full">Cargando nodos del clúster...</div>
   </div>
 
   <!-- Explorador de Datos de Obeliscos / Tributos del Clúster -->
-  <div style="border-top: 1px solid var(--border-color); padding-top: 26px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+  <div class="section-divider">
+    <div class="section-subbar">
       <div>
-        <h3 style="font-size: 1.05rem; font-weight: 700; color: #f0f6fc; margin: 0; display: flex; align-items: center; gap: 8px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e3b341" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <h3 class="section-heading-sub">
+          {{ icon("package", 18, "text-warning") }}
           <span>Explorador de Datos en Obeliscos (/clusters)</span>
         </h3>
-        <p style="margin: 4px 0 0 0; color: var(--text-dim); font-size: 0.82rem;">
+        <p class="tab-subtitle">
           Supervivientes, dinosaurios y tributos actualmente subidos a las terminales y disponibles para transferir entre mapas.
         </p>
       </div>
-      <button class="btn btn-secondary" onclick="loadClusterTributes()" style="padding: 6px 14px; font-size: 0.8rem;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="loadClusterTributes()">
+        {{ icon("refresh-cw", 13) }}
         <span>Refrescar Datos</span>
       </button>
     </div>
 
-    <div class="table-container" style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+    <div class="table-container table-wrap-scroll">
       <table class="data-table">
         <thead>
           <tr>
@@ -103,12 +104,12 @@
             <th>SteamID Propietario</th>
             <th>Tamaño</th>
             <th>Fecha de Subida</th>
-            <th style="text-align: right;">Acciones</th>
+            <th class="th-right">Acciones</th>
           </tr>
         </thead>
         <tbody id="cluster-tributes-tbody">
           <tr>
-            <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">
+            <td colspan="6" class="table-empty">
               No hay transferencias pendientes en la nube de los obeliscos.
             </td>
           </tr>
@@ -118,73 +119,73 @@
   </div>
 </div>
 
-
 <!-- Modal para Crear Nuevo Mapa en el Clúster -->
-<div class="modal-backdrop modal-dialog-backdrop" id="modal-add-instance" style="display: none; z-index: 2100;">
-  <div class="modal-box modal-dialog-box" style="max-width: 520px;">
-    <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #30363d;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(56, 139, 253, 0.15); border: 1px solid rgba(56, 139, 253, 0.3); display: flex; align-items: center; justify-content: center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+<div class="modal-backdrop modal-dialog-backdrop" id="modal-add-instance" style="display: none;">
+  <div class="modal-box modal-dialog-box modal-box-md">
+    <div class="modal-header">
+      <div class="modal-title-row">
+        <div class="icon-box-md tone-info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
         </div>
-        <h3 style="font-size: 1.05rem; font-weight: 600; color: #f0f6fc; margin: 0;">Agregar Mapa al Clúster</h3>
+        <h3 class="card-title-sm">Agregar Mapa al Clúster</h3>
       </div>
       <button class="action-icon-btn" type="button" onclick="closeAddInstanceModal()" aria-label="Cerrar">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        {{ icon("x", 14) }}
       </button>
     </div>
-    
-    <div class="modal-body" style="padding: 20px;">
-      <div class="form-group" style="margin-bottom: 14px;">
-        <label class="form-label" for="add-inst-name" style="font-size: 0.82rem;">Nombre Identificativo:</label>
-        <input type="text" id="add-inst-name" class="form-input" placeholder="ej: Scorched Earth" style="font-size: 0.88rem;">
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="add-inst-name">Nombre Identificativo:</label>
+        <input type="text" id="add-inst-name" class="form-input" placeholder="ej: Scorched Earth">
       </div>
 
-      <div class="form-group" style="margin-bottom: 14px;">
-        <label class="form-label" for="add-inst-map" style="font-size: 0.82rem;">Mapa Oficial:</label>
-        <select id="add-inst-map" class="form-select" style="font-size: 0.88rem;" onchange="onMapSelectionChange(this.value)">
+      <div class="form-group">
+        <label class="form-label" for="add-inst-map">Mapa Oficial:</label>
+        <select id="add-inst-map" class="form-select" onchange="onMapSelectionChange(this.value)">
           <!-- Poblado por app.js -->
         </select>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="add-inst-port" style="font-size: 0.82rem;">Puerto Juego (UDP):</label>
-          <input type="number" id="add-inst-port" class="form-input" value="7779" style="font-size: 0.88rem;">
+      <div class="setting-grid-2 mb-sm">
+        <div class="form-group mb-0">
+          <label class="form-label" for="add-inst-port">Puerto Juego (UDP):</label>
+          <input type="number" id="add-inst-port" class="form-input" value="7779">
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" for="add-inst-query" style="font-size: 0.82rem;">Puerto Query (UDP):</label>
-          <input type="number" id="add-inst-query" class="form-input" value="27016" style="font-size: 0.88rem;">
+        <div class="form-group mb-0">
+          <label class="form-label" for="add-inst-query">Puerto Query (UDP):</label>
+          <input type="number" id="add-inst-query" class="form-input" value="27016">
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom: 14px;">
-        <label class="form-label" for="add-inst-players" style="font-size: 0.82rem;">Límite Máximo de Supervivientes:</label>
-        <input type="number" id="add-inst-players" class="form-input" value="20" style="font-size: 0.88rem;">
+      <div class="form-group">
+        <label class="form-label" for="add-inst-players">Límite Máximo de Supervivientes:</label>
+        <input type="number" id="add-inst-players" class="form-input" value="20">
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label class="form-label" for="add-inst-rcon" style="font-size: 0.82rem; margin-bottom: 0;">Puerto RCON (Interno):</label>
-            <span style="font-size: 0.70rem; color: #58a6ff; font-weight: 600; background: rgba(56, 139, 253, 0.1); border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 4px; padding: 1px 6px;">Automático</span>
+      <div class="setting-grid-2 mb-sm">
+        <div class="form-group mb-0">
+          <div class="field-label-row">
+            <label class="form-label" for="add-inst-rcon">Puerto RCON (Interno):</label>
+            <span class="badge-xs tone-info">Automático</span>
           </div>
-          <input type="number" id="add-inst-rcon" class="form-input" value="27021" style="font-size: 0.88rem; background: rgba(22, 27, 34, 0.9); color: #79c0ff; font-family: var(--font-mono); cursor: not-allowed; border-color: #30363d;" readonly tabindex="-1">
+          <input type="number" id="add-inst-rcon" class="form-input form-input-readonly" value="27021" readonly tabindex="-1">
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label class="form-label" for="add-inst-altsave" style="font-size: 0.82rem; margin-bottom: 0;">Carpeta (AltSaveDir):</label>
-            <span style="font-size: 0.70rem; color: #3fb950; font-weight: 600; background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.3); border-radius: 4px; padding: 1px 6px;">Automática</span>
+        <div class="form-group mb-0">
+          <div class="field-label-row">
+            <label class="form-label" for="add-inst-altsave">Carpeta (AltSaveDir):</label>
+            <span class="badge-xs tone-success">Automática</span>
           </div>
-          <input type="text" id="add-inst-altsave" class="form-input" placeholder="ej: ScorchedEarth" style="font-size: 0.88rem; background: rgba(22, 27, 34, 0.9); color: #79c0ff; font-family: var(--font-mono); cursor: not-allowed; border-color: #30363d;" readonly tabindex="-1">
+          <input type="text" id="add-inst-altsave" class="form-input form-input-readonly" placeholder="ej: ScorchedEarth" readonly tabindex="-1">
         </div>
       </div>
-      <small style="color: var(--text-dim); font-size: 0.74rem; display: block; margin-top: 2px;">
-        💡 El puerto RCON interno (127.0.0.1) y la contraseña de administrador son gestionados automáticamente por el panel para la consola y comandos de este mapa.
+      <small class="field-help field-help-inline">
+        {{ icon("info", 14) }}
+        <span>El puerto RCON interno (127.0.0.1) y la contraseña de administrador son gestionados automáticamente por el panel para la consola y comandos de este mapa.</span>
       </small>
     </div>
 
-    <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #30363d; display: flex; justify-content: flex-end; gap: 10px;">
+    <div class="modal-footer modal-footer-end">
       <button type="button" class="btn btn-outline" onclick="closeAddInstanceModal()">Cancelar</button>
       <button type="button" class="btn btn-primary" onclick="submitNewInstance()">Crear Servidor</button>
     </div>

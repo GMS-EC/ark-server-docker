@@ -1,13 +1,21 @@
-// ARK Server Manager File Manager Script (Dockraft Replicated Feature Suite)
+// ARK Server Manager File Manager Script (Dockraft v1.4.0 Replicated Feature Suite)
 const Files = {
-  currentPath: '',
+  currentPath: sessionStorage.getItem('ark_files_path') || '',
   activeEditingPath: '',
   activeRenamePath: '',
   initialized: false,
+  uploadQueue: [],
+  uploadProcessing: false,
+  uploadMinimized: false,
 
   init() {
     if (this.initialized) return;
     this.initialized = true;
+
+    const savedPath = sessionStorage.getItem('ark_files_path');
+    if (savedPath !== null) {
+      this.currentPath = savedPath;
+    }
 
     // Global listener: close context menu on click outside
     window.addEventListener('click', (e) => {
@@ -38,12 +46,46 @@ const Files = {
       this.hideContextMenu();
     }, true);
 
-    // Background right-click on the table
+    // Background right-click and drag & drop on the table / card
     const table = document.getElementById('file-manager-table');
     if (table) {
       table.addEventListener('contextmenu', (e) => {
         if (e.target.closest('.file-row')) return;
         this.showContextMenu(e, null);
+      });
+    }
+
+    const dropCard = document.getElementById('files-dropzone-card') || table;
+    const dropOverlay = document.getElementById('files-drop-overlay');
+    const dropLabel = document.getElementById('files-drop-target-label');
+    if (dropCard) {
+      let dragDepth = 0;
+      dropCard.addEventListener('dragenter', (e) => {
+        if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return;
+        e.preventDefault();
+        dragDepth++;
+        if (dropLabel) {
+          dropLabel.textContent = `Destino: /ark-server${this.currentPath ? '/' + this.currentPath : ''}`;
+        }
+        if (dropOverlay) dropOverlay.style.display = 'flex';
+      });
+      dropCard.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+      dropCard.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0 && dropOverlay) {
+          dropOverlay.style.display = 'none';
+        }
+      });
+      dropCard.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragDepth = 0;
+        if (dropOverlay) dropOverlay.style.display = 'none';
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          this.enqueueUploads(e.dataTransfer.files);
+        }
       });
     }
   },
@@ -75,12 +117,23 @@ const Files = {
     return window.prompt(message, defaultVal);
   },
 
-  async loadDirectory(path = '') {
+  async loadDirectory(path = '', preserveScroll = false) {
+    const isSameFolder = (path === this.currentPath);
+    const scrollContainer = document.getElementById('files-scroll-container');
+    const prevScrollTop = (preserveScroll || isSameFolder) && scrollContainer ? scrollContainer.scrollTop : 0;
+    const prevWindowScroll = (preserveScroll || isSameFolder) ? window.scrollY : null;
+
     this.currentPath = path;
+    try {
+      sessionStorage.setItem('ark_files_path', path);
+    } catch (_) {}
+
     const tbody = document.getElementById('files-table-body');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">Cargando archivos...</td></tr>';
+    if (!preserveScroll && !isSameFolder) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-dim);">Cargando archivos...</td></tr>';
+    }
     this.updateBreadcrumbs(path);
     this.hideContextMenu();
 
@@ -95,9 +148,29 @@ const Files = {
         throw new Error(errMsg);
       }
       const data = await res.json();
+      if (data.current_path !== undefined) {
+        this.currentPath = data.current_path;
+        try {
+          sessionStorage.setItem('ark_files_path', this.currentPath);
+        } catch (_) {}
+        this.updateBreadcrumbs(this.currentPath);
+      }
       this.renderFileList(data.items || []);
+
+      // Re-aplicar filtro si hay texto en el buscador
+      const filterInput = document.getElementById('files-filter-input');
+      if (filterInput && filterInput.value.trim()) {
+        this.filter(filterInput.value);
+      }
+
+      if (scrollContainer && prevScrollTop > 0) {
+        scrollContainer.scrollTop = prevScrollTop;
+      }
+      if (prevWindowScroll !== null) {
+        window.scrollTo({ top: prevWindowScroll, behavior: 'instant' });
+      }
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--status-danger);">${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--status-danger);">${this.escapeHtml(e.message)}</td></tr>`;
     }
   },
 
@@ -137,7 +210,7 @@ const Files = {
     const tbody = document.getElementById('files-table-body');
     if (!tbody) return;
 
-    if (items.length === 0) {
+    if (items.length === 0 && !this.currentPath) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-dim);">La carpeta está vacía. Haz clic derecho para crear archivos.</td></tr>';
       return;
     }
@@ -147,7 +220,8 @@ const Files = {
     // If inside a subfolder, add '..' parent directory row
     if (this.currentPath) {
       const parentRow = document.createElement('tr');
-      parentRow.className = 'file-row';
+      parentRow.className = 'file-row parent-dir-row';
+      parentRow.setAttribute('data-parent', 'true');
       parentRow.innerHTML = `
         <td colspan="4">
           <div class="file-name-cell">
@@ -169,9 +243,17 @@ const Files = {
       tbody.appendChild(parentRow);
     }
 
+    if (items.length === 0) {
+      const emptyRow = document.createElement('tr');
+      emptyRow.innerHTML = '<td colspan="4" style="text-align:center; padding:24px; color:var(--text-dim);">Esta carpeta está vacía.</td>';
+      tbody.appendChild(emptyRow);
+      return;
+    }
+
     items.forEach(item => {
       const row = document.createElement('tr');
       row.className = 'file-row';
+      row.setAttribute('data-name', (item.name || '').toLowerCase());
 
       const iconSvg = item.is_dir 
         ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`
@@ -202,7 +284,6 @@ const Files = {
         </td>
       `;
 
-      // Event listener for name cell click
       const nameCell = row.querySelector('.file-name-cell');
       nameCell.addEventListener('click', () => {
         if (item.is_dir) {
@@ -212,7 +293,6 @@ const Files = {
         }
       });
 
-      // Actions
       const editBtn = row.querySelector('.btn-edit');
       if (editBtn) editBtn.addEventListener('click', () => this.openEditor(itemRelativePath));
 
@@ -225,7 +305,6 @@ const Files = {
       const delBtn = row.querySelector('.btn-del');
       if (delBtn) delBtn.addEventListener('click', () => this.deleteItem(itemRelativePath, item.name));
 
-      // Right-click context menu event
       row.addEventListener('contextmenu', (e) => {
         this.showContextMenu(e, item, itemRelativePath, row);
       });
@@ -238,7 +317,6 @@ const Files = {
     e.preventDefault();
     e.stopPropagation();
 
-    // Clear existing highlight
     document.querySelectorAll('.file-row.context-selected').forEach(r => r.classList.remove('context-selected'));
     if (targetRow) {
       targetRow.classList.add('context-selected');
@@ -252,7 +330,6 @@ const Files = {
     const safeName = item ? this.attrJsStr(item.name) : '';
 
     if (!item) {
-      // Background context menu
       menu.innerHTML = `
         <button type="button" class="context-menu-item" onclick="Files.openCreateFileModal()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
@@ -264,16 +341,15 @@ const Files = {
         </button>
         <button type="button" class="context-menu-item" onclick="document.getElementById('file-upload-input').click(); Files.hideContextMenu();">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <span>Subir Archivo</span>
+          <span>Subir Archivos</span>
         </button>
         <div class="context-menu-divider"></div>
-        <button type="button" class="context-menu-item" onclick="Files.loadDirectory(Files.currentPath)">
+        <button type="button" class="context-menu-item" onclick="Files.loadDirectory(Files.currentPath, true)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           <span>Refrescar</span>
         </button>
       `;
     } else if (item.is_dir) {
-      // Folder context menu
       menu.innerHTML = `
         <button type="button" class="context-menu-item" onclick="Files.loadDirectory('${safePath}')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -302,7 +378,6 @@ const Files = {
         </button>
       `;
     } else {
-      // File context menu
       const canEdit = this.isEditable(item.extension);
       const isZip = item.extension === 'zip';
 
@@ -354,7 +429,6 @@ const Files = {
       menu.innerHTML = itemsHtml;
     }
 
-    // Position context menu safely within viewport
     menu.style.display = 'flex';
     menu.classList.add('open');
 
@@ -442,7 +516,7 @@ const Files = {
       if (res.ok) {
         this.closeRenameModal();
         this.notify(`Renombrado a "${data.name}"`, 'success');
-        this.loadDirectory(this.currentPath);
+        this.loadDirectory(this.currentPath, true);
       } else {
         this.notify(data.detail || "Error al renombrar", 'danger');
       }
@@ -481,7 +555,7 @@ const Files = {
       if (res.ok) {
         this.closeCreateFileModal();
         this.notify(`Archivo "${fileName}" creado`, 'success');
-        await this.loadDirectory(this.currentPath);
+        await this.loadDirectory(this.currentPath, true);
         const ext = fileName.split('.').pop().toLowerCase();
         if (this.isEditable(ext)) {
           this.openEditor(newPath);
@@ -506,7 +580,7 @@ const Files = {
       const data = await res.json();
       if (res.ok) {
         this.notify(`Copia creada: "${data.new_name}"`, 'success');
-        this.loadDirectory(this.currentPath);
+        this.loadDirectory(this.currentPath, true);
       } else {
         this.notify(data.detail || "Error al duplicar", 'danger');
       }
@@ -527,7 +601,7 @@ const Files = {
       const data = await res.json();
       if (res.ok) {
         this.notify(`Archivo comprimido: "${data.archive_name}"`, 'success');
-        this.loadDirectory(this.currentPath);
+        this.loadDirectory(this.currentPath, true);
       } else {
         this.notify(data.detail || "Error al comprimir", 'danger');
       }
@@ -594,7 +668,7 @@ const Files = {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   },
 
-  async openEditor(filePath) {
+  async openEditor(filePath, fallbackPath = '') {
     this.hideContextMenu();
     this.activeEditingPath = filePath;
     const modal = document.getElementById('file-editor-modal');
@@ -608,7 +682,15 @@ const Files = {
     if (modal) modal.classList.add('open');
 
     try {
-      const res = await fetch(`/api/files/content?path=${encodeURIComponent(filePath)}`);
+      let res = await fetch(`/api/files/content?path=${encodeURIComponent(filePath)}`);
+      if (!res.ok && fallbackPath) {
+        const fbRes = await fetch(`/api/files/content?path=${encodeURIComponent(fallbackPath)}`);
+        if (fbRes.ok) {
+          res = fbRes;
+          this.activeEditingPath = fallbackPath;
+          if (title) title.textContent = fallbackPath;
+        }
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Error al cargar archivo");
       if (textarea) {
@@ -617,7 +699,7 @@ const Files = {
       }
     } catch (e) {
       if (textarea) {
-        textarea.value = `No se puede abrir el archivo:\n${e.message}\n\nSi el archivo es binario o muy pesado, descárgalo para editarlo localmente.`;
+        textarea.value = `No se puede abrir el archivo:\n${e.message}\n\nSi el archivo aún no existe o es binario, créalo o descárgalo para editarlo localmente.`;
         textarea.disabled = true;
       }
       if (saveBtn) saveBtn.disabled = true;
@@ -670,9 +752,10 @@ const Files = {
       });
       if (res.ok) {
         this.notify(`"${name}" eliminado`, 'success');
-        this.loadDirectory(this.currentPath);
+        this.loadDirectory(this.currentPath, true);
       } else {
-        this.notify("Error al eliminar", 'danger');
+        const err = await res.json().catch(() => ({}));
+        this.notify(err.detail || "Error al eliminar", 'danger');
       }
     } catch (e) {
       this.notify(e.message, 'danger');
@@ -690,7 +773,7 @@ const Files = {
       });
       if (res.ok) {
         this.notify("Extracción completada", 'success');
-        this.loadDirectory(this.currentPath);
+        this.loadDirectory(this.currentPath, true);
       } else {
         const data = await res.json();
         this.notify(data.detail || "Error en la extracción", 'danger');
@@ -719,7 +802,7 @@ const Files = {
       });
       if (res.ok) {
         this.notify("Carpeta creada", 'success');
-        this.loadDirectory(this.currentPath);
+        this.loadDirectory(this.currentPath, true);
       } else {
         const err = await res.json();
         this.notify(err.detail || "Error al crear carpeta", 'danger');
@@ -729,35 +812,194 @@ const Files = {
     }
   },
 
-  async uploadFile(file) {
+  // --- Administrador de Subidas Flotante (Cola Múltiple + MB/s + Cancelación) ---
+  enqueueUploads(fileList) {
     this.hideContextMenu();
-    const formData = new FormData();
-    formData.append('path', this.currentPath);
-    formData.append('file', file);
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
 
-    this.notify(`Subiendo ${file.name}...`, 'info');
-
-    try {
-      const res = await fetch('/api/files/upload', {
-        method: 'POST',
-        body: formData
+    files.forEach((f) => {
+      const id = 'up_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      this.uploadQueue.push({
+        id,
+        file: f,
+        targetPath: this.currentPath,
+        status: 'pending', // pending, uploading, done, error, canceled
+        progress: 0,
+        speedText: 'En cola...',
+        xhr: null
       });
-      if (res.ok) {
-        this.notify(`Subido: ${file.name}`, 'success');
-        this.loadDirectory(this.currentPath);
-      } else {
-        const data = await res.json();
-        this.notify(data.detail || "Error al subir archivo", 'danger');
-      }
-    } catch (e) {
-      this.notify(e.message, 'danger');
+    });
+
+    this.renderUploadManager();
+    if (!this.uploadProcessing) {
+      this.processUploadQueue();
     }
+  },
+
+  uploadFile(file) {
+    if (file) this.enqueueUploads([file]);
+  },
+
+  uploadFiles(fileList) {
+    if (fileList && fileList.length) this.enqueueUploads(fileList);
+  },
+
+  renderUploadManager() {
+    const mgr = document.getElementById('upload-manager-widget') || document.getElementById('floating-upload-manager');
+    const body = document.getElementById('upload-widget-body') || document.getElementById('upload-mgr-body');
+    const title = document.getElementById('upload-widget-title') || document.getElementById('upload-mgr-title');
+    if (!mgr || !body) return;
+
+    if (this.uploadQueue.length === 0) {
+      mgr.style.display = 'none';
+      return;
+    }
+
+    mgr.style.display = 'block';
+    body.style.display = this.uploadMinimized ? 'none' : 'flex';
+
+    const doneCount = this.uploadQueue.filter(u => u.status === 'done').length;
+    if (title) {
+      title.textContent = `Subidas (${doneCount}/${this.uploadQueue.length})`;
+    }
+
+    body.innerHTML = this.uploadQueue.map(u => {
+      const barColor = u.status === 'done' ? '#3fb950' : (u.status === 'error' || u.status === 'canceled' ? '#f85149' : '#58a6ff');
+      const canCancel = u.status === 'pending' || u.status === 'uploading';
+      return `
+        <div style="background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 0.78rem; font-weight: 600; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.escapeHtml(u.file.name)}</span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              <span style="font-size: 0.72rem; color: #8b949e; font-family: var(--font-mono);">${this.escapeHtml(u.speedText)}</span>
+              ${canCancel ? `<button type="button" class="action-icon-btn danger" style="padding: 2px;" onclick="Files.cancelUpload('${u.id}')" title="Cancelar"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
+            </div>
+          </div>
+          <div style="height: 5px; width: 100%; background: #21262d; border-radius: 3px; overflow: hidden;">
+            <div style="height: 100%; width: ${u.progress}%; background: ${barColor}; transition: width 0.15s ease;"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  toggleUploadManagerMinimize() {
+    this.uploadMinimized = !this.uploadMinimized;
+    this.renderUploadManager();
+  },
+
+  toggleUploadWidgetBody() {
+    this.toggleUploadManagerMinimize();
+  },
+
+  closeUploadManager() {
+    this.uploadQueue = this.uploadQueue.filter(u => u.status === 'uploading' || u.status === 'pending');
+    if (this.uploadQueue.length === 0) {
+      const mgr = document.getElementById('upload-manager-widget') || document.getElementById('floating-upload-manager');
+      if (mgr) mgr.style.display = 'none';
+    } else {
+      this.renderUploadManager();
+    }
+  },
+
+  closeUploadWidget() {
+    this.closeUploadManager();
+  },
+
+  cancelUpload(id) {
+    const item = this.uploadQueue.find(u => u.id === id);
+    if (!item) return;
+    if (item.status === 'uploading' && item.xhr) {
+      item.xhr.abort();
+    }
+    item.status = 'canceled';
+    item.speedText = 'Cancelado';
+    this.renderUploadManager();
+  },
+
+  async processUploadQueue() {
+    this.uploadProcessing = true;
+    while (true) {
+      const next = this.uploadQueue.find(u => u.status === 'pending');
+      if (!next) break;
+      await this.runSingleUpload(next);
+    }
+    this.uploadProcessing = false;
+    this.loadDirectory(this.currentPath, true);
+  },
+
+  runSingleUpload(item) {
+    return new Promise((resolve) => {
+      item.status = 'uploading';
+      item.progress = 1;
+      item.speedText = '0.0 MB/s';
+      this.renderUploadManager();
+
+      const formData = new FormData();
+      formData.append('path', item.targetPath);
+      formData.append('file', item.file);
+
+      const xhr = new XMLHttpRequest();
+      item.xhr = xhr;
+      const startedAt = performance.now();
+
+      xhr.upload.onprogress = (ev) => {
+        if (ev.lengthComputable) {
+          item.progress = Math.round((ev.loaded / ev.total) * 100);
+          const elapsedSec = Math.max(0.1, (performance.now() - startedAt) / 1000);
+          const mbPerSec = (ev.loaded / (1024 * 1024)) / elapsedSec;
+          item.speedText = `${mbPerSec.toFixed(1)} MB/s (${item.progress}%)`;
+          this.renderUploadManager();
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          item.status = 'done';
+          item.progress = 100;
+          item.speedText = 'Completado';
+        } else {
+          item.status = 'error';
+          let detail = 'Error';
+          try {
+            const resp = JSON.parse(xhr.responseText);
+            if (resp.detail) detail = resp.detail;
+          } catch (_) {}
+          item.speedText = detail;
+          this.notify(`Error subiendo ${item.file.name}: ${detail}`, 'danger');
+        }
+        this.renderUploadManager();
+        resolve();
+      };
+
+      xhr.onerror = () => {
+        item.status = 'error';
+        item.speedText = 'Error de red';
+        this.renderUploadManager();
+        resolve();
+      };
+
+      xhr.onabort = () => {
+        item.status = 'canceled';
+        item.speedText = 'Cancelado';
+        this.renderUploadManager();
+        resolve();
+      };
+
+      xhr.open('POST', '/api/files/upload', true);
+      xhr.send(formData);
+    });
   },
 
   filter(query) {
     const q = (query || "").toLowerCase().trim();
     const rows = document.querySelectorAll("#files-table-body .file-row");
     rows.forEach(row => {
+      if (row.getAttribute("data-parent") === "true") {
+        row.style.display = "";
+        return;
+      }
       const name = row.getAttribute("data-name") || "";
       if (!q || name.toLowerCase().includes(q)) {
         row.style.display = "";
@@ -768,17 +1010,32 @@ const Files = {
   },
 
   openDirectConfig(filename) {
-    const knownPaths = {
-      'GameUserSettings.ini': 'ShooterGame/Saved/Config/CleanConfig/GameUserSettings.ini',
-      'Game.ini': 'ShooterGame/Saved/Config/CleanConfig/Game.ini',
-      'arkmanager.cfg': '/etc/arkmanager/arkmanager.cfg',
+    if (filename === 'arkmanager.cfg') {
+      if (typeof switchTab === 'function') {
+        switchTab('settings');
+      }
+      this.notify("Los parámetros de arkmanager.cfg se gestionan de forma segura desde la pestaña Configuración.", 'info');
+      return;
+    }
+
+    const primaryPaths = {
+      'GameUserSettings.ini': 'ShooterGame/Saved/Config/LinuxServer/GameUserSettings.ini',
+      'Game.ini': 'ShooterGame/Saved/Config/LinuxServer/Game.ini',
       'ShooterGame.log': 'ShooterGame/Saved/Logs/ShooterGame.log'
     };
-    const target = knownPaths[filename] || filename;
-    this.openEditor(target);
+    const fallbackPaths = {
+      'GameUserSettings.ini': 'ShooterGame/Saved/Config/CleanConfig/GameUserSettings.ini',
+      'Game.ini': 'ShooterGame/Saved/Config/CleanConfig/Game.ini'
+    };
+    const target = primaryPaths[filename] || filename;
+    const fallback = fallbackPaths[filename] || '';
+    this.openEditor(target, fallback);
   },
 
   escapeHtml(str) {
+    if (typeof window.escapeHtml === 'function') {
+      return window.escapeHtml(str);
+    }
     if (!str) return '';
     return String(str)
       .replace(/&/g, '&amp;')
@@ -788,31 +1045,15 @@ const Files = {
       .replace(/'/g, '&#039;');
   },
 
-  // Escapa una cadena para insertarla DENTRO de un literal JS con comillas simples
-  // dentro de un atributo HTML onclick="...". Previene romper el atributo o inyectar código.
   attrJsStr(str) {
+    if (typeof window.attrJsStr === 'function') {
+      return window.attrJsStr(str);
+    }
     if (str === null || str === undefined) return '';
     return String(str)
       .replace(/\\/g, '\\\\')
       .replace(/'/g, "\\'")
       .replace(/\r/g, '\\r')
-      .replace(/\n/g, '\\n')
-      .replace(/\u2028/g, '\\u2028')
-      .replace(/\u2029/g, '\\u2029')
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+      .replace(/\n/g, '\\n');
   }
 };
-
-window.Files = Files;
-
-// Inicializar en carga del DOM
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => Files.init());
-  } else {
-    Files.init();
-  }
-}

@@ -1,22 +1,74 @@
 import os
+import re
 import json
 import secrets
+import threading
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.core.fs_utils import atomic_write_json
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+_CHANGELOG_VERSION_PATTERN = re.compile(r"^##\s+\[(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)\]")
+_DEFAULT_APP_VERSION = "2.1.0"
+_version_cache_lock = threading.Lock()
+_version_cache: Dict[str, Any] = {"path": None, "mtime_ns": None, "version": _DEFAULT_APP_VERSION}
+
+
+def get_app_version(changelog_path: Optional[Path] = None, fallback: str = _DEFAULT_APP_VERSION) -> str:
+    """Lee la versión más reciente desde CHANGELOG.md con caché invalidado por mtime."""
+    target = changelog_path or (BASE_DIR / "CHANGELOG.md")
+    try:
+        mtime_ns = target.stat().st_mtime_ns
+    except OSError:
+        return fallback
+
+    target_key = str(target)
+    with _version_cache_lock:
+        if _version_cache["path"] == target_key and _version_cache["mtime_ns"] == mtime_ns:
+            return _version_cache["version"]
+
+    parsed_version = fallback
+    try:
+        with open(target, "r", encoding="utf-8") as fh:
+            for line in fh:
+                match = _CHANGELOG_VERSION_PATTERN.match(line.strip())
+                if match:
+                    parsed_version = match.group(1)
+                    break
+    except OSError:
+        return fallback
+
+    with _version_cache_lock:
+        _version_cache["path"] = target_key
+        _version_cache["mtime_ns"] = mtime_ns
+        _version_cache["version"] = parsed_version
+    return parsed_version
+
+
 class Settings:
+    @property
+    def app_version(self) -> str:
+        """Versión de la aplicación sincronizada automáticamente con CHANGELOG.md."""
+        return get_app_version(self.base_dir / "CHANGELOG.md")
     def __init__(self):
         # Paths
         self.base_dir: Path = BASE_DIR
         
         # En Docker: /home/steam/steamcmd/ark y /home/steam/ark-backups
-        # En local/desarrollo: usar fallback dentro de data y backups
-        default_data = Path(os.getenv("ARK_DATA_DIR", "/home/steam/steamcmd/ark"))
-        if not default_data.exists() and not os.path.exists("/home/steam"):
-            default_data = self.base_dir / "data"
+        # En local/desarrollo: priorizar ./steamcmd/ark si existe (volumen Docker Compose), si no ./data
+        env_data_dir = os.getenv("ARK_DATA_DIR")
+        if env_data_dir:
+            default_data = Path(env_data_dir)
+        else:
+            container_data = Path("/home/steam/steamcmd/ark")
+            local_steamcmd_data = self.base_dir / "steamcmd" / "ark"
+            if container_data.exists() or os.path.exists("/home/steam"):
+                default_data = container_data
+            elif local_steamcmd_data.exists():
+                default_data = local_steamcmd_data
+            else:
+                default_data = self.base_dir / "data"
         default_data.mkdir(parents=True, exist_ok=True)
         self.ark_data_dir: Path = default_data
 
@@ -44,20 +96,11 @@ class Settings:
 
         # Config file
         self._config_file = self.ark_data_dir / "ark_panel_config.json"
+        self._secret_key_file = self.ark_data_dir / ".secret_key"
         self.runtime_config: Dict[str, Any] = self._load_runtime_config()
 
-        # Secret Key persistente (prioridad: env -> json en disco -> nuevo)
-        env_secret = os.getenv("SECRET_KEY", "").strip()
-        if env_secret:
-            self.secret_key = env_secret
-        else:
-            saved_secret = str(self.runtime_config.get("secret_key", "")).strip()
-            if saved_secret:
-                self.secret_key = saved_secret
-            else:
-                self.secret_key = secrets.token_hex(32)
-                self.runtime_config["secret_key"] = self.secret_key
-                self.save_runtime_config({})
+        # Secret Key persistente aislada en data/.secret_key (prioridad: env -> .secret_key -> migración json -> nuevo)
+        self.secret_key: str = self._load_or_create_secret_key()
 
         # ARK Server settings (Carga dinámica desde runtime_config con fallback a env vars)
         self.session_name: str = self.runtime_config.get("session_name", os.getenv("SESSION_NAME", "ARK Server"))
@@ -73,6 +116,38 @@ class Settings:
         self.rcon_port: int = int(os.getenv("RCON_PORT", "27020"))
         self.rcon_host: str = os.getenv("RCON_HOST", "127.0.0.1")
         self.rcon_enabled: bool = os.getenv("RCON_ENABLED", "true").lower() in ("true", "1", "yes")
+
+    def _load_or_create_secret_key(self) -> str:
+        env_secret = os.getenv("SECRET_KEY", "").strip()
+        if env_secret:
+            return env_secret
+
+        try:
+            if self._secret_key_file.exists():
+                key = self._secret_key_file.read_text(encoding="utf-8").strip()
+                if len(key) >= 32:
+                    if "secret_key" in self.runtime_config:
+                        self.runtime_config.pop("secret_key", None)
+                        self.save_runtime_config({})
+                    return key
+        except Exception:
+            pass
+
+        # Migrar desde runtime_config si existía o generar nueva
+        legacy_secret = str(self.runtime_config.pop("secret_key", "")).strip()
+        key = legacy_secret if len(legacy_secret) >= 32 else secrets.token_hex(32)
+        try:
+            self._secret_key_file.parent.mkdir(parents=True, exist_ok=True)
+            self._secret_key_file.write_text(key, encoding="utf-8")
+            try:
+                os.chmod(self._secret_key_file, 0o600)
+            except Exception:
+                pass
+            if legacy_secret:
+                self.save_runtime_config({})
+        except Exception:
+            pass
+        return key
 
     def _load_runtime_config(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}

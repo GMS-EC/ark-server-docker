@@ -11,6 +11,7 @@ from typing import Dict, Any, List, Optional
 
 from app.config import settings
 from app.core.process_manager import process_manager
+from app.core.rcon_client import escape_rcon_quoted_text, sanitize_steam_id
 from app.core.fs_utils import atomic_write_json
 from app.core.webhook_manager import webhook_manager
 
@@ -254,25 +255,31 @@ class PlayerManager:
 
     async def kick(self, steam_id: str) -> str:
         """Expulsa a un superviviente mediante RCON."""
-        return await process_manager.rcon.kick_player(steam_id)
+        clean_id = sanitize_steam_id(steam_id)
+        return await process_manager.rcon.kick_player(clean_id)
 
     async def ban(self, steam_id: str) -> str:
         """Banea a un superviviente mediante RCON y lo marca en el historial."""
-        if steam_id in self._player_history:
-            self._player_history[steam_id]["banned"] = True
+        clean_id = sanitize_steam_id(steam_id)
+        if clean_id in self._player_history:
+            self._player_history[clean_id]["banned"] = True
             self._save_history()
-        return await process_manager.rcon.ban_player(steam_id)
+        return await process_manager.rcon.ban_player(clean_id)
 
     async def message_player(self, steam_id: str, message: str) -> str:
         """Envía un mensaje privado in-game al superviviente vía RCON."""
-        safe_msg = message.replace('"', '\"')
-        return await process_manager.rcon.send_command(f'ServerChatToPlayer "{steam_id}" {safe_msg}')
+        clean_id = sanitize_steam_id(steam_id)
+        safe_msg = escape_rcon_quoted_text(message)
+        if not safe_msg:
+            raise ValueError("El mensaje no puede estar vacío.")
+        return await process_manager.rcon.send_command(f'ServerChatToPlayer "{clean_id}" {safe_msg}')
 
     async def unban(self, steam_id: str) -> str:
         """Desbanea a un superviviente."""
-        if steam_id in self._player_history:
-            self._player_history[steam_id]["banned"] = False
+        clean_id = sanitize_steam_id(steam_id)
+        if clean_id in self._player_history:
+            self._player_history[clean_id]["banned"] = False
             self._save_history()
-        return await process_manager.rcon.unban_player(steam_id)
+        return await process_manager.rcon.unban_player(clean_id)
 
 player_manager = PlayerManager()

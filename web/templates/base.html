@@ -21,10 +21,10 @@
   <meta name="apple-mobile-web-app-title" content="ARK Server Manager">
   
   <!-- Chart.js para monitoreo en tiempo real -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" integrity="sha384-e6cc9LaIG7xZ3XD5B+jtr1NhTWPQGQdRCh6xiZ+ZFUtWCpg4ycv3Sh+SkZoopvUY" crossorigin="anonymous"></script>
 
   <!-- Dockraft-Identical Stylesheet -->
-  <link rel="stylesheet" href="/static/css/style.css?v=2.0.2">
+  <link rel="stylesheet" href="/static/css/style.css?v={{ get_app_version() }}">
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -32,13 +32,13 @@
   {% block content %}{% endblock %}
 
   <!-- Toast Notification System -->
-  <div id="toast-container" class="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none;max-width:340px;"></div>
+  <div id="toast-container" class="toast-container"></div>
 
   {% block scripts %}{% endblock %}
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/static/sw.js').then(reg => reg.update()).catch(() => {});
+        navigator.serviceWorker.register('/static/sw.js?v={{ get_app_version() }}').then(reg => reg.update()).catch(() => {});
       });
     }
   </script>

@@ -1,0 +1,37 @@
+{% macro popular_mods_list(mode="install") %}
+{% set catalog = [
+  {"id": "731604991", "name": "Structures Plus (S+)", "desc": "Construcción optimizada y utilidades"},
+  {"id": "1404697612", "name": "Awesome Spyglass", "desc": "Catalejo HUD con estadísticas de dinos"},
+  {"id": "1999447172", "name": "Dino Storage v2", "desc": "Almacenamiento ultraligero de dinos (Soul Traps)"},
+  {"id": "764755314", "name": "Castles, Keeps, and Forts (CKF)", "desc": "Arquitectura medieval avanzada"},
+  {"id": "761535755", "name": "Ultra Stacks", "desc": "Apilamiento aumentado y reducción de peso"},
+  {"id": "895711211", "name": "Classic Flyers", "desc": "Vuelo clásico con velocidad subible"},
+  {"id": "889745138", "name": "Awesome Teleporters", "desc": "Teletransportadores y balizas de viaje"}
+] %}
+{% if mode == "wizard" %}
+<div class="mod-wizard-grid">
+  {% for mod in catalog %}
+  <div class="mod-wizard-card" id="mod-card-{{ mod.id }}" onclick="toggleWizardMod('{{ mod.id }}', this)">
+    <div>
+      <div class="mod-card-title">{{ mod.name }}</div>
+      <div class="mod-card-meta">ID: {{ mod.id }} &middot; {{ mod.desc }}</div>
+    </div>
+    <span class="mod-status-tag tone-info">+ Añadir</span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="mod-preset-list">
+  {% for mod in catalog %}
+  <div class="mod-preset-card">
+    <div>
+      <div class="mod-card-title">{{ mod.name }}</div>
+      <div class="mod-card-meta mono">ID: {{ mod.id }} &middot; {{ mod.desc }}</div>
+    </div>
+    <button type="button" class="btn btn-outline btn-sm" onclick="addPresetMod('{{ mod.id }}', '{{ mod.name }}')">Instalar</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}
+

@@ -75,8 +75,12 @@ ENV HOME=/home/steam \
     PANEL_PASSWORD="adminpassword" \
     AUTOSTART_SERVER=true
 
-# Install ark-server-tools
-RUN curl -sL https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/netinstall.sh | bash -s steam --install-service --commit=master && \
+# Install ark-server-tools (descarga verificada antes de ejecutar)
+RUN curl -fsSL https://raw.githubusercontent.com/arkmanager/ark-server-tools/master/netinstall.sh -o /tmp/arkmanager-netinstall.sh && \
+    test -s /tmp/arkmanager-netinstall.sh && \
+    head -n 1 /tmp/arkmanager-netinstall.sh | grep -q '^#!/' && \
+    bash /tmp/arkmanager-netinstall.sh steam --install-service --commit=master && \
+    rm -f /tmp/arkmanager-netinstall.sh && \
     ln -sf /usr/local/bin/arkmanager /usr/bin/arkmanager
 
 # Create necessary directories
@@ -91,6 +95,7 @@ RUN pip3 install --no-cache-dir --break-system-packages -r /app/requirements.txt
 
 COPY app/ /app/app/
 COPY web/ /app/web/
+COPY CHANGELOG.md /app/
 RUN chown -R steam:steam /app
 
 COPY ./scripts /home/steam/scripts/

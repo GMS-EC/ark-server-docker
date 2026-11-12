@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-11-12
+
+### Added
+- **Sidebar Navigation & Contextual Topbar**: Replaced the crowded horizontal navigation bar with a grouped sidebar (`sidebar.html`: *Operación*, *Infraestructura*, *Sistema*) paired with a contextual `.topbar` (`header.html`) displaying the active section title (`#topbar-section-title`), live server status pill, active cluster selector, logout button, and mobile drawer toggle with backdrop/`Escape` dismissal (`toggleMobileSidebar`, `closeMobileSidebar`).
+- **Unified SVG Icon System**: Created a reusable SVG macro library (`web/templates/components/icons.html`) replacing all Unicode/UI emojis across navigation items, section headers, cards, alerts, toast notifications (`app.js`), and the File Explorer (`files.js`).
+- **Shared Popular Mods Catalog**: Extracted the Steam Workshop popular mods list into a shared Jinja macro (`web/templates/components/popular_mods.html` `popular_mods_list`) reused by both the Mods and Server Installer tabs.
+- **Modular FastAPI Routers**: Split route handlers out of monolithic `app/main.py` into 8 domain routers under `app/routers/` (`backups.py`, `cluster.py`, `files.py`, `mods.py`, `players.py`, `settings.py`, `tasks.py`, `webhooks.py`).
+- **Shared Process & Filesystem Utilities**: Added `app/core/process_utils.py` (`find_ark_processes()` with thread-safe TTL cache and `ArkProcessInfo` snapshots) and expanded `app/core/fs_utils.py` with shared `is_subpath()`, atomic write helpers (`atomic_write_text()`, `atomic_write_json()`), and TTL-cached directory sizing (`get_dir_size_cached()`, `invalidate_dir_size_cache()`).
+- **File Explorer Drag-and-Drop Queue & Path Persistence**: Added persistent current-folder navigation (`sessionStorage`), drag-and-drop upload overlay (`#files-drop-overlay`), and upload queue state management in `web/static/js/files.js`.
+- **Automated Changelog-Driven Versioning & Footer Display**: Added `get_app_version()` (`app/config.py`) reading `CHANGELOG.md` directly (copied into Docker via `Dockerfile`) to drive `FastAPI.version`, Jinja's `get_app_version()`, `<span class="footer-ver">` in `footer.html`, static asset query cache-busters (`?v=...` in `base.html` and `index.html`), and dynamic Service Worker cache naming in `web/static/sw.js`; removed the duplicate version badge from `sidebar.html`.
+- **Automated Test Suite & Dev Dependencies**: Added `requirements-dev.txt`, `pytest.ini`, and 30 unit/integration tests across `tests/test_phase1_security.py`, `tests/test_phase2_backend.py`, `tests/test_phase3_4.py`, and `tests/test_phase5_coverage.py`, along with updated verification instructions in `CONTRIBUTING.md`.
+- **Live Task Scheduler Status API**: Added `/api/tasks/status` endpoint and live scheduler status display in the Tasks tab.
+
+### Changed
+- **100% Opaque Visual Palette & CSS Architecture**: Removed all alpha transparency, translucent overlays, and `backdrop-filter` rules in `web/static/css/style.css`; consolidated duplicate CSS rules; replaced nested `.card` containers with lightweight `.subcard`, `.subcard-summary`, and `.subcard-check` components; migrated 450+ static inline styles into reusable CSS classes (`.tab-header`, `.setting-grid`, `.kpi-row`, `.drop-overlay`, `.upload-widget`, `.modal-box-*`); and unified responsive breakpoints.
+- **Cross-Tab UI Deduplication**: Streamlined `banner.html`, replaced duplicated CPU/RAM/Disk widgets in `console.html` with a compact `.console-control-bar`, and removed redundant manual quick-action buttons from `tasks.html` and circular navigation cards from `backups.html` and `settings.html`.
+- **Backend Performance & Module Structure**: Precompiled INI section/key-value regexes in `app/core/ark_settings_manager.py`, removed circular dependency on settings from `cluster_manager.py`, added debounced JSON persistence (`flush()`) in `app/core/activity_manager.py`, and improved data directory resolution in `app/config.py`.
+- **Pinned Runtime Dependencies & Git Ignore Rules**: Pinned exact package versions in `requirements.txt` and expanded `.gitignore` to exclude `.secret_key`, runtime JSON config/state files, `backups/`, `.pytest_cache/`, and local virtual environments.
+
+### Security
+- **Session Nonces, Revocation & API Rate Limiting**: Added per-token nonces and SHA-256 token revocation on `/logout`, fail-closed empty `PANEL_PASSWORD` enforcement (`is_auth_bypassed()` opt-in via `ALLOW_EMPTY_PASSWORD=true`), pruned and bounded the in-memory login rate-limit tracker, enforced constant-time credential verification, added sliding-window endpoint rate limiting (`require_api_rate_limit`) in `app/core/security.py`, and added HTTPS `Secure` cookies, HSTS, `Content-Security-Policy`, and `Permissions-Policy` headers.
+- **File Manager & Backup Archive Hardening**: Added `PROTECTED_FILES` access blocking, storage quota validation, symlink blocking, sanitized 500 internal error responses (no exception detail leakage), ZipSlip/TarSlip path traversal checks, and ZipBomb ratio (`MAX_ZIP_COMPRESSION_RATIO = 100`) and uncompressed size guards in `app/core/file_manager.py`, `app/routers/files.py`, and `app/core/backup_manager.py`.
+- **Webhook SSRF Protection & Redaction**: Added `is_safe_webhook_url()` DNS/private/loopback/link-local IP validation with `follow_redirects=False` and `mask_webhook_url()` masking in `app/core/webhook_manager.py`.
+- **RCON, CLI & Config Sanitization**: Stripped NUL/CR/LF control characters, added `redact_rcon_command()` error-log redaction, `sanitize_steam_id()`, and shared `escape_rcon_quoted_text()` (fixing `PlayerManager.message_player()` quote escaping and validating SteamIDs in `app/routers/players.py` and `app/core/rcon_client.py`); added `_sanitize_cli_param()` in `app/core/cluster_manager.py`, Workshop ID validation, and quote/newline sanitization in `scripts/generate-config.sh`; and added default/empty `PANEL_PASSWORD`/`ADMIN_PASSWORD` startup warnings in `scripts/init.sh`.
+- **Container Install Verification, SRI & XSS Hardening**: Verified `arkmanager-netinstall.sh` download size and shebang prior to execution in `Dockerfile`, added Chart.js CDN Subresource Integrity (`integrity` + `crossorigin="anonymous"`) in `web/templates/base.html`, escaped dynamic HTML (including `escapeHtml(nodeTitle)`) and inline handler strings across `app.js` and `files.js`, and capped DOM audit-log rendering to the 100 most recent entries.
+
+### Fixed
+- **Non-Cancelling WebSocket Heartbeat & Reconnection**: Replaced timeout-wrapped `receive_text` with a background zero-width keepalive task in `app/main.py` so idle console connections stay alive without dropping incoming commands, cleaned up orphan reconnect sockets, and halted reconnect loops on `1008` session expiry.
+- **Task Scheduler & Safe-Restart Reliability**: Prevented duplicate safe-restart countdown tasks, improved persisted save feedback/reload in `tasks.html`, and fixed shared `/api/metrics` cache mutation.
+- **Player History Persistence**: Debounced JSON writes and pruned stale or oversized entries in `app/core/player_manager.py`.
+- **Mobile Banner Toggle Target**: Fixed the mobile overview toggle button in `web/templates/components/banner.html` to target `#server-overview-banner`.
+
 ## [2.0.0] - 2026-09-08
 
 ### Added

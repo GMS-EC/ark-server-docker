@@ -43,6 +43,16 @@ trap 'su - steam -c "arkmanager stop --saveworld @all" 2>/dev/null || true; exit
 
 export PATH="/usr/local/bin:/usr/bin:/bin:/home/steam/bin:$PATH"
 
+# Advertir si las credenciales siguen vacías o con valores por defecto
+if [ -z "${PANEL_PASSWORD:-}" ]; then
+    echo "[SEGURIDAD] CRÍTICO: PANEL_PASSWORD está vacío. El acceso al panel quedará bloqueado (fail-closed) salvo que defina ALLOW_EMPTY_PASSWORD=true."
+elif [ "${PANEL_PASSWORD}" = "adminpassword" ]; then
+    echo "[SEGURIDAD] ADVERTENCIA: PANEL_PASSWORD usa el valor por defecto ('adminpassword'). Cámbielo en producción."
+fi
+if [ "${ADMIN_PASSWORD:-adminpass}" = "adminpass" ]; then
+    echo "[SEGURIDAD] ADVERTENCIA: ADMIN_PASSWORD usa el valor por defecto ('adminpass'). Cámbielo en producción."
+fi
+
 # Arrancar el panel web de ARK Server Manager (FastAPI + Uvicorn) como usuario steam
 echo "[ARK Server Manager] Lanzando panel web en puerto ${PANEL_PORT:-8080}..."
 cd /app

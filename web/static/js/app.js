@@ -27,6 +27,19 @@ function attrJsStr(str) {
         .replace(/>/g, '&gt;');
 }
 
+// --- Helper global de iconos SVG vectoriales (sin emojis) ---
+const UI_ICON_PATHS = {
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    'alert-triangle': '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    'alert-circle': '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'
+};
+
+function uiIcon(name, size = 14) {
+    const body = UI_ICON_PATHS[name] || UI_ICON_PATHS.info;
+    return `<svg class="ui-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
+
 // ARK Server Manager Main Client Script
 let metricsChart = null;
 let currentInstanceId = localStorage.getItem("ark_active_instance") || "main";
@@ -38,16 +51,9 @@ let cmdDraft = "";
 
 // Inicialización
 document.addEventListener("DOMContentLoaded", () => {
-    // Scroll horizontal con la rueda del ratón en la barra de pestañas
-    const navTabsContainer = document.querySelector(".nav-tabs");
-    if (navTabsContainer) {
-        navTabsContainer.addEventListener("wheel", (e) => {
-            if (e.deltaY !== 0) {
-                e.preventDefault();
-                navTabsContainer.scrollLeft += e.deltaY;
-            }
-        }, { passive: false });
-    }
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMobileSidebar();
+    });
 
     initTabs();
     initWebSocket();
@@ -71,8 +77,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedTab = hash || localStorage.getItem("ark_active_tab");
     if (savedTab && savedTab !== "console" && document.getElementById(`tab-${savedTab}`)) {
         switchTab(savedTab);
+    } else {
+        const activeNav = document.querySelector(".nav-btn.active");
+        const topbarTitle = document.getElementById("topbar-section-title");
+        if (activeNav && topbarTitle) {
+            const labelEl = activeNav.querySelector(".nav-label");
+            topbarTitle.textContent = (labelEl ? labelEl.textContent : activeNav.textContent).trim();
+        }
     }
 });
+
+// --- Navegación Lateral (Sidebar & Drawer Móvil) ---
+function toggleMobileSidebar() {
+    document.body.classList.toggle("sidebar-open");
+}
+
+function closeMobileSidebar() {
+    document.body.classList.remove("sidebar-open");
+}
 
 // --- Pestañas ---
 function initTabs() {
@@ -93,8 +115,16 @@ function switchTab(tabId) {
     const navLink = document.querySelector(`.nav-btn[data-tab="${tabId}"], .nav-item[data-tab="${tabId}"]`);
     const targetPane = document.getElementById(`tab-${tabId}`);
 
-    if (navLink) navLink.classList.add("active");
+    if (navLink) {
+        navLink.classList.add("active");
+        const topbarTitle = document.getElementById("topbar-section-title");
+        if (topbarTitle) {
+            const labelEl = navLink.querySelector(".nav-label");
+            topbarTitle.textContent = (labelEl ? labelEl.textContent : navLink.textContent).trim();
+        }
+    }
     if (targetPane) targetPane.classList.add("active");
+    closeMobileSidebar();
 
     localStorage.setItem("ark_active_tab", tabId);
     if (window.history.replaceState) {
@@ -235,14 +265,6 @@ function initWebSocket() {
             scheduleWsReconnect();
         }
     };
-}
-
-function sendQuickRcon(cmd) {
-    const input = document.getElementById("console-input");
-    if (input) {
-        input.value = cmd;
-        sendConsoleCommand();
-    }
 }
 
 function toggleAutoScroll() {
@@ -477,20 +499,30 @@ function initChart() {
                 {
                     label: "CPU (%)",
                     borderColor: "#10b981",
-                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    backgroundColor: "#10b981",
                     data: [],
                     tension: 0.3,
-                    fill: true,
+                    fill: false,
                     pointRadius: 2,
                     pointHoverRadius: 4
                 },
                 {
                     label: "RAM Servidor (GB)",
                     borderColor: "#06b6d4",
-                    backgroundColor: "rgba(6, 182, 212, 0.1)",
+                    backgroundColor: "#06b6d4",
                     data: [],
                     tension: 0.3,
-                    fill: true,
+                    fill: false,
+                    pointRadius: 2,
+                    pointHoverRadius: 4
+                },
+                {
+                    label: "Disco (%)",
+                    borderColor: "#a371f7",
+                    backgroundColor: "#a371f7",
+                    data: [],
+                    tension: 0.3,
+                    fill: false,
                     pointRadius: 2,
                     pointHoverRadius: 4
                 }
@@ -500,7 +532,7 @@ function initChart() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.05)" } },
+                y: { beginAtZero: true, grid: { color: "#21262d" } },
                 x: { grid: { display: false } }
             },
             plugins: {
@@ -528,10 +560,53 @@ async function fetchMetricsOnce() {
         if (valDiskPct && curr.disk_percent !== undefined) {
             valDiskPct.textContent = `${curr.disk_percent}%`;
         }
+        const valDiskBar = document.getElementById("val-disk-bar");
+        if (valDiskBar && curr.disk_percent !== undefined) {
+            valDiskBar.style.width = `${Math.min(100, curr.disk_percent)}%`;
+            valDiskBar.style.background = curr.disk_alert_level === "critical"
+                ? "#f85149"
+                : (curr.disk_alert_level === "warning" ? "#d29922" : "#a371f7");
+        }
+        const valDiskFree = document.getElementById("val-disk-free");
+        if (valDiskFree && curr.disk_total_gb !== undefined) {
+            const freeGb = curr.disk_free_gb !== undefined
+                ? curr.disk_free_gb
+                : Math.max(0, curr.disk_total_gb - curr.disk_used_gb).toFixed(1);
+            valDiskFree.textContent = `Libre: ${freeGb} GB`;
+        }
+        const diskBanner = document.getElementById("disk-alert-banner");
+        if (diskBanner) {
+            const alertLvl = curr.disk_alert_level || "normal";
+            if (alertLvl === "critical" || alertLvl === "warning") {
+                diskBanner.style.display = "block";
+                const isCrit = alertLvl === "critical";
+                diskBanner.style.borderColor = isCrit ? "#73262d" : "#694914";
+                diskBanner.style.backgroundColor = isCrit ? "#2c1418" : "#291e0c";
+                const iconEl = document.getElementById("disk-alert-icon");
+                if (iconEl) iconEl.style.color = isCrit ? "#f85149" : "#d29922";
+                const titleEl = document.getElementById("disk-alert-title");
+                if (titleEl) {
+                    titleEl.textContent = isCrit
+                        ? `Alerta Crítica de Almacenamiento (${curr.disk_percent}%)`
+                        : `Advertencia de Espacio en Disco (${curr.disk_percent}%)`;
+                }
+                const descEl = document.getElementById("disk-alert-desc");
+                if (descEl) {
+                    descEl.textContent = isCrit
+                        ? `Quedan solo ${curr.disk_free_gb ?? Math.max(0, (curr.disk_total_gb - curr.disk_used_gb)).toFixed(1)} GB disponibles. Elimina copias antiguas o registros para evitar corrupción en el guardado de ARK.`
+                        : `El disco ha superado el 75% de capacidad (${curr.disk_used_gb} / ${curr.disk_total_gb} GB usados).`;
+                }
+            } else {
+                diskBanner.style.display = "none";
+            }
+        }
         const valRamPct = document.getElementById("val-ram-pct");
         if (valRamPct && curr.ram_percent !== undefined) {
             valRamPct.textContent = `${curr.ram_percent}%`;
         }
+
+        // Guardar max_players globalmente para sincronizar contadores
+        window._arkMaxPlayers = curr.max_players || 20;
 
         // Actualizar Tarjeta de Supervivientes en Métricas
         const metricPlayers = document.getElementById("val-players-metric");
@@ -602,6 +677,11 @@ async function fetchMetricsOnce() {
             metricsChart.data.labels = data.history.map(h => h.timestamp);
             metricsChart.data.datasets[0].data = data.history.map(h => h.cpu_percent);
             metricsChart.data.datasets[1].data = data.history.map(h => h.ark_ram_gb);
+            if (metricsChart.data.datasets[2]) {
+                metricsChart.data.datasets[2].data = data.history.map(h =>
+                    h.disk_percent !== undefined ? h.disk_percent : (curr.disk_percent || 0)
+                );
+            }
             metricsChart.update("none");
         }
     } catch (e) {}
@@ -666,8 +746,8 @@ async function loadPlayers() {
         // 1. Actualizar métricas del banner superior de jugadores
         const statOnline = document.getElementById("players-online-stat");
         if (statOnline) {
-            const maxP = (metricsChart && metricsChart.data && metricsChart.data.max_players) || 20;
-            statOnline.textContent = `${playersCache.online.length}`;
+            const maxP = window._arkMaxPlayers || 20;
+            statOnline.textContent = `${playersCache.online.length} / ${maxP}`;
         }
         const statHist = document.getElementById("players-history-stat");
         if (statHist) statHist.textContent = playersCache.history.length;
@@ -763,11 +843,11 @@ function renderPlayersList() {
 
         let statusBadge = "";
         if (p.banned) {
-            statusBadge = `<span class="status-pill offline" style="font-size: 0.72rem; padding: 2px 8px; border-color: #f85149; color: #ff7b72;">🔴 Baneado</span>`;
+            statusBadge = `<span class="status-pill tone-danger" style="font-size: 0.72rem; padding: 2px 8px;"><span class="dot-inline danger"></span><span>Baneado</span></span>`;
         } else if (p.is_online) {
-            statusBadge = `<span class="status-pill running" style="font-size: 0.72rem; padding: 2px 8px;">🟢 En línea</span>`;
+            statusBadge = `<span class="status-pill online" style="font-size: 0.72rem; padding: 2px 8px;"><span class="dot-inline online"></span><span>En línea</span></span>`;
         } else {
-            statusBadge = `<span class="status-pill offline" style="font-size: 0.72rem; padding: 2px 8px; color: #8b949e;">⚪ Desconectado</span>`;
+            statusBadge = `<span class="status-pill offline" style="font-size: 0.72rem; padding: 2px 8px; color: #8b949e;"><span class="dot-inline offline"></span><span>Desconectado</span></span>`;
         }
 
         tr.innerHTML = `
@@ -959,7 +1039,7 @@ async function loadBackups() {
                 <td>${b.created_at}</td>
                 <td>
                     <div style="display: inline-flex; align-items: center; gap: 6px;">
-                        <a href="/api/backups/download/${encodeURIComponent(b.filename)}" class="btn btn-outline" title="Descargar copia de seguridad" download style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; color: #58a6ff; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.08); text-decoration: none; border-radius: 6px;">
+                        <a href="/api/backups/download/${encodeURIComponent(b.filename)}" class="btn btn-outline" title="Descargar copia de seguridad" download style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; color: #79c0ff; border-color: #254b7c; background-color: #132238; text-decoration: none; border-radius: 6px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </a>
                         <button class="btn btn-warning" style="padding: 4px 10px; font-size: 11px;" onclick="restoreBackup('${attrJsStr(b.filename)}')">Restaurar</button>
@@ -1037,7 +1117,8 @@ async function deleteBackup(filename) {
 // --- Configuraciones ---
 async function loadSettings() {
     try {
-        const res = await fetch("/api/settings");
+        const instParam = encodeURIComponent(currentInstanceId || "main");
+        const res = await fetch(`/api/settings?instance=${instParam}`);
         const s = await res.json();
         
         // Servidor
@@ -1128,7 +1209,8 @@ async function saveSettings(e) {
     };
 
     try {
-        const res = await fetch("/api/settings", {
+        const instParam = encodeURIComponent(currentInstanceId || "main");
+        const res = await fetch(`/api/settings?instance=${instParam}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -1192,7 +1274,6 @@ async function saveTaskSettings() {
     const btn = document.getElementById("btn-save-tasks");
     if (btn) {
         btn.disabled = true;
-        btn.style.opacity = "0.6";
         btn.querySelector("span").textContent = "Guardando...";
     }
     try {
@@ -1210,7 +1291,7 @@ async function saveTaskSettings() {
                 const hh = String(now.getHours()).padStart(2, "0");
                 const mm = String(now.getMinutes()).padStart(2, "0");
                 const ss = String(now.getSeconds()).padStart(2, "0");
-                savedEl.textContent = `✓ Guardado ${hh}:${mm}:${ss} (se aplica en ≤30 s)`;
+                savedEl.innerHTML = `${uiIcon("check", 13)} Guardado ${hh}:${mm}:${ss} (se aplica en <=30 s)`;
             }
             // Recargar desde el servidor para reflejar exactamente lo persistido
             await loadTaskSettings();
@@ -1223,7 +1304,6 @@ async function saveTaskSettings() {
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.style.opacity = "";
             btn.querySelector("span").textContent = "Guardar Horarios";
         }
     }
@@ -1291,7 +1371,11 @@ async function loadTasksStatus() {
                 : "desactivado";
         }
         if (el("ts-cleanup")) el("ts-cleanup").textContent = s.last_cleanup || "pendiente (cada 24h)";
-        if (el("ts-error-msg")) el("ts-error-msg").textContent = s.last_error ? `⚠ último error: ${s.last_error}` : "";
+        if (el("ts-error-msg")) {
+            el("ts-error-msg").innerHTML = s.last_error
+                ? `<span style="color: #e3b341; display: inline-flex; align-items: center; gap: 4px;">${uiIcon("alert-triangle", 13)}<span>último error: ${escapeHtml(s.last_error)}</span></span>`
+                : "";
+        }
     } catch (e) {
         console.error("Error cargando estado de tareas:", e);
     }
@@ -1371,7 +1455,7 @@ const App = {
       border-radius: 6px;
       font-size: 0.85rem;
       font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      box-shadow: 0 0 0 1px #0d1117;
       animation: fadeIn 0.15s ease-out;
       max-width: 340px;
       word-break: break-word;
@@ -1379,9 +1463,9 @@ const App = {
     toast.textContent = message;
     container.appendChild(toast);
     setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.25s ease';
-      setTimeout(() => toast.remove(), 250);
+      toast.style.transform = 'translateX(20px)';
+      toast.style.transition = 'transform 0.2s ease';
+      setTimeout(() => toast.remove(), 200);
     }, 3500);
   },
 
@@ -1427,7 +1511,7 @@ const App = {
       <div class="modal-box modal-dialog-box" style="max-width: 480px;">
         <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #30363d;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div id="modal-prompt-icon" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(56, 139, 253, 0.15); border: 1px solid rgba(56, 139, 253, 0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div id="modal-prompt-icon" style="width: 36px; height: 36px; border-radius: 8px; background-color: #132238; border: 1px solid #254b7c; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
             <h3 id="modal-prompt-title-text" style="font-size: 1.05rem; font-weight: 600; color: #f0f6fc; margin: 0;">Entrada Requerida</h3>
@@ -1479,16 +1563,16 @@ const App = {
 
       if (iconEl) {
         if (isDanger) {
-          iconEl.style.background = 'rgba(248, 81, 73, 0.15)';
-          iconEl.style.border = '1px solid rgba(248, 81, 73, 0.3)';
+          iconEl.style.backgroundColor = '#2c1418';
+          iconEl.style.border = '1px solid #73262d';
           iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
         } else if (isWarning) {
-          iconEl.style.background = 'rgba(210, 153, 34, 0.15)';
-          iconEl.style.border = '1px solid rgba(210, 153, 34, 0.3)';
+          iconEl.style.backgroundColor = '#291e0c';
+          iconEl.style.border = '1px solid #694914';
           iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d29922" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
         } else {
-          iconEl.style.background = 'rgba(56, 139, 253, 0.15)';
-          iconEl.style.border = '1px solid rgba(56, 139, 253, 0.3)';
+          iconEl.style.backgroundColor = '#132238';
+          iconEl.style.border = '1px solid #254b7c';
           iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
         }
       }
@@ -1709,8 +1793,8 @@ async function loadClusterInstances() {
                 const card = document.createElement("div");
                 card.className = "card";
                 card.style.padding = "22px 24px";
-                card.style.background = isSelected ? "rgba(56, 139, 253, 0.05)" : "var(--bg-subtle)";
-                card.style.borderColor = isSelected ? "rgba(56, 139, 253, 0.4)" : "var(--border-color)";
+                card.style.backgroundColor = isSelected ? "#132238" : "var(--bg-subtle)";
+                card.style.borderColor = isSelected ? "#254b7c" : "var(--border-color)";
 
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 12px;">
@@ -1721,7 +1805,7 @@ async function loadClusterInstances() {
                                 ${isSelected ? '<span class="badge" style="font-size: 0.68rem; background: #1f6feb; color: #fff; padding: 2px 7px; border-radius: 4px;">Activo en Panel</span>' : ''}
                             </div>
                             <div style="font-size: 0.8rem; color: #8b949e;">
-                                Mapa oficial: <code style="color: #79c0ff; background: rgba(56, 139, 253, 0.1); padding: 2px 6px; border-radius: 4px;">${inst.map}</code>
+                                Mapa oficial: <code style="color: #79c0ff; background-color: #132238; border: 1px solid #254b7c; padding: 2px 6px; border-radius: 4px;">${inst.map}</code>
                             </div>
                         </div>
                         <span class="status-pill ${isOnline ? 'running' : 'offline'}" style="font-size: 0.74rem; padding: 3px 10px; flex-shrink: 0;">
@@ -1730,7 +1814,7 @@ async function loadClusterInstances() {
                         </span>
                     </div>
 
-                    <div style="background: rgba(13, 17, 23, 0.8); border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 0.82rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="background-color: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 0.82rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <div><span style="color: #8b949e;">Puerto Juego:</span> <strong style="color: #f0f6fc;">${inst.server_port}/UDP</strong></div>
                         <div><span style="color: #8b949e;">Puerto Query:</span> <strong style="color: #f0f6fc;">${inst.query_port}/UDP</strong></div>
                         <div><span style="color: #8b949e;">Puerto RCON:</span> <strong style="color: #f0f6fc;">${inst.rcon_port}/TCP</strong></div>
@@ -1739,7 +1823,7 @@ async function loadClusterInstances() {
 
                     <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
                         ${isOnline ? `
-                            <button class="btn btn-outline" onclick="stopClusterInstance('${inst.id}')" style="padding: 7px 14px; font-size: 0.82rem; color: #f85149; border-color: rgba(248, 81, 73, 0.4);">
+                            <button class="btn btn-outline" onclick="stopClusterInstance('${inst.id}')" style="padding: 7px 14px; font-size: 0.82rem; color: #ff7b72; background-color: #2c1418; border-color: #73262d;">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
                                 <span>Detener</span>
                             </button>
@@ -1758,7 +1842,7 @@ async function loadClusterInstances() {
                             <span>Administrar</span>
                         </button>
                         ${!inst.is_primary ? `
-                            <button class="action-icon-btn" onclick="deleteClusterInstance('${attrJsStr(inst.id)}', '${attrJsStr(inst.name)}')" title="Eliminar del clúster" style="padding: 7px 10px; color: #f85149; border: 1px solid rgba(248, 81, 73, 0.3); border-radius: 6px; margin-left: auto;">
+                            <button class="action-icon-btn" onclick="deleteClusterInstance('${attrJsStr(inst.id)}', '${attrJsStr(inst.name)}')" title="Eliminar del clúster" style="padding: 7px 10px; color: #ff7b72; background-color: #2c1418; border: 1px solid #73262d; border-radius: 6px; margin-left: auto;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             </button>
                         ` : ''}
@@ -1842,7 +1926,8 @@ function onSwitchClusterServer(instanceId) {
         targetInst = clusterData.instances.find(i => i.id === instanceId);
         if (targetInst) {
             const topPort = document.getElementById("top-server-port");
-            if (topPort && targetInst.game_port) topPort.textContent = `${targetInst.game_port} (UDP)`;
+            const gPort = targetInst.server_port || targetInst.game_port;
+            if (topPort && gPort) topPort.textContent = `${gPort} (UDP)`;
             const topRcon = document.getElementById("top-server-rcon");
             if (topRcon && targetInst.rcon_port) topRcon.textContent = `${targetInst.rcon_port} (Interno)`;
             const topMap = document.getElementById("top-server-map");
@@ -1869,7 +1954,7 @@ function onSwitchClusterServer(instanceId) {
     const consoleOut = document.getElementById("console-output");
     if (consoleOut) {
         const nodeTitle = targetInst ? targetInst.name : instanceId;
-        consoleOut.innerHTML = `<div class="log-line info" style="color: #58a6ff; font-weight: 600;">[ARK Server Manager] Conectando consola a nodo: ${nodeTitle}...</div>`;
+        consoleOut.innerHTML = `<div class="log-line info console-node-banner">[ARK Server Manager] Conectando consola a nodo: ${escapeHtml(nodeTitle)}...</div>`;
     }
     initWebSocket();
 
@@ -2173,14 +2258,21 @@ async function deleteTribute(filename) {
 // --- GESTIÓN DE MODS DE STEAM WORKSHOP ---
 let activeModsList = [];
 
-async function loadMods() {
+async function loadMods(forceRefresh = false) {
     try {
-        const res = await fetch("/api/mods");
+        const url = forceRefresh ? "/api/mods?refresh=true" : "/api/mods";
+        const res = await fetch(url);
         const data = await res.json();
         activeModsList = data.mods || [];
 
         const countEl = document.getElementById("mods-count-val");
         if (countEl) countEl.textContent = activeModsList.length;
+
+        const updatesEl = document.getElementById("mods-updates-val");
+        if (updatesEl) {
+            const updCount = Number(data.updates_available || 0);
+            updatesEl.textContent = updCount > 0 ? `${updCount} disponible${updCount > 1 ? "s" : ""}` : "Al día";
+        }
 
         const listContainer = document.getElementById("active-mods-list");
         if (!listContainer) return;
@@ -2194,26 +2286,55 @@ async function loadMods() {
             return;
         }
 
-        listContainer.innerHTML = activeModsList.map((modId, index) => `
-            <div class="mod-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); width: 20px;">#${index + 1}</span>
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.9rem; color: #79c0ff; font-family: var(--font-mono);">
-                            Mod ID: ${modId}
+        const detailsMap = {};
+        const rawDetails = data.details;
+        if (Array.isArray(rawDetails)) {
+            rawDetails.forEach(d => {
+                if (d && d.id) detailsMap[String(d.id)] = d;
+            });
+        } else if (rawDetails && typeof rawDetails === "object") {
+            Object.entries(rawDetails).forEach(([k, d]) => {
+                if (d) detailsMap[String(d.id || k)] = d;
+            });
+        }
+
+        listContainer.innerHTML = activeModsList.map((modId, index) => {
+            const meta = detailsMap[String(modId)] || {};
+            const modTitle = meta.title || `Mod ID: ${modId}`;
+            const sizeLabel = meta.local_size_mb ? `${meta.local_size_mb} MB instalados` : (meta.file_size_mb ? `${meta.file_size_mb} MB` : "");
+            const thumbHtml = meta.preview_url
+                ? `<img src="${escapeHtml(meta.preview_url)}" alt="" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border-color); flex-shrink: 0;">`
+                : `<span style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); width: 24px; text-align: center;">#${index + 1}</span>`;
+            const isInstalled = Boolean(meta.installed ?? meta.installed_locally);
+            const updateBadge = meta.update_available
+                ? `<span style="font-size: 0.7rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background-color: #291e0c; color: #e3b341; border: 1px solid #694914;">Actualización Disponible</span>`
+                : (isInstalled ? `<span style="font-size: 0.7rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background-color: #10261a; color: #56d364; border: 1px solid #205938;">Instalado</span>` : "");
+
+            return `
+            <div class="mod-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                    ${thumbHtml}
+                    <div style="min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-weight: 600; font-size: 0.9rem; color: #f0f6fc;">${escapeHtml(modTitle)}</span>
+                            <code style="font-size: 0.75rem; color: #79c0ff; background-color: #132238; border: 1px solid #254b7c; padding: 1px 6px; border-radius: 4px;">ID: ${escapeHtml(modId)}</code>
+                            ${updateBadge}
                         </div>
-                        <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=${modId}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: #58a6ff; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                            <span>Ver en Steam Workshop</span>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </a>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 3px; font-size: 0.75rem; color: var(--text-dim);">
+                            <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=${encodeURIComponent(modId)}" target="_blank" rel="noopener noreferrer" style="color: #58a6ff; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                <span>Ver en Steam Workshop</span>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            </a>
+                            ${sizeLabel ? `<span>• ${escapeHtml(sizeLabel)}</span>` : ""}
+                        </div>
                     </div>
                 </div>
-                <button type="button" class="btn btn-outline" onclick="removeMod('${modId}')" title="Quitar mod" style="padding: 4px 10px; font-size: 0.78rem; border-color: #f85149; color: #ff7b72;">
+                <button type="button" class="btn btn-outline" onclick="removeMod('${attrJsStr(modId)}')" title="Quitar mod" style="padding: 4px 10px; font-size: 0.78rem; border-color: #f85149; color: #ff7b72;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     <span>Quitar</span>
                 </button>
             </div>
-        `).join("");
+        `}).join("");
     } catch (e) {
         console.error("Error cargando mods:", e);
     }
@@ -2297,7 +2418,10 @@ async function updateModsNow() {
 async function sendQuickRcon(command) {
     showToast(`Ejecutando: ${command}...`, "info");
     try {
-        const res = await fetch("/api/server/command", {
+        const url = (currentInstanceId && currentInstanceId !== "main")
+            ? `/api/cluster/instances/${currentInstanceId}/command`
+            : "/api/server/command";
+        const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ command })
@@ -2478,7 +2602,7 @@ function renderActivityLogs(logs) {
             <tr style="border-bottom: 1px solid var(--border-color);">
                 <td style="padding: 8px 14px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">${escapeHtml(item.timestamp)}</td>
                 <td style="padding: 8px 14px; white-space: nowrap;">
-                    <span style="font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.06); color: ${color}; border: 1px solid ${color}44;">
+                    <span style="font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background-color: #1b222c; color: ${color}; border: 1px solid #30363d;">
                         ${escapeHtml(item.category)}
                     </span>
                 </td>

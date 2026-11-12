@@ -1,12 +1,3 @@
-# ==========================================================
-# ARK Server Manager - Despliegue Multi-Contenedor de Clúster de ARK
-# ==========================================================
-# Este archivo orquesta múltiples mapas de ARK (The Island + Scorched Earth)
-# en contenedores Docker independientes, vinculados por una red interna y
-# compartiendo el volumen 'cluster_data' para viajes entre mundos por obeliscos.
-
-version: "3.8"
-
 services:
   # Servidor 1: The Island (Nodo Principal)
   ark-island:

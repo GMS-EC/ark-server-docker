@@ -2,16 +2,29 @@
 .env
 .env.*
 !.env.example
+.secret_key
+**/.secret_key
 
-# Server data (created at runtime, should not be versioned)
+# Server data & runtime configs (created at runtime, should not be versioned)
 steamcmd/
 ark-backups/
+backups/
 clusters/
 app/data/
 data/
+**/ark_panel_config.json
+**/arkraft_panel_config.json
+**/ark_cluster_instances.json
+**/arkraft_cluster_instances.json
+**/ark_players.json
+**/arkraft_players.json
+**/activity_logs.json
 
-# OS/editor noise
+# OS/editor/test noise
 .DS_Store
 *.swp
 __pycache__/
 *.pyc
+.pytest_cache/
+.venv/
+venv/

@@ -1,0 +1,81 @@
+{% from "components/icons.html" import icon %}
+<aside class="sidebar" id="app-sidebar" aria-label="Navegación principal">
+  <div class="sidebar-brand">
+    <div class="logo-container">
+      <div class="logo-icon">
+        <img src="/static/img/logo.png" alt="ARK Server Manager Logo" width="32" height="32">
+      </div>
+      <div class="logo-text">
+        <h1>ARK Manager</h1>
+      </div>
+    </div>
+    <button type="button" class="sidebar-close-btn" id="btn-close-sidebar" onclick="closeMobileSidebar()" aria-label="Cerrar menú">
+      {{ icon("x", 18) }}
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    {% if not is_installed %}
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Inicio</div>
+      <button type="button" class="nav-btn active" data-tab="installer" id="tab-btn-installer">
+        {{ icon("download", 16, "tab-icon") }}
+        <span class="nav-label">Instalación</span>
+      </button>
+    </div>
+    {% endif %}
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Operación</div>
+      <button type="button" class="nav-btn {% if is_installed %}active{% endif %}" data-tab="console" id="tab-btn-console">
+        {{ icon("terminal", 16, "tab-icon") }}
+        <span class="nav-label">Consola</span>
+      </button>
+      <button type="button" class="nav-btn" data-tab="players" id="tab-btn-players">
+        {{ icon("users", 16, "tab-icon") }}
+        <span class="nav-label">Jugadores</span>
+      </button>
+      <button type="button" class="nav-btn" data-tab="metrics" id="tab-btn-metrics">
+        {{ icon("activity", 16, "tab-icon") }}
+        <span class="nav-label">Métricas</span>
+      </button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Infraestructura</div>
+      <button type="button" class="nav-btn" data-tab="cluster" id="tab-btn-cluster">
+        {{ icon("layers", 16, "tab-icon") }}
+        <span class="nav-label">Clúster</span>
+      </button>
+      <button type="button" class="nav-btn" data-tab="backups" id="tab-btn-backups">
+        {{ icon("hard-drive", 16, "tab-icon") }}
+        <span class="nav-label">Respaldos</span>
+      </button>
+      <button type="button" class="nav-btn" data-tab="files" id="tab-btn-files">
+        {{ icon("folder", 16, "tab-icon") }}
+        <span class="nav-label">Archivos</span>
+      </button>
+      <button type="button" class="nav-btn" data-tab="mods" id="tab-btn-mods">
+        {{ icon("package", 16, "tab-icon") }}
+        <span class="nav-label">Mods</span>
+      </button>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Sistema</div>
+      <button type="button" class="nav-btn" data-tab="tasks" id="tab-btn-tasks">
+        {{ icon("clock", 16, "tab-icon") }}
+        <span class="nav-label">Tareas</span>
+      </button>
+      <button type="button" class="nav-btn" data-tab="webhooks" id="tab-btn-webhooks">
+        {{ icon("bell", 16, "tab-icon") }}
+        <span class="nav-label">Webhooks</span>
+      </button>
+      <button type="button" class="nav-btn" data-tab="settings" id="tab-btn-settings">
+        {{ icon("settings", 16, "tab-icon") }}
+        <span class="nav-label">Ajustes</span>
+      </button>
+    </div>
+  </nav>
+</aside>
+

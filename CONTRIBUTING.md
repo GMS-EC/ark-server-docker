@@ -44,8 +44,10 @@ Si tienes una idea para mejorar el contenedor:
 
 1. Haz un Fork del repositorio y crea una rama descriptiva (`git checkout -b feature/nueva-funcionalidad`).
 2. Sigue las convenciones de código existentes en el proyecto.
-3. Asegúrate de verificar la sintaxis de todos los scripts Bash:
+3. Instala las dependencias de desarrollo y ejecuta la suite de pruebas + verificación Bash:
    ```bash
+   pip install -r requirements-dev.txt
+   pytest -v
    for f in scripts/*.sh; do bash -n "$f"; done
    ```
 4. Envía tu PR hacia la rama `main` explicando detalladamente los cambios propuestos.
@@ -90,8 +92,10 @@ If you have an idea to improve the container:
 
 1. Fork the repository and create a feature branch (`git checkout -b feature/my-new-feature`).
 2. Follow the project's existing code style and guidelines.
-3. Ensure all Bash scripts pass syntax verification:
+3. Install dev dependencies and run tests + Bash syntax verification:
    ```bash
+   pip install -r requirements-dev.txt
+   pytest -v
    for f in scripts/*.sh; do bash -n "$f"; done
    ```
 4. Submit your PR targeting the `main` branch with a detailed explanation of your changes.

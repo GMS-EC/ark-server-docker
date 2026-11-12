@@ -6,11 +6,17 @@
 .env
 .env.*
 
-# Local runtime directories & volumes
+# Local runtime directories, volumes & test/venv artifacts
 steamcmd/
 ark-backups/
+backups/
 clusters/
 app/data/
+data/
+.venv/
+venv/
+.pytest_cache/
+tests/
 
 # Python cache & bytecode
 __pycache__/
@@ -18,9 +24,8 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Markdown documentation (only Documents/branding is needed by Dockerfile)
+# Markdown documentation (CHANGELOG.md and Documents/branding are needed by Dockerfile)
 README.md
-CHANGELOG.md
 CONTRIBUTING.md
 Documents/*
 !Documents/branding/

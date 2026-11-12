@@ -1,19 +1,16 @@
 import time
 import json
-import shutil
 import os
 import asyncio
 import logging
-from pathlib import Path
 from contextlib import asynccontextmanager
-from typing import Dict, Any, Optional, List
+from typing import Optional
 
 from fastapi import (
     FastAPI, WebSocket, WebSocketDisconnect, Depends,
-    HTTPException, Request, Response, Form, status,
-    UploadFile, File, Query
+    HTTPException, Request, Response, Form, status
 )
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, HTMLResponse
+from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -22,20 +19,31 @@ from pydantic import BaseModel
 
 from app.config import settings, BASE_DIR
 from app.core.security import (
-    create_session_token, verify_session_token, verify_admin_credentials, is_authenticated,
-    require_auth, check_login_rate_limit, record_failed_login, reset_failed_login,
+    create_session_token, verify_session_token, revoke_session_token,
+    verify_admin_credentials, is_authenticated, is_auth_bypassed, is_request_secure,
+    require_auth, require_api_rate_limit, check_login_rate_limit, record_failed_login, reset_failed_login,
     SESSION_COOKIE_NAME
 )
 from app.core.process_manager import process_manager
+from app.core.rcon_client import redact_rcon_command
 from app.core.player_manager import player_manager
 from app.core.metrics_manager import metrics_manager
 from app.core.ark_settings_manager import ark_settings_manager
-from app.core.backup_manager import backup_manager
-from app.core.file_manager import file_manager
 from app.core.task_scheduler import task_scheduler
 from app.core.webhook_manager import webhook_manager
 from app.core.activity_manager import activity_manager
 from app.core.cluster_manager import cluster_manager
+
+from app.routers import (
+    backups as backups_router,
+    cluster as cluster_router,
+    files as files_router,
+    mods as mods_router,
+    players as players_router,
+    settings as settings_router,
+    tasks as tasks_router,
+    webhooks as webhooks_router,
+)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -45,6 +53,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/npm/chart.js@4.4.2/; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self' ws: wss:; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "frame-ancestors 'none'; "
+            "form-action 'self'"
+        )
         if request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         if request.url.path.startswith("/static/"):
@@ -55,28 +75,36 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Ciclo de vida de la aplicación ARK Server Manager."""
-    # Configurar logging para que los módulos (task_scheduler, rcon, etc.)
-    # muestren su actividad en los logs del contenedor (nivel INFO).
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
-    # Evitar ruido por cada request HTTP de httpx (webhooks)
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    sec_logger = logging.getLogger("arkserver.security")
+    if not (settings.admin_password or "").strip():
+        if is_auth_bypassed():
+            sec_logger.warning("[SEGURIDAD] PANEL_PASSWORD está vacío con ALLOW_EMPTY_PASSWORD=true. El panel es accesible sin contraseña.")
+        else:
+            sec_logger.critical("[SEGURIDAD] CRÍTICO: PANEL_PASSWORD está vacío. El acceso al panel queda BLOQUEADO (fail-closed) hasta configurar PANEL_PASSWORD.")
+    elif settings.admin_password == "adminpassword":
+        sec_logger.warning("[SEGURIDAD] PANEL_PASSWORD usa el valor por defecto ('adminpassword'). Cámbielo en .env / docker-compose.yml.")
+    if settings.admin_ark_password == "adminpass":
+        sec_logger.warning("[SEGURIDAD] ADMIN_PASSWORD usa el valor por defecto ('adminpass'). Cámbielo en .env / docker-compose.yml.")
     metrics_manager.start()
     task_scheduler.start_loop()
     player_manager.start_monitor()
 
-    # Si el proceso del servidor ya está corriendo en el host (ej. reinicio de panel)
-    if process_manager._is_ark_process_running():
+    if await asyncio.to_thread(process_manager._is_ark_process_running):
         if await process_manager.is_server_ready():
             process_manager.status = "RUNNING"
         else:
             process_manager.status = "STARTING"
             asyncio.create_task(process_manager._watch_server_readiness())
 
-    # Autoinicio si el servidor ya está instalado (producción) o si está activo en runtime_config
-    autostart_cfg = settings.runtime_config.get("autostart_server", os.getenv("AUTOSTART_SERVER", "true").lower() in ("true", "1", "yes"))
+    autostart_cfg = settings.runtime_config.get(
+        "autostart_server",
+        os.getenv("AUTOSTART_SERVER", "true").lower() in ("true", "1", "yes")
+    )
     if autostart_cfg and process_manager.is_installed():
         async def _autostart():
             await asyncio.sleep(2)
@@ -90,20 +118,20 @@ async def lifespan(app: FastAPI):
     player_manager.stop_monitor()
     task_scheduler.stop_loop()
     metrics_manager.stop()
-    # Apagado seguro de ARK con guardado de mundo al detener el contenedor (SIGTERM)
-    if process_manager._is_ark_process_running():
+    if await asyncio.to_thread(process_manager._is_ark_process_running):
         try:
             print("[ARK Server Manager] [SEGURIDAD] Contenedor deteniéndose. Ejecutando guardado de mundo (SaveWorld)...")
             await process_manager.stop_server(grace_seconds=15)
         except Exception as e:
             print(f"[ARK Server Manager] Error durante guardado seguro al apagar: {e}")
     await process_manager.rcon.disconnect()
+    activity_manager.flush()
 
 
 app = FastAPI(
     title="ARK Server Manager",
     description="Panel Web Ultra-ligero para Servidor de ARK: Survival Evolved",
-    version="2.0.0",
+    version=settings.app_version,
     lifespan=lifespan,
     docs_url=None,
     redoc_url=None,
@@ -113,13 +141,23 @@ app = FastAPI(
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Rutas estáticas y plantillas
 web_dir = BASE_DIR / "web"
 templates_dir = web_dir / "templates"
 static_dir = web_dir / "static"
 
 templates = Jinja2Templates(directory=str(templates_dir))
+templates.env.globals["get_app_version"] = lambda: settings.app_version
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+# Registrar Routers Modulares
+app.include_router(backups_router.router)
+app.include_router(cluster_router.router)
+app.include_router(files_router.router)
+app.include_router(mods_router.router)
+app.include_router(players_router.router)
+app.include_router(settings_router.router)
+app.include_router(tasks_router.router)
+app.include_router(webhooks_router.router)
 
 
 @app.get("/health")
@@ -132,7 +170,7 @@ async def health_check():
     }
 
 
-# --- Modelos Pydantic para API ---
+# --- Modelos Pydantic para Control del Servidor ---
 class InstallServerRequest(BaseModel):
     world: str = "TheIsland"
     session_name: str = "ARK Server"
@@ -147,97 +185,29 @@ class InstallServerRequest(BaseModel):
     mature_multiplier: str = "1.0"
     mod_ids: Optional[str] = ""
 
+
 class CommandRequest(BaseModel):
     command: str
+
 
 class BroadcastRequest(BaseModel):
     message: str
 
-class KickBanRequest(BaseModel):
-    steam_id: str
-
-class PlayerMessageRequest(BaseModel):
-    steam_id: str
-    message: str
-
-class FileSaveRequest(BaseModel):
-    path: str
-    content: str
-
-class FolderCreateRequest(BaseModel):
-    path: str
-
-class UnzipRequest(BaseModel):
-    path: str
-    target_dir: str = ""
-
-class FileRenameRequest(BaseModel):
-    path: str
-    new_name: str
-
-class FileDuplicateRequest(BaseModel):
-    path: str
-
-class ModsUpdateRequest(BaseModel):
-    mod_ids: str
-
-class FileCompressRequest(BaseModel):
-    path: str
-
-class FileCreateRequest(BaseModel):
-    path: str
-
-# Retrocompatibilidad
-FileWriteRequest = FileSaveRequest
-class FileDeleteRequest(BaseModel):
-    path: str
-
-class BackupCreateRequest(BaseModel):
-    name: Optional[str] = None
-
-class BackupRestoreRequest(BaseModel):
-    filename: str
 
 class RestartCountdownRequest(BaseModel):
     minutes: int = 5
 
-class ClusterInstanceCreateRequest(BaseModel):
-    name: str
-    map: str
-    session_name: Optional[str] = None
-    server_port: Optional[int] = None
-    query_port: Optional[int] = None
-    rcon_port: Optional[int] = None
-    rcon_password: Optional[str] = None
-    server_password: Optional[str] = None
-    max_players: Optional[int] = None
-    alt_save_dir: Optional[str] = None
 
-class ClusterInstanceUpdateRequest(BaseModel):
-    name: Optional[str] = None
-    session_name: Optional[str] = None
-    server_password: Optional[str] = None
-    rcon_password: Optional[str] = None
-    max_players: Optional[int] = None
-    enabled: Optional[bool] = None
-    server_port: Optional[int] = None
-    query_port: Optional[int] = None
-    rcon_port: Optional[int] = None
-
-class ClusterRatesSyncRequest(BaseModel):
-    rates: Dict[str, Any]
-
-
-# --- Rutas de Vistas HTML ---
+# --- Rutas de Vistas HTML y Autenticación ---
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     if not is_authenticated(request):
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    
-    settings_data = ark_settings_manager.get_all_settings()
-    current_metrics = metrics_manager.get_current_metrics()
+
+    settings_data = await asyncio.to_thread(ark_settings_manager.get_all_settings)
+    current_metrics = await metrics_manager.get_current_metrics_async()
     is_installed = process_manager.is_installed()
-    
+
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -256,11 +226,16 @@ async def dashboard(request: Request):
         }
     )
 
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     if is_authenticated(request):
         return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-    return templates.TemplateResponse(request=request, name="login.html", context={"error": None})
+    err = None
+    if not (settings.admin_password or "").strip() and not is_auth_bypassed():
+        err = "PANEL_PASSWORD está vacío. Configure una contraseña válida en el entorno para habilitar el acceso."
+    return templates.TemplateResponse(request=request, name="login.html", context={"error": err})
+
 
 @app.post("/login")
 async def login_post(request: Request, response: Response, username: str = Form(...), password: str = Form(...)):
@@ -284,9 +259,9 @@ async def login_post(request: Request, response: Response, username: str = Form(
             key=SESSION_COOKIE_NAME,
             value=token,
             httponly=True,
-            secure=(request.url.scheme == "https"),
+            secure=is_request_secure(request),
             samesite="lax",
-            max_age=3600  # 60 minutos de caducidad
+            max_age=3600
         )
         return redirect
 
@@ -307,8 +282,13 @@ async def login_post(request: Request, response: Response, username: str = Form(
         status_code=status_code
     )
 
+
 @app.get("/logout")
-async def logout():
+@app.post("/logout")
+async def logout(request: Request):
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    if token:
+        revoke_session_token(token)
     res = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     res.delete_cookie(SESSION_COOKIE_NAME)
     return res
@@ -317,8 +297,7 @@ async def logout():
 # --- WebSocket de Consola en Tiempo Real (Soporta Instancia de Clúster) ---
 @app.websocket("/ws/console")
 async def websocket_console(websocket: WebSocket, instance: str = "main"):
-    # Protección de Seguridad: Validar autenticación de sesión
-    if settings.admin_password:
+    if not is_auth_bypassed():
         token = websocket.cookies.get(SESSION_COOKIE_NAME)
         if not token or not verify_session_token(token):
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
@@ -357,19 +336,11 @@ async def websocket_console(websocket: WebSocket, instance: str = "main"):
                 cluster_manager.connected_websockets[instance].discard(websocket)
 
 
-# Carácter invisible usado como heartbeat de aplicación (no se muestra en la consola)
 WS_HEARTBEAT_TOKEN = "\u200b"
 WS_HEARTBEAT_IDLE_SECONDS = 25
 
-async def _console_relay(websocket: WebSocket, on_command) -> None:
-    """Relevo de comandos de consola con heartbeat en segundo plano.
 
-    Una tarea independiente envía periódicamente un carácter invisible para verificar
-    que la conexión sigue viva y mantenerla activa. Si el envío falla (cliente muerto
-    sin cerrar el TCP), se detiene el relevo y el 'finally' del endpoint limpia el
-    socket de la lista de conectados. El bucle principal NO usa timeout sobre receive,
-    por lo que nunca se pierde un comando por cancelación.
-    """
+async def _console_relay(websocket: WebSocket, on_command) -> None:
     stop = asyncio.Event()
 
     async def _heartbeat():
@@ -404,11 +375,11 @@ async def _console_relay(websocket: WebSocket, on_command) -> None:
         hb.cancel()
 
 
-# --- Endpoints de API (Control de Servidor) ---
+# --- Endpoints de API (Control de Servidor, Métricas y Auditoría) ---
 @app.get("/api/status", dependencies=[Depends(require_auth)])
 async def api_status():
     players = await player_manager.get_online_players()
-    metrics = metrics_manager.get_current_metrics()
+    metrics = await metrics_manager.get_current_metrics_async()
     return {
         "status": process_manager.get_status(),
         "is_installed": process_manager.is_installed(),
@@ -419,38 +390,42 @@ async def api_status():
         "metrics": metrics
     }
 
-@app.post("/api/server/install", dependencies=[Depends(require_auth)])
+
+@app.post(
+    "/api/server/install",
+    dependencies=[Depends(require_auth), Depends(require_api_rate_limit("server_install", max_requests=3, window_seconds=60))],
+)
 async def api_server_install(req: InstallServerRequest):
-    """Guarda la configuración personalizada y comienza la descarga e instalación del servidor."""
     settings.world = req.world
     settings.session_name = req.session_name
     settings.server_password = req.server_password or ""
     settings.admin_ark_password = req.admin_password
     settings.max_players = req.max_players
 
-    # Guardar en GameUserSettings.ini, Game.ini y runtime_config
-    ark_settings_manager.save_settings({
-        "server": {
-            "world": req.world,
-            "session_name": req.session_name,
-            "server_password": req.server_password or "",
-            "admin_password": req.admin_password,
-            "max_players": req.max_players,
-            "mod_ids": req.mod_ids or ""
-        },
-        "multipliers": {
-            "xp": req.xp_multiplier,
-            "taming": req.taming_multiplier,
-            "harvest": req.harvest_multiplier,
-            "hatch": req.hatch_multiplier,
-            "mature": req.mature_multiplier
-        },
-        "rules": {
-            "pve_mode": req.server_pve
+    await asyncio.to_thread(
+        ark_settings_manager.save_settings,
+        {
+            "server": {
+                "world": req.world,
+                "session_name": req.session_name,
+                "server_password": req.server_password or "",
+                "admin_password": req.admin_password,
+                "max_players": req.max_players,
+                "mod_ids": req.mod_ids or ""
+            },
+            "multipliers": {
+                "xp": req.xp_multiplier,
+                "taming": req.taming_multiplier,
+                "harvest": req.harvest_multiplier,
+                "hatch": req.hatch_multiplier,
+                "mature": req.mature_multiplier
+            },
+            "rules": {
+                "pve_mode": req.server_pve
+            }
         }
-    })
+    )
 
-    # Actualizar nombre y mapa de la instancia principal en el clúster
     if "main" in cluster_manager._instances:
         map_title = "The Island" if req.world.lower() == "theisland" else req.world
         cluster_manager._instances["main"]["map"] = req.world
@@ -463,6 +438,7 @@ async def api_server_install(req: InstallServerRequest):
     asyncio.create_task(process_manager.install_server())
     return {"success": True, "message": "Instalación del servidor de ARK iniciada."}
 
+
 @app.post("/api/server/start", dependencies=[Depends(require_auth)])
 async def api_server_start():
     activity_manager.log("Servidor", "Iniciando servidor de ARK...")
@@ -470,6 +446,7 @@ async def api_server_start():
     if ok:
         await webhook_manager.notify_starting()
     return {"success": ok, "status": process_manager.get_status()}
+
 
 @app.post("/api/server/stop", dependencies=[Depends(require_auth)])
 async def api_server_stop():
@@ -479,11 +456,13 @@ async def api_server_stop():
         await webhook_manager.notify_server_status(False)
     return {"success": ok, "status": process_manager.get_status()}
 
+
 @app.post("/api/server/restart", dependencies=[Depends(require_auth)])
 async def api_server_restart():
     activity_manager.log("Servidor", "Reiniciando servidor de ARK...")
     ok = await process_manager.restart_server()
     return {"success": ok, "status": process_manager.get_status()}
+
 
 @app.post("/api/server/restart_safe", dependencies=[Depends(require_auth)])
 async def api_server_restart_safe(req: RestartCountdownRequest):
@@ -491,17 +470,23 @@ async def api_server_restart_safe(req: RestartCountdownRequest):
     asyncio.create_task(task_scheduler.trigger_safe_restart(req.minutes))
     return {"success": True, "message": f"Reinicio iniciado con cuenta regresiva de {req.minutes} min."}
 
-@app.post("/api/server/command", dependencies=[Depends(require_auth)])
+
+@app.post(
+    "/api/server/command",
+    dependencies=[Depends(require_auth), Depends(require_api_rate_limit("server_command", max_requests=30, window_seconds=60))],
+)
 async def api_server_command(req: CommandRequest):
     resp = await process_manager.send_command(req.command)
-    activity_manager.log("Consola", f"Comando: {req.command}")
+    activity_manager.log("Consola", f"Comando: {redact_rcon_command(req.command)}")
     return {"response": resp}
+
 
 @app.post("/api/server/saveworld", dependencies=[Depends(require_auth)])
 async def api_server_saveworld():
     resp = await process_manager.rcon.save_world()
     activity_manager.log("ARK", "SaveWorld ejecutado")
     return {"success": True, "response": resp}
+
 
 @app.post("/api/server/dinowipe", dependencies=[Depends(require_auth)])
 async def api_server_dinowipe():
@@ -510,22 +495,27 @@ async def api_server_dinowipe():
     await webhook_manager.notify_dino_wipe()
     return {"success": True, "response": resp}
 
-@app.post("/api/server/broadcast", dependencies=[Depends(require_auth)])
+
+@app.post(
+    "/api/server/broadcast",
+    dependencies=[Depends(require_auth), Depends(require_api_rate_limit("server_broadcast", max_requests=20, window_seconds=60))],
+)
 async def api_server_broadcast(req: BroadcastRequest):
-    resp = await process_manager.rcon.broadcast(req.message)
+    try:
+        resp = await process_manager.rcon.broadcast(req.message)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     activity_manager.log("ARK", f"Broadcast: '{req.message}'")
     return {"success": True, "response": resp}
 
 
-# --- Endpoints de Auditoría, Logs y Mods ---
 @app.get("/api/activity", dependencies=[Depends(require_auth)])
 async def api_activity():
-    """Retorna el historial de eventos recientes de auditoría de los últimos 7 días."""
     return {"activities": activity_manager.get_recent()}
+
 
 @app.get("/api/activity/download", dependencies=[Depends(require_auth)])
 async def api_activity_download():
-    """Descarga el registro completo de auditoría de los últimos 7 días en formato JSON."""
     logs = activity_manager.get_recent()
     content = json.dumps(logs, indent=2, ensure_ascii=False)
     filename = f"auditoria_ark_{time.strftime('%Y%m%d_%H%M%S')}.json"
@@ -535,9 +525,9 @@ async def api_activity_download():
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+
 @app.get("/api/server/logs/download", dependencies=[Depends(require_auth)])
 async def api_download_logs():
-    """Permite descargar el log completo del servidor de ARK."""
     log_path = settings.log_file
     if log_path.exists():
         return FileResponse(
@@ -552,111 +542,10 @@ async def api_download_logs():
         headers={"Content-Disposition": "attachment; filename=ShooterGame.log"}
     )
 
-@app.get("/api/mods", dependencies=[Depends(require_auth)])
-async def api_get_mods():
-    """Obtiene la lista de mods configurados."""
-    cfg = settings.runtime_config
-    mod_ids_str = cfg.get("mod_ids", os.getenv("MOD_IDS", "")).strip()
-    mods = [m.strip() for m in mod_ids_str.split(",") if m.strip()]
-    return {
-        "mod_ids_raw": mod_ids_str,
-        "mods": mods,
-        "count": len(mods)
-    }
 
-@app.post("/api/mods", dependencies=[Depends(require_auth)])
-async def api_save_mods(req: ModsUpdateRequest):
-    """Guarda la lista de mods en la configuración activa y arkmanager.cfg."""
-    raw_mods = ",".join([m.strip() for m in req.mod_ids.split(",") if m.strip()])
-    # Validar formato: los IDs de Steam Workshop son numéricos. Esto evita inyección
-    # de directivas en /etc/arkmanager/arkmanager.cfg a través del campo de mods.
-    for token in raw_mods.split(","):
-        if not token.strip().isdigit():
-            return {"success": False, "error": "La lista de mods solo puede contener IDs numéricos separados por comas."}
-    settings.runtime_config["mod_ids"] = raw_mods
-    settings.save_runtime_config({"mod_ids": raw_mods})
-
-    cfg_file = Path("/etc/arkmanager/arkmanager.cfg")
-    if cfg_file.exists():
-        try:
-            lines = cfg_file.read_text(encoding="utf-8").splitlines()
-            new_lines = [line for line in lines if not line.startswith("ark_GameModIds=")]
-            if raw_mods:
-                new_lines.append(f'ark_GameModIds="{raw_mods}"')
-            cfg_file.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-        except Exception:
-            pass
-
-    count = len(raw_mods.split(",")) if raw_mods else 0
-    activity_manager.log("Mods", f"Lista de mods actualizada ({count} mods configurados)")
-    return {"success": True, "mod_ids": raw_mods, "count": count}
-
-@app.post("/api/mods/update", dependencies=[Depends(require_auth)])
-async def api_update_mods():
-    """Ejecuta la actualización y descarga de mods en segundo plano."""
-    activity_manager.log("Mods", "Iniciando verificación y actualización de mods...")
-    await process_manager.broadcast_log("[ARK Server Manager] Comprobando y actualizando mods de Steam Workshop...")
-    if shutil.which("arkmanager"):
-        async def _run_update():
-            proc = await asyncio.create_subprocess_exec(
-                "arkmanager", "update", "--no-background", "--update-mods", "@main",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT
-            )
-            while True:
-                line = await proc.stdout.readline()
-                if not line:
-                    break
-                await process_manager.broadcast_log(f"[ArkManager] {line.decode('utf-8', errors='replace').rstrip()}")
-            await proc.wait()
-            await process_manager.broadcast_log("[ARK Server Manager] Actualización de mods finalizada.")
-        asyncio.create_task(_run_update())
-        return {"success": True, "message": "Actualización de mods iniciada en segundo plano."}
-    else:
-        await process_manager.broadcast_log("[ARK Server Manager] Simulación: Mods actualizados correctamente.")
-        return {"success": True, "message": "Simulación: Mods actualizados."}
-
-
-# --- Endpoints de Jugadores ---
-@app.get("/api/players", dependencies=[Depends(require_auth)])
-async def api_players():
-    online = await player_manager.get_online_players()
-    history = player_manager.get_all_history()
-    return {
-        "online": online,
-        "online_count": len(online),
-        "history": history
-    }
-
-@app.post("/api/players/message", dependencies=[Depends(require_auth)])
-async def api_player_message(req: PlayerMessageRequest):
-    resp = await player_manager.message_player(req.steam_id, req.message)
-    activity_manager.log("Jugadores", f"Mensaje privado a {req.steam_id}: {req.message}")
-    return {"success": True, "response": resp}
-
-@app.post("/api/players/kick", dependencies=[Depends(require_auth)])
-async def api_player_kick(req: KickBanRequest):
-    resp = await player_manager.kick(req.steam_id)
-    activity_manager.log("Jugadores", f"Superviviente expulsado: {req.steam_id}")
-    return {"success": True, "response": resp}
-
-@app.post("/api/players/ban", dependencies=[Depends(require_auth)])
-async def api_player_ban(req: KickBanRequest):
-    resp = await player_manager.ban(req.steam_id)
-    activity_manager.log("Jugadores", f"Superviviente baneado: {req.steam_id}")
-    return {"success": True, "response": resp}
-
-@app.post("/api/players/unban", dependencies=[Depends(require_auth)])
-async def api_player_unban(req: KickBanRequest):
-    resp = await player_manager.unban(req.steam_id)
-    activity_manager.log("Jugadores", f"Superviviente desbaneado: {req.steam_id}")
-    return {"success": True, "response": resp}
-
-
-# --- Endpoints de Métricas ---
 @app.get("/api/metrics", dependencies=[Depends(require_auth)])
 async def api_metrics():
-    curr = dict(metrics_manager.get_current_metrics())
+    curr = dict(await metrics_manager.get_current_metrics_async())
     try:
         players = await player_manager.get_online_players()
         curr["players_online"] = len(players)
@@ -665,317 +554,6 @@ async def api_metrics():
     curr["max_players"] = settings.max_players
     return {
         "current": curr,
-        "history": metrics_manager.get_history()
+        "history": metrics_manager.get_history(),
+        "disk_history": metrics_manager.get_disk_history(),
     }
-
-
-# --- Endpoints de Configuración ---
-@app.get("/api/settings", dependencies=[Depends(require_auth)])
-async def api_get_settings():
-    return ark_settings_manager.get_all_settings()
-
-@app.get("/api/server/settings", dependencies=[Depends(require_auth)])
-async def api_get_server_settings_alias():
-    return ark_settings_manager.get_all_settings()
-
-@app.post("/api/settings", dependencies=[Depends(require_auth)])
-async def api_save_settings(payload: Dict[str, Any]):
-    ok = ark_settings_manager.save_settings(payload)
-    activity_manager.log("Configuración", "Configuraciones de ARK actualizadas")
-    return {"success": ok}
-
-
-# --- Endpoints de Webhooks Discord ---
-@app.get("/api/webhooks", dependencies=[Depends(require_auth)])
-async def api_get_webhooks():
-    cfg = settings.runtime_config
-    events = cfg.get("discord_events", {
-        "start": True,
-        "starting": True,
-        "shutdown": True,
-        "shutdown_warn": True,
-        "backup": True,
-        "dino_wipe": True,
-        "restart": True,
-        "players": False
-    })
-    return {
-        "url": cfg.get("discord_webhook_url", "") or os.getenv("DISCORD_WEBHOOK_URL", ""),
-        "language": cfg.get("discord_language", "es"),
-        "events": events
-    }
-
-@app.post("/api/webhooks", dependencies=[Depends(require_auth)])
-async def api_save_webhooks(req: Dict[str, Any]):
-    url = req.get("url", "").strip()
-    lang = req.get("language", "es").strip().lower()
-    events = req.get("events", {})
-    settings.save_runtime_config({
-        "discord_webhook_url": url,
-        "discord_language": lang,
-        "discord_events": events
-    })
-    activity_manager.log("Webhooks", f"Configuración de Webhook guardada (Idioma: {lang})")
-    return {"success": True}
-
-@app.post("/api/webhooks/test", dependencies=[Depends(require_auth)])
-async def api_test_webhook():
-    ok = await webhook_manager.send_discord_embed("TEST", "¡Notificación de prueba entregada con éxito desde el panel web de ARK Server Manager!")
-    if ok:
-        activity_manager.log("Webhooks", "Notificación de prueba enviada a Discord con éxito")
-        return {"success": True}
-    return {"success": False, "error": "No se pudo entregar el mensaje. Verifica que la URL del Webhook sea válida."}
-
-# --- Endpoints de Tareas y Automatizaciones ---
-@app.get("/api/tasks/config", dependencies=[Depends(require_auth)])
-async def api_get_tasks_config():
-    cfg = settings.runtime_config
-    return {
-        "schedule_enabled": cfg.get("schedule_enabled", False),
-        "schedule_start": cfg.get("schedule_start", "20:00"),
-        "schedule_stop": cfg.get("schedule_stop", "00:00"),
-        "schedule_warn_mins": int(cfg.get("schedule_warn_mins", 10)),
-        "auto_backup_enabled": cfg.get("auto_backup_enabled", True),
-        "auto_backup_interval_hours": int(cfg.get("auto_backup_interval_hours", 6)),
-        "backup_max_count": int(cfg.get("backup_max_count", 10)),
-        "auto_dino_wipe_enabled": cfg.get("auto_dino_wipe_enabled", False),
-        "auto_dino_wipe_hours": int(cfg.get("auto_dino_wipe_hours", 24)),
-        "auto_restart_hours": int(cfg.get("auto_restart_hours", 0))
-    }
-
-@app.post("/api/tasks/config", dependencies=[Depends(require_auth)])
-async def api_save_tasks_config(payload: Dict[str, Any]):
-    settings.save_runtime_config(payload)
-    activity_manager.log("Tareas", "Configuración de horarios y tareas automáticas actualizada")
-    return {"success": True}
-
-@app.get("/api/tasks/status", dependencies=[Depends(require_auth)])
-async def api_tasks_status():
-    """Estado en tiempo real del planificador: bucle activo, últimas ejecuciones y próximas."""
-    return task_scheduler.get_status()
-
-
-
-# --- Endpoints de Backups ---
-@app.get("/api/backups", dependencies=[Depends(require_auth)])
-async def api_backups_list():
-    return {"backups": backup_manager.list_backups()}
-
-@app.post("/api/backups/create", dependencies=[Depends(require_auth)])
-async def api_backup_create(req: BackupCreateRequest):
-    res = await backup_manager.create_backup(req.name)
-    if res.get("success"):
-        activity_manager.log("Backups", f"Copia creada: {res.get('filename')}")
-        await webhook_manager.notify_backup(res.get("filename", ""), res.get("size_mb", 0.0))
-    return res
-
-@app.post("/api/backups/restore", dependencies=[Depends(require_auth)])
-async def api_backup_restore(req: BackupRestoreRequest):
-    res = await backup_manager.restore_backup(req.filename)
-    activity_manager.log("Backups", f"Copia restaurada: {req.filename}")
-    return res
-
-@app.post("/api/backups/delete", dependencies=[Depends(require_auth)])
-async def api_backup_delete(req: BackupRestoreRequest):
-    ok = backup_manager.delete_backup(req.filename)
-    activity_manager.log("Backups", f"Copia eliminada: {req.filename}")
-    return {"success": ok}
-
-@app.get("/api/backups/download/{filename}", dependencies=[Depends(require_auth)])
-async def api_backup_download(filename: str):
-    path = backup_manager.get_backup_path(filename)
-    if not path:
-        raise HTTPException(status_code=404, detail="Archivo no encontrado")
-    return FileResponse(path=str(path), filename=filename, media_type="application/gzip")
-
-
-# --- Endpoints de Archivos (Dockraft Replicated Suite) ---
-@app.get("/api/files/list", dependencies=[Depends(require_auth)])
-async def file_list(path: str = Query("")):
-    try:
-        return file_manager.list_directory(path)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/files/content", dependencies=[Depends(require_auth)])
-async def file_content(path: str = Query(...)):
-    return file_manager.read_file(path)
-
-@app.post("/api/files/save", dependencies=[Depends(require_auth)])
-async def file_save(req: FileSaveRequest):
-    res = file_manager.write_file(req.path, req.content)
-    activity_manager.log("Archivos", f"Archivo guardado: {req.path}")
-    return res
-
-@app.post("/api/files/folder", dependencies=[Depends(require_auth)])
-async def file_folder(req: FolderCreateRequest):
-    res = file_manager.create_folder(req.path)
-    activity_manager.log("Archivos", f"Carpeta creada: {req.path}")
-    return res
-
-@app.delete("/api/files/delete", dependencies=[Depends(require_auth)])
-async def file_delete(path: str = Query(...)):
-    res = file_manager.delete_item(path)
-    activity_manager.log("Archivos", f"Elemento eliminado: {path}")
-    return res
-
-@app.post("/api/files/upload", dependencies=[Depends(require_auth)])
-async def file_upload(path: str = Form(""), file: UploadFile = File(...)):
-    res = await file_manager.save_upload(path, file)
-    activity_manager.log("Archivos", f"Archivo subido: {file.filename}")
-    return res
-
-@app.post("/api/files/unzip", dependencies=[Depends(require_auth)])
-async def file_unzip(req: UnzipRequest):
-    res = file_manager.extract_zip(req.path, req.target_dir)
-    activity_manager.log("Archivos", f"Archivo extraído: {req.path}")
-    return res
-
-@app.get("/api/files/download", dependencies=[Depends(require_auth)])
-async def file_download(path: str = Query(...)):
-    safe_path = file_manager.resolve_download(path)
-    return FileResponse(
-        str(safe_path),
-        filename=safe_path.name,
-        media_type="application/octet-stream"
-    )
-
-@app.post("/api/files/create", dependencies=[Depends(require_auth)])
-async def file_create(req: FileCreateRequest):
-    res = file_manager.create_file(req.path)
-    activity_manager.log("Archivos", f"Archivo creado: {req.path}")
-    return res
-
-@app.post("/api/files/duplicate", dependencies=[Depends(require_auth)])
-async def file_duplicate(req: FileDuplicateRequest):
-    res = file_manager.duplicate_item(req.path)
-    activity_manager.log("Archivos", f"Elemento duplicado: {req.path}")
-    return res
-
-@app.post("/api/files/compress", dependencies=[Depends(require_auth)])
-async def file_compress(req: FileCompressRequest):
-    res = file_manager.compress_item(req.path)
-    activity_manager.log("Archivos", f"Elemento comprimido: {req.path}")
-    return res
-
-@app.post("/api/files/rename", dependencies=[Depends(require_auth)])
-async def file_rename(req: FileRenameRequest):
-    res = file_manager.rename_item(req.path, req.new_name)
-    activity_manager.log("Archivos", f"Elemento renombrado a {req.new_name}")
-    return res
-
-# Retrocompatibilidad para llamadas previas
-@app.get("/api/files/read", dependencies=[Depends(require_auth)])
-async def api_files_read(path: str = Query(...)):
-    return file_manager.read_file(path)
-
-@app.post("/api/files/write", dependencies=[Depends(require_auth)])
-async def api_files_write(req: FileSaveRequest):
-    return file_manager.write_file(req.path, req.content)
-
-
-# --- Endpoints de Clúster & Multi-Instancia ---
-@app.get("/api/cluster/status", dependencies=[Depends(require_auth)])
-async def api_cluster_status():
-    instances = cluster_manager.list_instances()
-    online_nodes = sum(1 for i in instances if i.get("status") == "RUNNING")
-    tributes = cluster_manager.list_cluster_tributes()
-    return {
-        "cluster_id": settings.cluster_id,
-        "cluster_dir": str(settings.cluster_dir),
-        "total_nodes": len(instances),
-        "online_nodes": online_nodes,
-        "tributes_count": len(tributes),
-        "instances": instances
-    }
-
-@app.get("/api/cluster/instances", dependencies=[Depends(require_auth)])
-async def api_cluster_instances():
-    return {
-        "instances": cluster_manager.list_instances(),
-        "maps": cluster_manager.get_official_maps(),
-        "suggested_ports": cluster_manager.suggest_next_ports(),
-        "cluster_id": settings.cluster_id
-    }
-
-@app.post("/api/cluster/instances", dependencies=[Depends(require_auth)])
-async def api_cluster_instance_create(req: ClusterInstanceCreateRequest):
-    res = cluster_manager.create_instance(req.model_dump())
-    if res.get("success"):
-        activity_manager.log("Clúster", f"Nuevo mapa añadido al clúster: {req.name} ({req.map})")
-    return res
-
-@app.put("/api/cluster/instances/{instance_id}", dependencies=[Depends(require_auth)])
-async def api_cluster_instance_update(instance_id: str, req: ClusterInstanceUpdateRequest):
-    res = cluster_manager.update_instance(instance_id, req.model_dump(exclude_unset=True))
-    if res.get("success"):
-        activity_manager.log("Clúster", f"Instancia {instance_id} actualizada")
-    return res
-
-@app.delete("/api/cluster/instances/{instance_id}", dependencies=[Depends(require_auth)])
-async def api_cluster_instance_delete(instance_id: str):
-    res = cluster_manager.delete_instance(instance_id)
-    if res.get("success"):
-        activity_manager.log("Clúster", f"Instancia {instance_id} eliminada del clúster")
-    return res
-
-@app.post("/api/cluster/instances/{instance_id}/start", dependencies=[Depends(require_auth)])
-async def api_cluster_instance_start(instance_id: str):
-    ok = await cluster_manager.start_instance(instance_id)
-    activity_manager.log("Clúster", f"Iniciando nodo {instance_id}...")
-    return {"success": ok, "status": cluster_manager.get_instance_status(instance_id)}
-
-@app.post("/api/cluster/instances/{instance_id}/stop", dependencies=[Depends(require_auth)])
-async def api_cluster_instance_stop(instance_id: str):
-    ok = await cluster_manager.stop_instance(instance_id)
-    activity_manager.log("Clúster", f"Deteniendo nodo {instance_id}...")
-    return {"success": ok, "status": cluster_manager.get_instance_status(instance_id)}
-
-@app.post("/api/cluster/instances/{instance_id}/restart", dependencies=[Depends(require_auth)])
-async def api_cluster_instance_restart(instance_id: str):
-    ok = await cluster_manager.restart_instance(instance_id)
-    activity_manager.log("Clúster", f"Reiniciando nodo {instance_id}...")
-    return {"success": ok, "status": cluster_manager.get_instance_status(instance_id)}
-
-@app.post("/api/cluster/instances/{instance_id}/command", dependencies=[Depends(require_auth)])
-async def api_cluster_instance_command(instance_id: str, payload: Dict[str, str]):
-    cmd = payload.get("command", "")
-    if not cmd:
-        return {"success": False, "error": "Comando vacío"}
-    if cluster_manager.get_instance_status(instance_id) != "RUNNING":
-        return {"success": False, "error": f"El nodo '{instance_id}' no está en ejecución", "response": f"[AVISO] El nodo '{instance_id}' está apagado o iniciando. Los comandos RCON solo están disponibles cuando está RUNNING."}
-    resp = await cluster_manager.send_command(instance_id, cmd)
-    return {"success": True, "response": resp}
-
-@app.get("/api/cluster/tributes", dependencies=[Depends(require_auth)])
-async def api_cluster_tributes():
-    return {
-        "cluster_id": settings.cluster_id,
-        "tributes": cluster_manager.list_cluster_tributes()
-    }
-
-@app.delete("/api/cluster/tributes/{filename}", dependencies=[Depends(require_auth)])
-async def api_cluster_tribute_delete(filename: str):
-    ok = cluster_manager.delete_cluster_tribute(filename)
-    if ok:
-        activity_manager.log("Clúster", f"Archivo de tributo/obelisco eliminado: {filename}")
-    return {"success": ok}
-
-@app.post("/api/cluster/start_all", dependencies=[Depends(require_auth)])
-async def api_cluster_start_all():
-    activity_manager.log("Clúster", "Iniciando todos los mapas del clúster...")
-    return await cluster_manager.start_all()
-
-@app.post("/api/cluster/stop_all", dependencies=[Depends(require_auth)])
-async def api_cluster_stop_all():
-    activity_manager.log("Clúster", "Deteniendo todos los mapas del clúster...")
-    return await cluster_manager.stop_all()
-
-@app.post("/api/cluster/sync_rates", dependencies=[Depends(require_auth)])
-async def api_cluster_sync_rates(req: ClusterRatesSyncRequest):
-    res = cluster_manager.sync_rates_to_all(req.rates)
-    activity_manager.log("Clúster", f"Multiplicadores sincronizados en {res.get('synced_nodes', 0)} nodos")
-    return res
-
